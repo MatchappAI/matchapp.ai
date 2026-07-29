@@ -12,8 +12,8 @@ const features = [
     body: "See the deliverables, estimated pay, timing, and usage-rights questions before you spend time pitching. Estimates are labeled when they are not backed by a confirmed offer.",
   },
   {
-    title: "One internal MatchAI Inbox",
-    body: "Keep each pitch, reply, draft, attachment, and negotiation in a single thread without connecting a personal mailbox. Provider-backed sending and synchronization stay honest until an external transport is selected.",
+    title: "Chat-first communication",
+    body: "Chat is the daily operating layer. Messages is the structured workspace for threads, drafts, attachments, and negotiation history when you need to inspect the full record.",
   },
   {
     title: "Negotiation and deal tracking",

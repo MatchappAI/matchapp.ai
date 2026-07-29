@@ -479,7 +479,7 @@ function DealsPage() {
           title="No active deals yet"
           description="Pursue a match from the feed above to create an internal draft, or finish your profile to improve recommendations."
           cta={{ label: "Open settings", to: "/dashboard/settings" }}
-          secondaryCta={{ label: "Open inbox", to: "/dashboard/inbox" }}
+          secondaryCta={{ label: "Open messages", to: "/dashboard/inbox" }}
         />
       ) : (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>

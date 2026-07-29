@@ -46,6 +46,14 @@ function AdminLayout() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Owner panel</h1>
         <p className="text-sm text-muted-foreground">Private to you. Not visible to creators.</p>
+        <div className="mt-3">
+          <Link
+            to="/internal"
+            className="inline-flex items-center rounded-full border border-foreground/[0.08] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.04]"
+          >
+            Open internal hub
+          </Link>
+        </div>
       </div>
       <nav className="flex gap-2 border-b border-border/40">
         {tabs.map((t) => (

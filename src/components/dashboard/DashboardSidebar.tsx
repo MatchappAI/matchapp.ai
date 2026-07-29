@@ -66,7 +66,10 @@ export function DashboardSidebar({
         ...NAV_GROUPS,
         {
           label: "Owner",
-          items: [{ to: "/dashboard/admin", label: "Insights", icon: Shield }],
+          items: [
+            { to: "/internal", label: "Internal hub", icon: Shield },
+            { to: "/dashboard/admin", label: "Insights", icon: Shield },
+          ],
         },
       ]
     : NAV_GROUPS;

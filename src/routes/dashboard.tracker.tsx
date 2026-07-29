@@ -94,7 +94,7 @@ function TrackerPage() {
             Status, follow-ups, next moves
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            This is the control surface. Inbox remains the communication layer; Tracker shows what
+            This is the control surface. Chat remains the communication layer; Tracker shows what
             needs attention across brand matches, replies, and active deals.
           </p>
         </div>
@@ -109,7 +109,7 @@ function TrackerPage() {
           <Button asChild>
             <Link to="/dashboard/inbox">
               <Inbox className="mr-2 h-4 w-4" />
-              Open Inbox
+              Open Messages
             </Link>
           </Button>
         </div>

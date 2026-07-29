@@ -96,6 +96,28 @@ function DashboardLayout() {
             </div>
             <div className="min-w-0">
               <DashboardTabs />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Link
+                  to="/dashboard/inbox"
+                  className="rounded-full border border-foreground/[0.08] px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                >
+                  Messages
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="rounded-full border border-foreground/[0.08] px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                >
+                  Chat
+                </Link>
+                {rolesData?.isStaff && (
+                  <Link
+                    to="/internal"
+                    className="rounded-full border border-foreground/[0.08] px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                  >
+                    Internal
+                  </Link>
+                )}
+              </div>
             </div>
           </header>
 

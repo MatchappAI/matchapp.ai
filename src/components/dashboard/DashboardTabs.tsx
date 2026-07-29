@@ -6,7 +6,6 @@ type Tab = { to: string; label: string };
 
 const TABS: Tab[] = [
   { to: "/dashboard/deals", label: "Deals" },
-  { to: "/dashboard/inbox", label: "Inbox" },
   { to: "/dashboard/tracker", label: "Tracker" },
   { to: "/dashboard/tools", label: "Tools" },
   { to: "/dashboard/settings", label: "Settings" },

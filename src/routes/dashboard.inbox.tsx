@@ -42,7 +42,7 @@ import { getCreatorEmailIdentity } from "@/lib/creator-email-identity.functions"
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/inbox")({
-  head: () => ({ meta: [{ title: "Inbox — MatchAI" }] }),
+  head: () => ({ meta: [{ title: "Messages — MatchAI" }] }),
   component: InboxPage,
 });
 
@@ -89,7 +89,7 @@ const FOLDERS: Array<{
   label: string;
   icon: typeof InboxIcon;
 }> = [
-  { id: "inbox", label: "Inbox", icon: InboxIcon },
+  { id: "inbox", label: "Messages", icon: InboxIcon },
   { id: "sent", label: "Sent", icon: Send },
   { id: "drafts", label: "Drafts", icon: File },
   { id: "archive", label: "Archive", icon: Archive },
@@ -512,7 +512,7 @@ function InboxPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search subject or message"
-                aria-label="Search Inbox"
+                aria-label="Search Messages"
                 className="rounded-xl pl-9"
               />
             </div>
@@ -548,7 +548,7 @@ function InboxPage() {
             {threadsQuery.isLoading ? (
               <CenteredStatus label="Loading email threads…" compact />
             ) : threadsQuery.isError ? (
-              <RetryState message="Inbox could not load." onRetry={() => threadsQuery.refetch()} />
+              <RetryState message="Messages could not load." onRetry={() => threadsQuery.refetch()} />
             ) : threads.length === 0 ? (
               <div className="p-8 text-center">
                 <MailOpen className="mx-auto h-8 w-8 text-muted-foreground/60" />
@@ -607,9 +607,9 @@ function InboxPage() {
               <div>
                 <InboxIcon className="mx-auto h-9 w-9 text-muted-foreground/50" />
                 <p className="mt-3 text-sm font-medium">Select a conversation</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Threads and drafts live in your internal MatchAI Inbox.
-                </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Threads and drafts live in your MatchAI Messages workspace.
+                  </p>
               </div>
             </div>
           ) : threadQuery.isLoading ? (

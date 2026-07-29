@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type ComponentType } from "react";
 import {
   AlertTriangle,
   ClipboardList,
+  ArrowRight,
   MessageSquareReply,
   MousePointer2,
   ShieldCheck,
@@ -46,6 +47,24 @@ function ToolsPage() {
           icon={ClipboardList}
           title="Money story"
           body="Brand-to-creator payment stays external. No wallet, no escrow, no payout surface."
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <NavCard
+          title="Open Deals"
+          body="Move from analysis into live deal state, outreach, and negotiation."
+          to="/dashboard/deals"
+        />
+        <NavCard
+          title="Open Messages"
+          body="Review threads, replies, and approval requests in one place."
+          to="/dashboard/inbox"
+        />
+        <NavCard
+          title="Open Tracker"
+          body="Update stages, dates, and next actions when an opportunity moves."
+          to="/dashboard/tracker"
         />
       </div>
 
@@ -157,5 +176,24 @@ function MiniToolCard({
         </Button>
       </div>
     </div>
+  );
+}
+
+function NavCard({ title, body, to }: { title: string; body: string; to: string }) {
+  return (
+    <Link
+      to={to as never}
+      className="rounded-3xl border border-foreground/[0.06] bg-card/70 p-5 transition-all hover:-translate-y-0.5 hover:bg-card"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{body}</p>
+        </div>
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+          <ArrowRight className="h-4 w-4" />
+        </span>
+      </div>
+    </Link>
   );
 }
