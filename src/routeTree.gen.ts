@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ForBrandsRouteImport } from './routes/for-brands'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as InternalRouteImport } from './routes/internal'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -89,6 +90,11 @@ const ForBrandsRoute = ForBrandsRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InternalRoute = InternalRouteImport.update({
+  id: '/internal',
+  path: '/internal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/for-brands': typeof ForBrandsRoute
   '/home': typeof HomeRoute
+  '/internal': typeof InternalRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -423,6 +430,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/for-brands': typeof ForBrandsRoute
   '/home': typeof HomeRoute
+  '/internal': typeof InternalRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -481,6 +489,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/for-brands': typeof ForBrandsRoute
   '/home': typeof HomeRoute
+  '/internal': typeof InternalRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
@@ -541,6 +550,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/for-brands'
     | '/home'
+    | '/internal'
     | '/mcp'
     | '/onboarding'
     | '/reset-password'
@@ -598,6 +608,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/for-brands'
     | '/home'
+    | '/internal'
     | '/mcp'
     | '/onboarding'
     | '/reset-password'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/for-brands'
     | '/home'
+    | '/internal'
     | '/mcp'
     | '/onboarding'
     | '/reset-password'
@@ -714,6 +726,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   ForBrandsRoute: typeof ForBrandsRoute
   HomeRoute: typeof HomeRoute
+  InternalRoute: typeof InternalRoute
   McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -780,6 +793,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/internal': {
+      id: '/internal'
+      path: '/internal'
+      fullPath: '/internal'
+      preLoaderRoute: typeof InternalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -1241,6 +1261,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   ForBrandsRoute: ForBrandsRoute,
   HomeRoute: HomeRoute,
+  InternalRoute: InternalRoute,
   McpRoute: McpRoute,
   OnboardingRoute: OnboardingRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
