@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://qjwwhtkwtxucsljeikvz.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "matchai-mcp",
+      "version": "0.1.0",
+      "title": "MatchAI"
+    },
+    "tools": [
+      {
+        "name": "list_brand_matches",
+        "title": "List brand matches",
+        "description": "List the signed-in creator's AI-generated brand matches with fit score, category, and status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "description": "Max matches to return."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "new",
+                "queued",
+                "outreach_drafted",
+                "outreach_sent",
+                "replied",
+                "won",
+                "lost",
+                "archived"
+              ],
+              "description": "Filter by match status."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_deals",
+        "title": "List deals",
+        "description": "List the signed-in creator's deals across the pipeline (prospect, negotiation, contracted, delivered, paid).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "stage": {
+              "type": "string",
+              "enum": [
+                "prospect",
+                "negotiating",
+                "contracted",
+                "in_progress",
+                "delivered",
+                "paid",
+                "lost"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_pending_approvals",
+        "title": "List pending approvals",
+        "description": "List outbound outreach drafts awaiting the creator's approval.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_profile",
+        "title": "Get creator profile",
+        "description": "Get the signed-in creator's MatchAI profile: name, niche, audience, platforms, and onboarding status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

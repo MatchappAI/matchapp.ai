@@ -1,0 +1,577 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-inner: var(--card-inner);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "Manrope", "Satoshi", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "General Sans", "Satoshi", "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem; /* button rounded-xl = 16px; card rounded-3xl = 24px */
+  --background: #ffffff;
+  --background-end: #fafafa;
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-inner: oklch(0.985 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  /* Trust-forward indigo primary, violet accent reserved for highlights */
+  --primary: #6366F1;
+  --primary-2: #8B5CF6;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.35 0 0);
+
+  --accent: #A78BFA;
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.55 0.24 25);
+  --border: oklch(0.2 0 0 / 12%);
+  --input: oklch(0.9 0 0);
+  --ring: #818CF8;
+
+  /* Premium motion tokens */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-slow: 380ms;
+  --duration-enter: 420ms;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Shimmer skeleton */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(15,23,42,0.04) 0%,
+    rgba(15,23,42,0.09) 40%,
+    rgba(15,23,42,0.04) 80%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s infinite linear;
+  border-radius: 12px;
+}
+
+/* One-shot card sheen on mount */
+@keyframes card-sheen-sweep {
+  0% { background-position: -200% 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { background-position: 200% 0; opacity: 0; }
+}
+.card-sheen { position: relative; overflow: hidden; isolation: isolate; }
+.card-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: card-sheen-sweep 900ms ease-in-out 200ms 1 both;
+  border-radius: inherit;
+}
+
+/* Typing dots */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+.typing-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(139,92,246,0.7);
+  display: inline-block;
+  animation: typing-bounce 1s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 160ms; }
+.typing-dot:nth-child(3) { animation-delay: 320ms; }
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; }
+  html, body {
+    background-color: #ffffff;
+    color: var(--color-foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 60%, #ffffff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.005em;
+  }
+  [data-app-scope="dashboard"],
+  [data-app-scope="dashboard"] * {
+    overflow-wrap: anywhere;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.022em;
+    font-weight: 700;
+  }
+  h1 { font-weight: 700; letter-spacing: -0.032em; }
+  h2 { letter-spacing: -0.028em; }
+  strong { font-weight: 600; }
+  ::selection { background: oklch(0.66 0.22 295 / 0.25); color: oklch(0.18 0.02 268); }
+
+
+  /* Premium scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.3 0.03 280 / 0.6);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(0.5 0.12 295 / 0.7); background-clip: padding-box; border: 2px solid transparent; }
+}
+
+/* Ambient grain texture overlay */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Glass panel */
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 24px -8px rgba(0, 0, 0, 0.5),
+    0 32px 64px -24px rgba(0, 0, 0, 0.7);
+}
+
+.glass-hover {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.5s ease;
+}
+.glass-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 12px 32px -8px rgba(0, 0, 0, 0.55),
+    0 48px 96px -24px rgba(139, 92, 246, 0.35);
+}
+
+/* Gradient border */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, oklch(0.7 0.2 295 / 0.6), oklch(0.6 0.15 250 / 0.1) 40%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Animated sheen for primary buttons */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, oklch(1 0 0 / 0.25) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+.btn-sheen:hover::after { transform: translateX(120%); }
+
+/* Aurora mesh background */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.03;
+}
+.aurora::before {
+  width: 40vw; height: 40vw;
+  top: -15vw; left: -10vw;
+  background: radial-gradient(circle, oklch(0.75 0.02 260 / 0.08), transparent 65%);
+  animation: drift 22s ease-in-out infinite alternate;
+}
+.aurora::after {
+  width: 35vw; height: 35vw;
+  top: -10vw; right: -10vw;
+  background: radial-gradient(circle, oklch(0.78 0.015 250 / 0.06), transparent 65%);
+  animation: drift2 26s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  0% { transform: translate3d(0,0,0) scale(1); }
+  100% { transform: translate3d(6vw, 4vw, 0) scale(1.1); }
+}
+@keyframes drift2 {
+  0% { transform: translate3d(0,0,0) scale(1); }
+  100% { transform: translate3d(-5vw, 3vw, 0) scale(1.08); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-8px) }
+}
+.float-slow { animation: float-slow 7s ease-in-out infinite; }
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.4; }
+}
+.pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+
+/* Cursor-tracking spotlight (apply to wrapper around .glass card) */
+.spotlight { position: relative; isolation: isolate; }
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background: radial-gradient(
+    320px circle at var(--mx, 50%) var(--my, 50%),
+    oklch(0.7 0.22 295 / 0.18),
+    transparent 60%
+  );
+  z-index: 1;
+}
+.spotlight:hover::before { opacity: 1; }
+.spotlight > * { position: relative; z-index: 2; }
+
+/* Animated underline shimmer for premium dividers */
+@keyframes shimmer-x {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer-line {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, oklch(0.7 0.22 295 / 0.7), transparent);
+  animation: shimmer-x 4s ease-in-out infinite;
+}
+
+/* Navbar scrolled state */
+.nav-scrolled {
+  background: oklch(0.13 0.022 280 / 0.65) !important;
+  box-shadow: 0 12px 40px -20px oklch(0 0 0 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.04);
+  border-color: oklch(0.55 0.05 280 / 0.25) !important;
+}
+
+/* Fill-in flash: pulse a field with a purple highlight when its value updates
+   (typically via an agent action). Toggle by setting data-just-updated="true". */
+@keyframes just-updated-flash {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.7 0.22 295 / 0.0);
+    background-color: oklch(0.7 0.22 295 / 0.0);
+  }
+  20% {
+    box-shadow: 0 0 0 4px oklch(0.7 0.22 295 / 0.35);
+    background-color: oklch(0.7 0.22 295 / 0.22);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.7 0.22 295 / 0.0);
+    background-color: oklch(0.7 0.22 295 / 0.0);
+  }
+}
+[data-just-updated="true"] {
+  animation: just-updated-flash 1.6s ease-out;
+  border-color: oklch(0.7 0.22 295 / 0.55) !important;
+}
+
+/* ============================================================
+   Elite polish pass · global readability + interaction defaults
+   ============================================================ */
+
+/* Smooth scroll for in-page anchors, with sticky-nav offset baked in
+   via scroll-margin on section ids. Respects reduced motion. */
+html {
+  scroll-behavior: smooth;
+  font-size: 18.5px;
+}
+/* Keep the dashboard product UI slightly denser than the landing page so
+   tables and controls don't wrap, but still a touch larger than before. */
+body:has([data-app-scope="dashboard"]) {
+  font-size: 17px;
+}
+
+/* Chat agent surface: warm, rounded, friend-texting-you feel.
+   Quicksand's soft geometric curves read as approachable and human,
+   with Nunito as a rounded fallback. Scoped so it only affects MatchAI. */
+.chat-agent {
+  font-family: "Quicksand", "Nunito", ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  font-size: 16.5px;
+  line-height: 1.7;
+  letter-spacing: 0.005em;
+  font-weight: 500;
+  color: #2a2438;
+}
+.chat-agent p { font-size: 16.5px; line-height: 1.7; font-weight: 500; }
+.chat-agent textarea,
+.chat-agent input { font-family: inherit; font-size: 16.5px; font-weight: 500; letter-spacing: 0.005em; }
+.chat-agent .text-\[10px\],
+.chat-agent .text-\[10\.5px\],
+.chat-agent .text-\[11px\] { font-size: 13px; font-weight: 600; }
+.chat-agent .text-\[12px\],
+.chat-agent .text-\[12\.5px\] { font-size: 14.5px; font-weight: 500; }
+.chat-agent .text-\[13px\] { font-size: 16px; font-weight: 500; }
+.chat-agent h1, .chat-agent h2, .chat-agent h3, .chat-agent h4 { font-family: inherit; letter-spacing: -0.005em; font-weight: 700; }
+.chat-agent strong, .chat-agent b { font-weight: 700; }
+.chat-agent button { font-family: inherit; letter-spacing: 0.005em; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Honor sticky nav when jumping to #section anchors */
+section[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* Consistent, branded focus ring on every interactive element.
+   Replaces the harsh browser default with a soft indigo halo. */
+*:focus-visible {
+  outline: 2px solid oklch(0.78 0.12 268 / 0.55);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline-color: oklch(0.78 0.12 268 / 0.75);
+}
+
+/* Hairline divider util — single 1px line that fades into the page bg */
+.hairline {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    oklch(0.46 0.04 268 / 0.35),
+    transparent
+  );
+}
+
+/* ============================================================
+   Global legibility boost — force faded text and icons dark.
+   Skips text-white (dark surfaces) and text-primary/accent (brand).
+   ============================================================ */
+[class*="text-foreground/"]:not([class*="text-white"]):not([class*="text-primary"]):not([class*="text-accent"]),
+[class*="text-muted-foreground/"]:not([class*="text-white"]):not([class*="text-primary"]):not([class*="text-accent"]),
+[class*="text-slate-"][class*="/"],
+[class*="text-gray-"][class*="/"],
+[class*="text-neutral-"][class*="/"],
+[class*="text-zinc-"][class*="/"] {
+  color: var(--foreground) !important;
+  opacity: 1 !important;
+}
+
+.text-muted-foreground:not(.on-dark) { color: oklch(0.18 0 0) !important; opacity: 1 !important; }
+.text-foreground { color: var(--foreground) !important; }
+
+/* Recharts + generic SVG chart text */
+.recharts-cartesian-axis-tick text,
+.recharts-text,
+.recharts-label,
+.recharts-legend-item-text,
+svg text:not(.on-dark) {
+  fill: var(--foreground) !important;
+  opacity: 1 !important;
+}
+
+/* Any faded text in cards/boxes/features — force full contrast.
+   Add class="on-dark" for elements that legitimately sit on dark surfaces. */
+p[class*="opacity-"]:not(.on-dark):not([class*="text-white"]),
+span[class*="opacity-"]:not(.on-dark):not([class*="text-white"]),
+li[class*="opacity-"]:not(.on-dark):not([class*="text-white"]),
+div[class*="opacity-"][class*="text-"]:not(.on-dark):not([class*="text-white"]),
+h1[class*="opacity-"]:not(.on-dark), h2[class*="opacity-"]:not(.on-dark),
+h3[class*="opacity-"]:not(.on-dark), h4[class*="opacity-"]:not(.on-dark),
+h5[class*="opacity-"]:not(.on-dark), h6[class*="opacity-"]:not(.on-dark) {
+  opacity: 1 !important;
+}
+
+/* Force dark ink on any low-contrast gray/slate/neutral/zinc text (all shades ≤ 500),
+   regardless of opacity suffix. Skip on-dark surfaces and brand tokens. */
+[class*="text-slate-100"]:not(.on-dark), [class*="text-slate-200"]:not(.on-dark),
+[class*="text-slate-300"]:not(.on-dark), [class*="text-slate-400"]:not(.on-dark),
+[class*="text-slate-500"]:not(.on-dark),
+[class*="text-gray-100"]:not(.on-dark), [class*="text-gray-200"]:not(.on-dark),
+[class*="text-gray-300"]:not(.on-dark), [class*="text-gray-400"]:not(.on-dark),
+[class*="text-gray-500"]:not(.on-dark),
+[class*="text-neutral-100"]:not(.on-dark), [class*="text-neutral-200"]:not(.on-dark),
+[class*="text-neutral-300"]:not(.on-dark), [class*="text-neutral-400"]:not(.on-dark),
+[class*="text-neutral-500"]:not(.on-dark),
+[class*="text-zinc-100"]:not(.on-dark), [class*="text-zinc-200"]:not(.on-dark),
+[class*="text-zinc-300"]:not(.on-dark), [class*="text-zinc-400"]:not(.on-dark),
+[class*="text-zinc-500"]:not(.on-dark),
+[class*="text-stone-100"]:not(.on-dark), [class*="text-stone-200"]:not(.on-dark),
+[class*="text-stone-300"]:not(.on-dark), [class*="text-stone-400"]:not(.on-dark),
+[class*="text-stone-500"]:not(.on-dark) {
+  color: var(--foreground) !important;
+  opacity: 1 !important;
+}
+
+/* Icons inheriting currentColor inside cards read dark by default too */
+.glass :where(svg, [class*="lucide"]):not(.on-dark):not([class*="text-primary"]):not([class*="text-accent"]):not([class*="text-white"]),
+[class*="rounded-2xl"] :where(svg):not(.on-dark):not([class*="text-primary"]):not([class*="text-accent"]):not([class*="text-white"]):not([fill]),
+[class*="rounded-3xl"] :where(svg):not(.on-dark):not([class*="text-primary"]):not([class*="text-accent"]):not([class*="text-white"]):not([fill]) {
+  color: var(--foreground);
+  opacity: 1;
+}
+
+
+/* Status accents (emerald/sky/cyan/blue/amber/rose) — force legible dark shades
+   on light surfaces. Skip on-dark surfaces. */
+[class*="text-emerald-100"]:not(.on-dark), [class*="text-emerald-200"]:not(.on-dark),
+[class*="text-emerald-300"]:not(.on-dark), [class*="text-emerald-400"]:not(.on-dark),
+[class*="text-emerald-500"]:not(.on-dark),
+[class*="text-green-100"]:not(.on-dark), [class*="text-green-200"]:not(.on-dark),
+[class*="text-green-300"]:not(.on-dark), [class*="text-green-400"]:not(.on-dark),
+[class*="text-green-500"]:not(.on-dark) {
+  color: oklch(0.45 0.14 155) !important;
+  opacity: 1 !important;
+}
+[class*="text-sky-100"]:not(.on-dark), [class*="text-sky-200"]:not(.on-dark),
+[class*="text-sky-300"]:not(.on-dark), [class*="text-sky-400"]:not(.on-dark),
+[class*="text-sky-500"]:not(.on-dark),
+[class*="text-blue-100"]:not(.on-dark), [class*="text-blue-200"]:not(.on-dark),
+[class*="text-blue-300"]:not(.on-dark), [class*="text-blue-400"]:not(.on-dark),
+[class*="text-blue-500"]:not(.on-dark),
+[class*="text-cyan-100"]:not(.on-dark), [class*="text-cyan-200"]:not(.on-dark),
+[class*="text-cyan-300"]:not(.on-dark), [class*="text-cyan-400"]:not(.on-dark),
+[class*="text-cyan-500"]:not(.on-dark) {
+  color: oklch(0.38 0.16 245) !important;
+  opacity: 1 !important;
+}
+[class*="text-indigo-100"]:not(.on-dark), [class*="text-indigo-200"]:not(.on-dark),
+[class*="text-indigo-300"]:not(.on-dark), [class*="text-indigo-400"]:not(.on-dark),
+[class*="text-indigo-500"]:not(.on-dark), [class*="text-indigo-600"]:not(.on-dark),
+[class*="text-violet-100"]:not(.on-dark), [class*="text-violet-200"]:not(.on-dark),
+[class*="text-violet-300"]:not(.on-dark), [class*="text-violet-400"]:not(.on-dark),
+[class*="text-violet-500"]:not(.on-dark), [class*="text-violet-600"]:not(.on-dark),
+[class*="text-purple-100"]:not(.on-dark), [class*="text-purple-200"]:not(.on-dark),
+[class*="text-purple-300"]:not(.on-dark), [class*="text-purple-400"]:not(.on-dark),
+[class*="text-purple-500"]:not(.on-dark), [class*="text-purple-600"]:not(.on-dark),
+[class*="text-fuchsia-100"]:not(.on-dark), [class*="text-fuchsia-200"]:not(.on-dark),
+[class*="text-fuchsia-300"]:not(.on-dark), [class*="text-fuchsia-400"]:not(.on-dark),
+[class*="text-fuchsia-500"]:not(.on-dark), [class*="text-fuchsia-600"]:not(.on-dark) {
+  color: oklch(0.38 0.18 285) !important;
+  opacity: 1 !important;
+}
+/* Icon strokes on light surfaces — darken purple/blue/indigo strokes too */
+svg[class*="text-indigo"]:not(.on-dark), svg[class*="text-violet"]:not(.on-dark),
+svg[class*="text-purple"]:not(.on-dark), svg[class*="text-fuchsia"]:not(.on-dark) {
+  color: oklch(0.38 0.18 285) !important;
+}
+svg[class*="text-sky"]:not(.on-dark), svg[class*="text-blue"]:not(.on-dark),
+svg[class*="text-cyan"]:not(.on-dark) {
+  color: oklch(0.38 0.16 245) !important;
+}
+[class*="text-amber-100"]:not(.on-dark), [class*="text-amber-200"]:not(.on-dark),
+[class*="text-amber-300"]:not(.on-dark), [class*="text-amber-400"]:not(.on-dark),
+[class*="text-amber-500"]:not(.on-dark),
+[class*="text-yellow-100"]:not(.on-dark), [class*="text-yellow-200"]:not(.on-dark),
+[class*="text-yellow-300"]:not(.on-dark), [class*="text-yellow-400"]:not(.on-dark),
+[class*="text-yellow-500"]:not(.on-dark) {
+  color: oklch(0.55 0.14 75) !important;
+  opacity: 1 !important;
+}
+[class*="text-rose-100"]:not(.on-dark), [class*="text-rose-200"]:not(.on-dark),
+[class*="text-rose-300"]:not(.on-dark), [class*="text-rose-400"]:not(.on-dark),
+[class*="text-rose-500"]:not(.on-dark),
+[class*="text-red-100"]:not(.on-dark), [class*="text-red-200"]:not(.on-dark),
+[class*="text-red-300"]:not(.on-dark), [class*="text-red-400"]:not(.on-dark),
+[class*="text-red-500"]:not(.on-dark) {
+  color: oklch(0.5 0.19 25) !important;
+  opacity: 1 !important;
+}
+
