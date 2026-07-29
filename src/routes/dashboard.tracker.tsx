@@ -243,20 +243,28 @@ function TrackerPage() {
                   <span className="rounded-full border border-foreground/[0.08] px-2.5 py-1">
                     Deal detail: {row.dealId ? "available" : "not available yet"}
                   </span>
-                  <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
-                    <Link to="/dashboard/inbox">
-                      <Reply className="mr-1.5 h-3.5 w-3.5" />
-                      Open thread
-                    </Link>
-                  </Button>
-                  {row.dealId && (
                     <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
-                      <Link to="/dashboard/deals/$id" params={{ id: row.dealId }}>
-                        <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
-                        Open deal
+                      <Link to="/dashboard/inbox">
+                        <Reply className="mr-1.5 h-3.5 w-3.5" />
+                        Open thread
                       </Link>
                     </Button>
-                  )}
+                    {row.dealId && (
+                      <>
+                        <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                          <Link to="/dashboard/deals/$id" params={{ id: row.dealId }}>
+                            <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
+                            Open context
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                          <Link to="/dashboard/deals/$id" params={{ id: row.dealId }}>
+                            <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
+                            Open deal
+                          </Link>
+                        </Button>
+                      </>
+                    )}
                 </div>
               </div>
             ))}

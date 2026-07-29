@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Sparkles, Send, Plus, Flag } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, Send, Plus, Flag, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,11 +96,19 @@ function DealDetailPage() {
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{d.status}</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">{d.brand_name}</h1>
         </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Value</p>
-          <p className="text-2xl font-semibold">
-            {d.deal_value ? `$${Number(d.deal_value).toLocaleString()}` : "TBD"}
-          </p>
+        <div className="flex flex-col items-end gap-2 text-right">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Value</p>
+            <p className="text-2xl font-semibold">
+              {d.deal_value ? `$${Number(d.deal_value).toLocaleString()}` : "TBD"}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="rounded-lg">
+            <Link to="/dashboard/inbox">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Open conversation
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -366,7 +374,15 @@ function NegotiatePanel({ dealId }: { dealId: string }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <div className="rounded-3xl border border-foreground/[0.06] bg-foreground/[0.03] p-6">
-        <h2 className="mb-4 text-lg font-semibold">Negotiation thread</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Negotiation thread</h2>
+          <Button variant="outline" size="sm" asChild className="rounded-lg">
+            <Link to="/dashboard/inbox">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Open thread
+            </Link>
+          </Button>
+        </div>
         <div className="mb-4 max-h-[420px] space-y-3 overflow-y-auto pr-2">
           {(data?.messages ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">
