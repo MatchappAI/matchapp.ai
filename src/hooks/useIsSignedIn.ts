@@ -10,16 +10,24 @@ export function useIsSignedIn() {
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) setSignedIn(!!data.session);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSignedIn(!!session);
-    });
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
+    try {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!cancelled) setSignedIn(!!data.session);
+      });
+      const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+        setSignedIn(!!session);
+      });
+      return () => {
+        cancelled = true;
+        sub.subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.warn("[Supabase] Landing auth state unavailable; rendering signed-out CTA.");
+      if (!cancelled) setSignedIn(false);
+      return () => {
+        cancelled = true;
+      };
+    }
   }, []);
 
   return signedIn;
