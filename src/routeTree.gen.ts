@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ForBrandsRouteImport } from './routes/for-brands'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -73,6 +74,11 @@ const AuthRoute = AuthRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForBrandsRoute = ForBrandsRouteImport.update({
+  id: '/for-brands',
+  path: '/for-brands',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/for-brands': typeof ForBrandsRoute
   '/home': typeof HomeRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRouteWithChildren
@@ -377,6 +384,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/for-brands': typeof ForBrandsRoute
   '/home': typeof HomeRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRouteWithChildren
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/for-brands': typeof ForBrandsRoute
   '/home': typeof HomeRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRouteWithChildren
@@ -483,6 +492,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/for-brands'
     | '/home'
     | '/mcp'
     | '/onboarding'
@@ -534,6 +544,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/for-brands'
     | '/home'
     | '/mcp'
     | '/onboarding'
@@ -585,6 +596,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/for-brands'
     | '/home'
     | '/mcp'
     | '/onboarding'
@@ -638,6 +650,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  ForBrandsRoute: typeof ForBrandsRoute
   HomeRoute: typeof HomeRoute
   McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRouteWithChildren
@@ -691,6 +704,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-brands': {
+      id: '/for-brands'
+      path: '/for-brands'
+      fullPath: '/for-brands'
+      preLoaderRoute: typeof ForBrandsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -1103,6 +1123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  ForBrandsRoute: ForBrandsRoute,
   HomeRoute: HomeRoute,
   McpRoute: McpRoute,
   OnboardingRoute: OnboardingRouteWithChildren,

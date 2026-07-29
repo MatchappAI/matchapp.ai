@@ -7,7 +7,7 @@ Target runtime: **Cloudflare Workers** (`wrangler.jsonc`,
 
 - Cloudflare account + `wrangler` CLI (`npm i -g wrangler`).
 - Supabase project you own (see `docs/DATABASE.md`).
-- Stripe account with Connect enabled.
+- Stripe account for MatchAI subscriptions / billing.
 - Resend account with a verified sending domain.
 - (Optional) Gmail OAuth app for creator send-as.
 - (Optional) Apify account for enrichment.
@@ -35,7 +35,6 @@ wrangler secret put LOVABLE_API_KEY        # or OPENAI_API_KEY / GOOGLE_GENERATI
 wrangler secret put APIFY_TOKEN
 wrangler secret put CRON_SECRET
 wrangler secret put GMAIL_OAUTH_CLIENT_SECRET
-wrangler secret put STRIPE_CONNECT_CLIENT_ID
 ```
 
 `VITE_*` values must be set in your CI/build environment (they are inlined
@@ -58,7 +57,7 @@ Add to `wrangler.jsonc`:
     "0 13 * * *"     // daily-digest at 13:00 UTC (~9am ET)
     ,"*/10 * * * *"  // poll-replies every 10 min
     ,"*/15 * * * *"  // process-follow-ups every 15 min
-    ,"0 * * * *"     // auto-release-escrow hourly
+    // No wallet / payout / Connect cron jobs in current product scope
   ]
 }
 ```

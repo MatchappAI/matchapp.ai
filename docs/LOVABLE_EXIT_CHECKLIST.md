@@ -67,7 +67,7 @@ Never copy values from the Lovable environment. Regenerate each one from
 its source dashboard, then push via `wrangler secret put <NAME>`:
 
 - [ ] `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_CLIENT_ID`
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - [ ] `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`
 - [ ] `GMAIL_OAUTH_CLIENT_ID`, `GMAIL_OAUTH_CLIENT_SECRET`
 - [ ] `APIFY_TOKEN`
@@ -87,7 +87,6 @@ Update the new deployment URL, then create the 5 pg_cron jobs listed in
 - [ ] `/api/public/cron/daily-digest` — `0 15 * * *`
 - [ ] `/api/public/cron/gmail-poll` — `*/10 * * * *`
 - [ ] `/api/public/cron/qualify-replies` — `*/15 * * * *`
-- [ ] `/api/public/cron/payout-retry` — `*/30 * * * *`
 - [ ] `/api/public/cron/autopilot` — `*/5 * * * *`
 
 Recreate pgmq queues: `q_email_outbound`, `q_email_inbound`, `q_agent_tasks`.
@@ -137,9 +136,8 @@ Recreate pgmq queues: `q_email_outbound`, `q_email_inbound`, `q_agent_tasks`.
 - [ ] All 52 migrations replay cleanly on a scratch Supabase project.
 - [ ] Smoke test the full journey against the new deployment:
       sign up → onboarding → connect Gmail → generate pitch → send →
-      receive reply → qualify reply → choose plan/free → fund protected
-      payment → deliver proof → auto-release → wallet payout to
-      Stripe Connect.
+      receive reply → qualify reply → choose plan/free → record external
+      payment status → deliver proof / track outcome externally.
 - [ ] Verify Autopilot daily caps, CAN-SPAM footer, suppression list, and
       bad-offer banners still fire.
 - [ ] Verify the three financial-table RLS findings are closed.

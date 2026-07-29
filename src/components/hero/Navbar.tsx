@@ -12,6 +12,8 @@ const links = [
   { hash: "faq", label: "FAQ" },
 ];
 
+const forBrandsLink = { to: "/for-brands" as const, label: "For Brands" };
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -57,6 +59,12 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            to={forBrandsLink.to}
+            className="rounded-full border border-border/60 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {forBrandsLink.label}
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
@@ -134,6 +142,23 @@ export function Navbar() {
                     </Link>
                   </motion.div>
                 ))}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    delay: 0.1 + links.length * 0.06,
+                    duration: 0.4,
+                    ease: [0.2, 0.8, 0.2, 1],
+                  }}
+                >
+                  <Link
+                    to={forBrandsLink.to}
+                    onClick={() => setOpen(false)}
+                    className="mt-1 block rounded-xl border border-border/60 px-4 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+                  >
+                    {forBrandsLink.label}
+                  </Link>
+                </motion.div>
               </div>
               <motion.div
                 initial={{ opacity: 0, y: 12 }}

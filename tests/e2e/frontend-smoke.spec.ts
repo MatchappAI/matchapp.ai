@@ -91,17 +91,25 @@ test("landing page renders the public funnel and keyboard CTA", async ({ page })
 
 test("mobile menu and public CTA remain usable", async ({ page }) => {
   const guard = installGuards(page);
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.goto("/");
 
-  const menuToggle = page.getByRole("button", { name: /toggle menu/i });
-  await expect(menuToggle).toBeVisible();
-  await menuToggle.click();
-  await page.waitForTimeout(200);
-  const mobileDrawer = page.locator("div.fixed.inset-0.z-30.md\\:hidden");
-  const mobileSignIn = mobileDrawer.getByRole("link", { name: /Sign in/i });
-  await expect(mobileSignIn).toBeVisible();
-  await mobileSignIn.click({ force: true });
+  const viewportWidth = page.viewportSize()?.width ?? 0;
+  if (viewportWidth < 768) {
+    const menuToggle = page.getByRole("button", { name: /toggle menu/i });
+    await expect(menuToggle).toBeVisible();
+    await menuToggle.click();
+    await menuToggle.click();
+  } else {
+    await expect(page.getByRole("button", { name: /toggle menu/i })).toBeHidden();
+  }
+
+  const mobileCTA = page.getByRole("link", { name: /Find Paid Brand Deals/i }).first();
+  await expect(mobileCTA).toBeVisible();
+  await mobileCTA.click({ force: true });
   await expect(page).toHaveURL(/\/auth(\?.*)?$/);
   await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
 
@@ -143,6 +151,44 @@ test("protected dashboard routes redirect unauthenticated users to auth", async 
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth(\?.*)?$/);
   await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
+
+  assertClean(guard);
+});
+
+test("secondary brand inquiry path is reachable without affecting creator funnel", async ({
+  page,
+}) => {
+  const guard = installGuards(page);
+  await page.addInitScript(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  await page.goto("/");
+  const viewportWidth = page.viewportSize()?.width ?? 0;
+  if (viewportWidth < 768) {
+    const footerBrandLink = page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: /For Brands/i });
+    await footerBrandLink.scrollIntoViewIfNeeded();
+    const mobileBrandLink = footerBrandLink;
+    await expect(mobileBrandLink).toBeVisible();
+    await mobileBrandLink.click({ force: true });
+  } else {
+    const headerBrandLink = page.getByRole("navigation").getByRole("link", { name: /For Brands/i });
+    await expect(headerBrandLink).toBeVisible();
+    await headerBrandLink.click();
+  }
+
+  await expect(page).toHaveURL(/\/for-brands$/);
+  await expect(
+    page.getByRole("heading", { name: /Looking to work with creators\?/i }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Submit Inquiry/i })).toBeVisible();
+  await expect(page.getByText("Paid social", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /Email hello@matchapp.ai/i }),
+  ).toBeVisible();
 
   assertClean(guard);
 });

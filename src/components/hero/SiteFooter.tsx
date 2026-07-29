@@ -20,6 +20,7 @@ export function SiteFooter() {
         { label: "FAQ", hash: "faq" },
         { label: "Pricing guide", hash: "pricing" },
         { label: "Trust & controls", to: "/trust" },
+        { label: "For Brands", to: "/for-brands" },
       ],
     },
     {
@@ -31,7 +32,6 @@ export function SiteFooter() {
       ],
     },
   ];
-
 
   const linkCls =
     "text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 rounded-md";
@@ -45,13 +45,16 @@ export function SiteFooter() {
               <MatchAILogo size="lg" />
             </div>
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-              The AI brand-deal manager for creators. Matches, pitches, follow-ups, negotiation, and secure payment — in one chat.
+              The AI brand-deal manager for creators. Matches, pitches, follow-ups, negotiation, and
+              secure payment — in one chat.
             </p>
           </div>
 
           {cols.map((c) => (
             <div key={c.title}>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">{c.title}</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                {c.title}
+              </h4>
               <ul className="mt-4 space-y-2.5">
                 {c.links.map((l) => (
                   <li key={l.label}>
@@ -72,8 +75,18 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-8 flex flex-col items-start justify-between gap-3 border-t border-border/60 pt-6 sm:flex-row sm:items-center">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} MatchAI. All rights reserved.</p>
-          <p className="text-xs text-muted-foreground">Built for creators who treat brand deals like a business.</p>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} MatchAI. All rights reserved.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Built for creators who treat brand deals like a business. Brand inquiries:{" "}
+            <a
+              href="mailto:hello@matchapp.ai"
+              className="underline decoration-border/60 underline-offset-4 transition-colors hover:text-foreground"
+            >
+              hello@matchapp.ai
+            </a>
+          </p>
         </div>
       </div>
     </footer>

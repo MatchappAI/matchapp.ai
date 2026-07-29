@@ -8,9 +8,10 @@ project-knowledge and custom-instructions surface. No secret values are included
 
 ## 1. Project identity
 
-MatchAI is a chat-first AI agent for UGC creators and micro-influencers
-(0–50K followers, beauty/skincare/haircare/makeup/fashion/accessories focus)
-to find paid brand deals, draft personalized outreach, negotiate, and get paid.
+MatchAI is a creator-first AI brand-deal manager for UGC creators and
+micro-influencers. It helps them find paid brand deals, draft personalized
+outreach, manage inbox threads, negotiate offers, and track external payment
+status without custodying funds.
 
 Current positioning: **"Find paid brand deals. Skip the cold DMs."**
 
@@ -23,9 +24,9 @@ Domain: `www.matchapp.ai`
 - **Framework:** TanStack Start v1, React 19, Vite 7, Cloudflare Workers (`nodejs_compat`)
 - **Styling:** Tailwind CSS v4, custom theme tokens in `src/styles.css`
 - **Backend:** Supabase (Postgres + Auth + Storage + RLS)
-- **AI:** OpenAI-compatible SDK, currently `google/gemini-2.5-flash` via gateway
-- **Payments:** Stripe subscriptions only; some selected deals may also include a separate MatchAI commission agreement, but MatchAI does not custody creator-brand payments
-- **Email:** Gmail API for outbound, Resend for transactional / inbound webhooks
+- **AI:** OpenAI-compatible SDK, currently `google/gemini-2.5-flash` via the Lovable gateway
+- **Payments:** Stripe subscriptions / billing only; creator-brand payments are external and are tracked as creator-reported status only
+- **Email:** Gmail API for creator inbox / outreach sync; Resend for transactional / inbound webhooks
 - **MCP:** `@lovable.dev/mcp-js` (replace on exit — see LOVABLE_EXIT_CHECKLIST)
 
 ---
@@ -59,9 +60,10 @@ Domain: `www.matchapp.ai`
 ## 4. Product surface
 
 ### Primary navigation (consolidated)
-- **Inbox** — unified brand conversation threads
-- **Deals** — opportunity discovery, fastest-to-cash ranking, ways to earn, first-deal journey
-- **Payments** — external payment tracking, commission tracking, billing
+- **Inbox** — authoritative creator communication threads
+- **Deals** — opportunity discovery, prioritization, first-deal journey, negotiation
+- **Tracker** — status/control view for follow-up, replies, and next actions
+- **Tools** — deal checker, rate helper, counteroffer, reply drafting
 - **Settings** — socials, billing, creator setup, rate helper, integrations
 
 ### Hidden but routable
@@ -76,7 +78,7 @@ Domain: `www.matchapp.ai`
 3. Chat → user or agent drafts personalized pitch.
 4. Inbox → brand replies flow back; agent suggests next action.
 5. Negotiation → deal terms, red-flag detection, counter-offers.
-6. Payments → creator-reported external payment tracking and optional commission tracking on selected deals.
+6. Payments → creator-reported external payment tracking only.
 
 ---
 
@@ -100,11 +102,11 @@ Domain: `www.matchapp.ai`
 
 ## 6. Pricing / monetization
 
-- Creators use MatchAI free until they receive a qualified paid brand reply.
-- Then choose:
--  - **Free:** $0 subscription; selected deals may include a separate MatchAI commission if agreed up front.
+- Creators use MatchAI free until they choose a paid plan.
+  - **Free:** $0 subscription.
   - **Paid plans:** $49 / $99 / $199 subscriptions.
-- Repeat deals with the same brand can still be commission-free when that is agreed up front.
+- MatchAI does not custody creator-brand deal funds or present any wallet,
+  escrow, payout, or Connect flow as active product behavior.
 - No caps on outbound sequences, follow-ups, or agent tool-loop steps.
 - Free tier has a 3-thread inbound cap before plan selection.
 - Fee math source of truth: `src/lib/fees.ts`. Never hardcode fee values
@@ -132,6 +134,8 @@ Domain: `www.matchapp.ai`
 | `src/routes/dashboard.tsx` | Dashboard shell (50/50 chat + live stage) |
 | `src/routes/dashboard.inbox.tsx` | Unified inbox |
 | `src/routes/dashboard.deals.tsx` | Consolidated deals/earnings tab |
+| `src/routes/dashboard.tracker.tsx` | Status/control view for follow-up and next actions |
+| `src/routes/dashboard.tools.tsx` | Deal checker, rate helper, counteroffer, reply drafting |
 | `src/routes/dashboard.wallet.tsx` | Legacy payment-status route; keep as compatibility surface only |
 | `src/routes/dashboard.settings.tsx` | Settings |
 | `src/components/chat/DashboardChatPanel.tsx` | Main chat UI |
@@ -141,7 +145,7 @@ Domain: `www.matchapp.ai`
 | `src/lib/demo-mode.ts` | Demo opportunities + fastest-to-cash scoring |
 | `src/lib/fees.ts` | Source of truth for subscription / commission copy |
 | `src/lib/qualification.functions.ts` | Qualified-reply classifier (paywall trigger) |
-| `src/lib/wallet.functions.ts` | Wallet balance + Stripe transfers |
+| `src/lib/wallet.functions.ts` | Legacy wallet compatibility helpers |
 | `src/lib/rate-helper.ts` | Rate-card suggestions from creator profile |
 | `src/lib/open-email-in-chat.ts` | Routes email interactions into chat |
 | `src/components/brand/MatchAILogo.tsx` | Single logo source of truth |
@@ -170,7 +174,7 @@ Domain: `www.matchapp.ai`
 ## 10. When adding features
 
 1. Prefer extending the chat-first experience over new tabs.
-2. Keep dashboard tabs to the four primary ones; hide secondary features rather
+2. Keep dashboard tabs to the five primary ones; hide secondary features rather
    than deleting them.
 3. Update `src/lib/fees.ts` if touching money math.
 4. Add DB migrations in `supabase/migrations/` with `GRANT` + RLS policies.
@@ -184,7 +188,7 @@ Domain: `www.matchapp.ai`
 ## 11. Security posture
 
 - All financial tables (`deals`, `brand_matches`, `negotiations`, `wallet_ledger`,
-  `payout_attempts`) have explicit RLS; the wallet/payout tables are legacy compatibility surfaces only.
+  `payout_attempts`) have explicit RLS; the wallet/payout tables are legacy compatibility surfaces only and should not be surfaced as active product capabilities.
 - `SECURITY DEFINER` functions have `EXECUTE` revoked from `anon` and
   `authenticated`; only invoked via server-side helpers.
 - Every `SECURITY DEFINER` function pins `search_path = public`.

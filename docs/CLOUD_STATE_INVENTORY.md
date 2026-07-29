@@ -48,7 +48,7 @@ verify signatures internally.
 | Daily digest email | `0 15 * * *` | `/api/public/cron/daily-digest` |
 | Gmail reply poll | `*/10 * * * *` | `/api/public/cron/gmail-poll` |
 | Qualification sweep | `*/15 * * * *` | `/api/public/cron/qualify-replies` |
-| Wallet payout retry | `*/30 * * * *` | `/api/public/cron/payout-retry` |
+| Legacy payout retry | `*/30 * * * *` | `/api/public/cron/payout-retry` |
 | Autopilot tick | `*/5 * * * *` | `/api/public/cron/autopilot` |
 
 Each job POSTs with header `x-cron-secret: <CRON_SHARED_SECRET>` which the
@@ -90,7 +90,7 @@ Recreate on the new Postgres via the pgmq extension.
 | `SUPABASE_SERVICE_ROLE_KEY` | Privileged writes only |
 | `STRIPE_SECRET_KEY` | Stripe API |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature verification |
-| `STRIPE_CONNECT_CLIENT_ID` | Stripe Connect OAuth |
+| `STRIPE_CONNECT_CLIENT_ID` | Legacy Connect OAuth client (unused in current scope) |
 | `RESEND_API_KEY` | Transactional + inbound email |
 | `RESEND_WEBHOOK_SECRET` | Resend inbound HMAC |
 | `GMAIL_OAUTH_CLIENT_ID` | Gmail sends |
