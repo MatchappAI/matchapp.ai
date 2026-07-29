@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
@@ -82,6 +82,18 @@ function ApprovalsPage() {
           </a>
           .
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm" className="rounded-lg">
+            <Link to="/dashboard">
+              Open chat
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="rounded-lg">
+            <Link to="/dashboard/inbox">
+              Open Messages
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-1 rounded-xl border border-foreground/5 bg-foreground/[0.03] p-1 w-fit">
@@ -109,10 +121,10 @@ function ApprovalsPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <EmptyState
+      <EmptyState
           icon={<Info className="h-10 w-10" />}
           title="No replies yet"
-          description="When a brand replies to your outreach, I'll surface it here with my read on their intent and a suggested response you can edit."
+          description="When a brand replies to your outreach, I'll surface it here with my read on their intent and a suggested response you can edit or open in chat."
           cta={{ label: "Go to Brand Matches", to: "/dashboard/brands" }}
         />
       ) : (
@@ -394,8 +406,7 @@ function ReplyReview({
       )}
 
       <p className="text-[11px] text-muted-foreground">
-        I'll log this as handled. Send your reply from your own inbox — MatchAI keeps everything
-        internal.
+        I'll log this as handled. Send your reply from the shared Messages workspace or from your own inbox — MatchAI keeps the records in sync.
       </p>
     </div>
   );
