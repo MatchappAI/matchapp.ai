@@ -15,15 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  listDealsAndPipeline,
-  moveDealCard,
-  createEscrowRequest,
-  markEscrowFunded,
-  releaseEscrow,
-} from "@/lib/matchai.functions";
-import { createEscrowFundingLink } from "@/lib/escrow.functions";
+import { listDealsAndPipeline, moveDealCard } from "@/lib/matchai.functions";
 import { SlideOver } from "./dashboard.brands";
 import { cn } from "@/lib/utils";
 import { FastestToCashStrip } from "@/components/dashboard/FastestToCashStrip";
@@ -43,7 +35,7 @@ type Stage =
   | "interested"
   | "negotiating"
   | "contract_sent"
-  | "escrow_funded"
+  | "terms_agreed"
   | "deliverables_due"
   | "payment_pending"
   | "paid";
@@ -54,7 +46,7 @@ const STAGES: { id: Stage; label: string; tone: string }[] = [
   { id: "interested", label: "Reply logged", tone: "bg-violet-500/15 text-violet-300" },
   { id: "negotiating", label: "Negotiating", tone: "bg-amber-500/15 text-amber-300" },
   { id: "contract_sent", label: "Contract prepared", tone: "bg-blue-500/15 text-blue-300" },
-  { id: "escrow_funded", label: "Funds confirmed", tone: "bg-cyan-500/15 text-cyan-300" },
+  { id: "terms_agreed", label: "Terms agreed", tone: "bg-cyan-500/15 text-cyan-300" },
   { id: "deliverables_due", label: "Deliverables due", tone: "bg-orange-500/15 text-orange-300" },
   { id: "payment_pending", label: "Invoice prepared", tone: "bg-primary/15 text-primary" },
   { id: "paid", label: "Paid", tone: "bg-emerald-500/15 text-emerald-300" },
@@ -78,15 +70,11 @@ function matchStage(s: string): Stage {
   return "matched";
 }
 
-function dealStage(d: {
-  status: string;
-  contract_status: string;
-  escrow_status: string;
-  invoice_status: string;
-}): Stage {
+function dealStage(d: { status: string; contract_status: string; invoice_status: string }): Stage {
   if (d.invoice_status === "paid") return "paid";
   if (d.invoice_status === "invoiced") return "payment_pending";
-  if (d.escrow_status === "funded") return "deliverables_due";
+  if (d.status === "in_progress") return "deliverables_due";
+  if (d.contract_status === "accepted") return "terms_agreed";
   if (d.contract_status === "sent") return "contract_sent";
   return "negotiating";
 }
@@ -126,8 +114,7 @@ function DealsPage() {
   }, [data]);
 
   const moveMut = useMutation({
-    mutationFn: (p: { kind: "match" | "deal"; id: string; to_stage: Stage }) =>
-      move({ data: p }),
+    mutationFn: (p: { kind: "match" | "deal"; id: string; to_stage: Stage }) => move({ data: p }),
     onSuccess: (_r, vars) => {
       const lbl = STAGES.find((s) => s.id === vars.to_stage)?.label;
       toast.success(`Moved to ${lbl}`);
@@ -157,7 +144,8 @@ function DealsPage() {
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Deals</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every paid opportunity in one place — from a fresh match to funds hitting your wallet. I'll flag the ones that need your call.
+          Track opportunities from first match through creator-reported external payment. MatchAI
+          never holds or moves deal funds.
         </p>
       </div>
 
@@ -174,7 +162,6 @@ function DealsPage() {
         </p>
       </div>
 
-
       {isLoading ? (
         <div className="flex h-64 items-center justify-center text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -187,7 +174,6 @@ function DealsPage() {
           cta={{ label: "Review approvals", to: "/dashboard/approvals" }}
           secondaryCta={{ label: "Find brands", to: "/dashboard/brands" }}
         />
-
       ) : (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
           <div className="grid grid-flow-col auto-cols-[280px] gap-3 overflow-x-auto pb-4">
@@ -270,7 +256,12 @@ function KanbanColumn({
       </div>
       <div className="flex-1 space-y-2 min-h-[200px]">
         {cards.map((c) => (
-          <DraggableCard key={`${c.kind}:${c.id}`} card={c} stage={stage.id} onOpen={() => onOpen(c)} />
+          <DraggableCard
+            key={`${c.kind}:${c.id}`}
+            card={c}
+            stage={stage.id}
+            onOpen={() => onOpen(c)}
+          />
         ))}
         {cards.length === 0 && (
           <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">
@@ -289,10 +280,10 @@ const AGENT_TAKE: Partial<Record<Stage, string>> = {
   interested: "Reply logged — needs your call.",
   negotiating: "Quote or counter — your move.",
   contract_sent: "Contract prepared. Mark sent when you send it.",
-  escrow_funded: "Payment received. Time to deliver.",
+  terms_agreed: "Terms agreed. Time to deliver.",
   deliverables_due: "Content owed soon.",
-  payment_pending: "Invoice prepared. Mark sent or follow up.",
-  paid: "Done. Nice work.",
+  payment_pending: "Payment is due outside MatchAI. Follow up when needed.",
+  paid: "Marked paid by you. Payment was handled externally.",
 };
 
 function DraggableCard({ card, stage, onOpen }: { card: Card; stage: Stage; onOpen: () => void }) {
@@ -345,61 +336,15 @@ function DraggableCard({ card, stage, onOpen }: { card: Card; stage: Stage; onOp
   );
 }
 
-function DealDetailPanel({ card, onDone, onOpenFull }: { card: Card; onDone: () => void; onOpenFull?: () => void }) {
-  const qc = useQueryClient();
-  const create = useServerFn(createEscrowRequest);
-  const fund = useServerFn(markEscrowFunded);
-  const release = useServerFn(releaseEscrow);
-  const fundingLink = useServerFn(createEscrowFundingLink);
-  const [amount, setAmount] = useState("");
-  const [escrowId, setEscrowId] = useState<string | null>(null);
-  const [fundingUrl, setFundingUrl] = useState<string | null>(null);
-
-  const createMut = useMutation({
-    mutationFn: () =>
-      create({ data: { deal_id: card.id, gross_amount: Number(amount) } }),
-    onSuccess: (r) => {
-      setEscrowId(r.escrow.id);
-      toast.success("Protected payment created — generate a funding link to send the brand.");
-      qc.invalidateQueries({ queryKey: ["deals-pipeline"] });
-    },
-    onError: (e) => toast.error(String(e)),
-  });
-  const linkMut = useMutation({
-    mutationFn: () =>
-      fundingLink({ data: { escrow_id: escrowId!, origin: window.location.origin } }),
-    onSuccess: (r) => {
-      setFundingUrl(r.url);
-      navigator.clipboard?.writeText(r.url).catch(() => {});
-      toast.success("Funding link copied — paste it to the brand to collect payment.");
-    },
-    onError: (e) => toast.error(String(e)),
-  });
-  const fundMut = useMutation({
-    mutationFn: () => fund({ data: { escrow_id: escrowId! } }),
-    onSuccess: () => {
-      toast.success("Marked as funded.");
-      qc.invalidateQueries({ queryKey: ["deals-pipeline"] });
-      onDone();
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not mark as funded"),
-  });
-
-  const releaseMut = useMutation({
-    mutationFn: () => release({ data: { escrow_id: escrowId! } }),
-    onSuccess: (r) => {
-      toast.success(
-        r.transferId
-          ? "Released — Stripe transfer sent to your payout account."
-          : "Marked released. Connect Stripe payouts to auto-transfer next time.",
-      );
-      qc.invalidateQueries({ queryKey: ["deals-pipeline"] });
-      qc.invalidateQueries({ queryKey: ["payments-overview"] });
-      onDone();
-    },
-    onError: (e) => toast.error(String(e)),
-  });
-
+function DealDetailPanel({
+  card,
+  onDone: _onDone,
+  onOpenFull,
+}: {
+  card: Card;
+  onDone: () => void;
+  onOpenFull?: () => void;
+}) {
   const isDeal = card.kind === "deal";
 
   return (
@@ -436,64 +381,15 @@ function DealDetailPanel({ card, onDone, onOpenFull }: { card: Card; onDone: () 
 
       {isDeal && (
         <div className="space-y-3 rounded-2xl border border-foreground/[0.06] bg-foreground/[0.03] p-4">
-          <p className="text-sm font-semibold">Payment tracking</p>
-          {!escrowId ? (
-            <>
-              <Input
-                type="number"
-                placeholder="Gross amount (USD)"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="bg-foreground/[0.04]"
-              />
-              <p className="text-xs text-muted-foreground">
-                Brand pays into a MatchAI protected payment. Funds release to you when you mark deliverables complete.
-              </p>
-              <Button
-                onClick={() => createMut.mutate()}
-                disabled={!amount || Number(amount) <= 0 || createMut.isPending}
-                className="w-full rounded-xl"
-              >
-                {createMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Set up protected payment
-              </Button>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Reference: <span className="font-mono">{escrowId.slice(0, 8)}</span>
-              </p>
-              {!fundingUrl ? (
-                <Button
-                  onClick={() => linkMut.mutate()}
-                  disabled={linkMut.isPending}
-                  className="w-full rounded-xl"
-                >
-                  {linkMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Generate funding link for brand
-                </Button>
-              ) : (
-                <div className="rounded-xl bg-foreground/[0.04] p-2 text-xs break-all">
-                  <a href={fundingUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                    {fundingUrl}
-                  </a>
-                  <p className="mt-1 text-muted-foreground">Link copied. Send it to the brand to collect payment.</p>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button onClick={() => fundMut.mutate()} disabled={fundMut.isPending} variant="outline" className="flex-1 rounded-xl">
-                  Mark funded manually
-                </Button>
-                <Button
-                  onClick={() => releaseMut.mutate()}
-                  disabled={releaseMut.isPending}
-                  className="flex-1 rounded-xl"
-                >
-                  Release to me
-                </Button>
-              </div>
-            </div>
-          )}
+          <p className="text-sm font-semibold">External payment tracking</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            The brand pays you outside MatchAI. Any due or paid status in this pipeline is reported
+            by you for organization only; MatchAI does not hold funds, provide escrow, charge a
+            success fee, or process a payout.
+          </p>
+          <p className="rounded-xl bg-foreground/[0.04] p-3 text-xs text-muted-foreground">
+            Move this card to “Payment due” or “Paid externally” when the real-world status changes.
+          </p>
         </div>
       )}
 

@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const credentialDb = supabaseAdmin as unknown as SupabaseClient;
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -76,10 +79,9 @@ async function signOAuthState(payload: { userId: string; returnOrigin: string })
   return `${body}.${await hmacSha256(body, clientSecret)}`;
 }
 
-async function verifyOAuthState(state: string): Promise<
-  | { ok: true; userId: string; returnOrigin: string }
-  | { ok: false; error: string }
-> {
+async function verifyOAuthState(
+  state: string,
+): Promise<{ ok: true; userId: string; returnOrigin: string } | { ok: false; error: string }> {
   const { clientSecret } = requireClientCreds();
   const [body, sig] = state.split(".");
   if (!body || !sig) return { ok: false, error: "Invalid OAuth state" };
@@ -105,27 +107,115 @@ function requireClientCreds() {
   return { clientId, clientSecret };
 }
 
+function requireTokenEncryptionSecret(): string {
+  const secret = (process.env.GMAIL_TOKEN_ENCRYPTION_KEY ?? "").trim();
+  if (secret.length < 32) {
+    throw new Error("GMAIL_TOKEN_ENCRYPTION_KEY must be configured with at least 32 characters");
+  }
+  return secret;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+async function tokenKey(): Promise<CryptoKey> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(requireTokenEncryptionSecret()),
+  );
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptToken(token: string): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    await tokenKey(),
+    new TextEncoder().encode(token),
+  );
+  return `${bytesToBase64Url(iv)}.${bytesToBase64Url(new Uint8Array(ciphertext))}`;
+}
+
+async function decryptToken(value: string): Promise<string> {
+  const [iv, ciphertext] = value.split(".");
+  if (!iv || !ciphertext) throw new Error("Invalid encrypted Gmail credential");
+  const plaintext = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: base64UrlToBytes(iv) },
+    await tokenKey(),
+    base64UrlToBytes(ciphertext),
+  );
+  return new TextDecoder().decode(plaintext);
+}
+
+function safeHeader(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
+function utf8Base64(value: string): string {
+  return bytesToBase64Url(new TextEncoder().encode(value)).replace(/-/g, "+").replace(/_/g, "/");
+}
+
 function buildRawEmail(opts: {
-  to: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  replyTo?: string[];
   subject: string;
   body: string;
   from?: string;
   inReplyTo?: string;
   references?: string;
+  attachments?: Array<{
+    filename: string;
+    mimeType: string;
+    contentBase64: string;
+  }>;
 }): string {
   const headers = [
-    `To: ${opts.to}`,
-    opts.from ? `From: ${opts.from}` : null,
-    `Subject: ${opts.subject}`,
+    `To: ${opts.to.map(safeHeader).join(", ")}`,
+    opts.cc?.length ? `Cc: ${opts.cc.map(safeHeader).join(", ")}` : null,
+    opts.bcc?.length ? `Bcc: ${opts.bcc.map(safeHeader).join(", ")}` : null,
+    opts.replyTo?.length ? `Reply-To: ${opts.replyTo.map(safeHeader).join(", ")}` : null,
+    opts.from ? `From: ${safeHeader(opts.from)}` : null,
+    `Subject: ${safeHeader(opts.subject)}`,
     "MIME-Version: 1.0",
-    'Content-Type: text/plain; charset="UTF-8"',
-    opts.inReplyTo ? `In-Reply-To: ${opts.inReplyTo}` : null,
-    opts.references ? `References: ${opts.references}` : null,
+    opts.inReplyTo ? `In-Reply-To: ${safeHeader(opts.inReplyTo)}` : null,
+    opts.references ? `References: ${safeHeader(opts.references)}` : null,
   ]
     .filter(Boolean)
     .join("\r\n");
-  const msg = `${headers}\r\n\r\n${opts.body}`;
-  return btoa(unescape(encodeURIComponent(msg)))
+  const attachments = opts.attachments ?? [];
+  let message: string;
+  if (attachments.length === 0) {
+    message = `${headers}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${utf8Base64(opts.body)}`;
+  } else {
+    const boundary = `matchai_${crypto.randomUUID()}`;
+    const parts = [
+      `${headers}\r\nContent-Type: multipart/mixed; boundary="${boundary}"`,
+      `--${boundary}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${utf8Base64(opts.body)}`,
+      ...attachments.map(
+        (attachment) =>
+          `--${boundary}\r\nContent-Type: ${safeHeader(attachment.mimeType)}; name="${safeHeader(attachment.filename)}"\r\nContent-Disposition: attachment; filename="${safeHeader(attachment.filename)}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${attachment.contentBase64}`,
+      ),
+      `--${boundary}--`,
+    ];
+    message = parts.join("\r\n\r\n");
+  }
+  return btoa(unescape(encodeURIComponent(message)))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
@@ -183,7 +273,6 @@ export const completeGmailConnect = createServerFn({ method: "POST" })
       }
       const redirectUri = gmailRedirectUri(verifiedState.returnOrigin);
 
-
       const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -218,7 +307,27 @@ export const completeGmailConnect = createServerFn({ method: "POST" })
         email = j.email ?? null;
       }
 
-      const expiresAt = Date.now() + (tok.expires_in - 60) * 1000;
+      const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
+      const previous = await credentialDb
+        .from("gmail_oauth_credentials")
+        .select("encrypted_refresh_token")
+        .eq("user_id", verifiedState.userId)
+        .maybeSingle();
+      const encryptedRefreshToken = tok.refresh_token
+        ? await encryptToken(tok.refresh_token)
+        : (previous.data?.encrypted_refresh_token ?? null);
+      await credentialDb.from("gmail_oauth_credentials").upsert(
+        {
+          user_id: verifiedState.userId,
+          encrypted_access_token: await encryptToken(tok.access_token),
+          encrypted_refresh_token: encryptedRefreshToken,
+          expires_at: expiresAt,
+          scopes: (tok.scope ?? GMAIL_SCOPES.join(" ")).split(" "),
+          revoked_at: null,
+          last_refresh_error: null,
+        },
+        { onConflict: "user_id" },
+      );
       await supabaseAdmin.from("connected_accounts").upsert(
         {
           user_id: verifiedState.userId,
@@ -228,10 +337,8 @@ export const completeGmailConnect = createServerFn({ method: "POST" })
           connection_id: null,
           connected_at: new Date().toISOString(),
           account_metadata: {
-            access_token: tok.access_token,
-            refresh_token: tok.refresh_token ?? null,
-            expires_at: expiresAt,
-            scope: tok.scope ?? GMAIL_SCOPES.join(" "),
+            scopes: (tok.scope ?? GMAIL_SCOPES.join(" ")).split(" "),
+            sync_status: "pending",
           },
         },
         { onConflict: "user_id,service" },
@@ -246,6 +353,7 @@ export const completeGmailConnect = createServerFn({ method: "POST" })
 export const disconnectGmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await credentialDb.from("gmail_oauth_credentials").delete().eq("user_id", context.userId);
     await supabaseAdmin
       .from("connected_accounts")
       .update({ connected: false, connection_id: null, account_metadata: {} })
@@ -265,27 +373,34 @@ export const getConnectedAccounts = createServerFn({ method: "GET" })
   });
 
 /** Server-only: get a fresh access token, refreshing if needed. */
-async function getFreshAccessToken(userId: string): Promise<
-  | { ok: true; accessToken: string; email: string | null }
-  | { ok: false; error: string }
-> {
-  const { data: acct } = await supabaseAdmin
-    .from("connected_accounts")
-    .select("account_email, account_metadata")
-    .eq("user_id", userId)
-    .eq("service", "gmail")
-    .eq("connected", true)
-    .maybeSingle();
-  const meta = (acct?.account_metadata ?? {}) as {
-    access_token?: string;
-    refresh_token?: string;
-    expires_at?: number;
-  };
-  if (!meta.access_token) return { ok: false, error: "Gmail not connected" };
-  if (meta.expires_at && meta.expires_at > Date.now() + 5000) {
-    return { ok: true, accessToken: meta.access_token, email: acct?.account_email ?? null };
+export async function getFreshGmailAccessToken(
+  userId: string,
+): Promise<{ ok: true; accessToken: string; email: string | null } | { ok: false; error: string }> {
+  const [{ data: acct }, { data: credentials }] = await Promise.all([
+    supabaseAdmin
+      .from("connected_accounts")
+      .select("account_email")
+      .eq("user_id", userId)
+      .eq("service", "gmail")
+      .eq("connected", true)
+      .maybeSingle(),
+    credentialDb
+      .from("gmail_oauth_credentials")
+      .select("encrypted_access_token,encrypted_refresh_token,expires_at,revoked_at")
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+  if (!acct || !credentials || credentials.revoked_at) {
+    return { ok: false, error: "Gmail not connected" };
   }
-  if (!meta.refresh_token) {
+  if (credentials.expires_at && new Date(credentials.expires_at).getTime() > Date.now() + 5000) {
+    return {
+      ok: true,
+      accessToken: await decryptToken(credentials.encrypted_access_token),
+      email: acct.account_email ?? null,
+    };
+  }
+  if (!credentials.encrypted_refresh_token) {
     return { ok: false, error: "Gmail token expired and no refresh token" };
   }
   const { clientId, clientSecret } = requireClientCreds();
@@ -295,46 +410,89 @@ async function getFreshAccessToken(userId: string): Promise<
     body: new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
-      refresh_token: meta.refresh_token,
+      refresh_token: await decryptToken(credentials.encrypted_refresh_token),
       grant_type: "refresh_token",
     }).toString(),
   });
   if (!res.ok) {
-    console.error("[gmail.refresh] failed", res.status, await res.text().catch(() => ""));
-    return { ok: false, error: "Could not refresh Gmail token" };
+    const responseText = await res.text().catch(() => "");
+    console.error("[gmail.refresh] failed", res.status, responseText);
+    const revoked =
+      res.status === 400 &&
+      (responseText.includes("invalid_grant") || responseText.includes("invalid_token"));
+    await credentialDb
+      .from("gmail_oauth_credentials")
+      .update({
+        revoked_at: revoked ? new Date().toISOString() : null,
+        last_refresh_error: revoked
+          ? "Google access was revoked. Reconnect Gmail."
+          : "Temporary token refresh failure.",
+      })
+      .eq("user_id", userId);
+    if (revoked) {
+      await supabaseAdmin
+        .from("connected_accounts")
+        .update({ connected: false })
+        .eq("user_id", userId)
+        .eq("service", "gmail");
+    }
+    return {
+      ok: false,
+      error: revoked
+        ? "Gmail access was revoked. Reconnect Gmail."
+        : "Could not refresh Gmail token",
+    };
   }
   const t = (await res.json()) as { access_token: string; expires_in: number };
-  const newExpires = Date.now() + (t.expires_in - 60) * 1000;
-  await supabaseAdmin
-    .from("connected_accounts")
+  const newExpires = new Date(Date.now() + (t.expires_in - 60) * 1000).toISOString();
+  await credentialDb
+    .from("gmail_oauth_credentials")
     .update({
-      account_metadata: { ...meta, access_token: t.access_token, expires_at: newExpires },
+      encrypted_access_token: await encryptToken(t.access_token),
+      expires_at: newExpires,
+      revoked_at: null,
+      last_refresh_error: null,
     })
-    .eq("user_id", userId)
-    .eq("service", "gmail");
-  return { ok: true, accessToken: t.access_token, email: acct?.account_email ?? null };
+    .eq("user_id", userId);
+  return {
+    ok: true,
+    accessToken: t.access_token,
+    email: acct.account_email ?? null,
+  };
 }
 
 /** Server-only: send an email via the user's Gmail. */
 export async function sendGmailFor(opts: {
   userId: string;
-  to: string;
+  to: string | string[];
+  cc?: string[];
+  bcc?: string[];
+  replyTo?: string[];
   subject: string;
   body: string;
   inReplyTo?: string;
   references?: string;
   threadId?: string;
   fromOverride?: string;
+  attachments?: Array<{
+    filename: string;
+    mimeType: string;
+    contentBase64: string;
+  }>;
 }): Promise<{ ok: true; messageId: string; threadId: string } | { ok: false; error: string }> {
-  const tok = await getFreshAccessToken(opts.userId);
+  const tok = await getFreshGmailAccessToken(opts.userId);
   if (!tok.ok) return tok;
   const raw = buildRawEmail({
-    to: opts.to,
+    to: Array.isArray(opts.to) ? opts.to : [opts.to],
+    cc: opts.cc,
+    bcc: opts.bcc,
+    replyTo: opts.replyTo,
     subject: opts.subject,
     body: opts.body,
     from: opts.fromOverride ?? tok.email ?? undefined,
     inReplyTo: opts.inReplyTo,
     references: opts.references,
+    attachments: opts.attachments,
   });
   const res = await fetch(`${GMAIL_API}/users/me/messages/send`, {
     method: "POST",
@@ -361,7 +519,7 @@ export async function fetchThreadRepliesFor(opts: {
   | { ok: true; replies: Array<{ from: string; text: string; receivedAt: number }> }
   | { ok: false; error: string }
 > {
-  const tok = await getFreshAccessToken(opts.userId);
+  const tok = await getFreshGmailAccessToken(opts.userId);
   if (!tok.ok) return tok;
   const res = await fetch(`${GMAIL_API}/users/me/threads/${opts.threadId}?format=full`, {
     headers: { Authorization: `Bearer ${tok.accessToken}` },

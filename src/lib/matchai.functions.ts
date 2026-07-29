@@ -13,7 +13,6 @@ import {
   type PlanSlug,
 } from "./plans";
 
-
 /* ---------------- Brand matching with secondary scoring ---------------- */
 
 const ScoreBreakdownSchema = z.object({
@@ -30,12 +29,12 @@ const ScoreBreakdownSchema = z.object({
 });
 
 const SCORE_WEIGHTS = {
-  audience_fit: 0.20,
+  audience_fit: 0.2,
   category_fit: 0.15,
   sponsorship_likelihood: 0.15,
   conversion_potential: 0.15,
-  deal_value_potential: 0.10,
-  brand_credibility_fit: 0.10,
+  deal_value_potential: 0.1,
+  brand_credibility_fit: 0.1,
   outreach_timing: 0.05,
   relationship_path: 0.05,
   competitive_white_space: 0.03,
@@ -88,7 +87,6 @@ const MatchListSchema = z.object({
     .max(20),
 });
 
-
 function tokenize(s: string | null | undefined) {
   return (s ?? "")
     .toLowerCase()
@@ -132,7 +130,8 @@ export const generateBrandMatches = createServerFn({ method: "POST" })
     const minDealValue = profile?.min_deal_value ?? 0;
     const preferred = tokenize(prefs?.preferred_categories);
     const blocked = tokenize(prefs?.blocked_categories);
-    const marketScope = (profile?.market_scope as "local" | "international" | "both" | null) ?? "both";
+    const marketScope =
+      (profile?.market_scope as "local" | "international" | "both" | null) ?? "both";
     const creatorLocation = profile?.location ?? null;
     const avgEngagement =
       (stats ?? []).reduce((s, x) => s + Number(x.engagement_rate ?? 0), 0) /
@@ -155,7 +154,6 @@ export const generateBrandMatches = createServerFn({ method: "POST" })
           "To find better matches, add your niche, city, platform, follower count, engagement rate, and audience details.",
       };
     }
-
 
     const scopeInstruction =
       marketScope === "local"
@@ -207,7 +205,6 @@ Never invent fake brand names. Never include brands in the creator's blocked cat
 Tone: calm, specific, no hype, no buzzwords ("workflow", "synergy", "leverage", "optimize" are banned).
 Score breakdowns must be honest — many brands should score below 70 in at least one dimension.`;
 
-
     let raw: z.infer<typeof MatchListSchema>;
     try {
       const gateway = createLovableAiGatewayProvider(lovableKey);
@@ -232,7 +229,10 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
           2,
         )}`,
       });
-      const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const cleaned = text
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
       raw = MatchListSchema.parse(JSON.parse(cleaned));
     } catch (e) {
       console.error("[brand-match] ai failed", e);
@@ -252,9 +252,7 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
         let pref = 0;
         if (blocked.some((b2) => industryLower.includes(b2) || b2.includes(industryLower))) {
           pref = -100;
-        } else if (
-          preferred.some((p) => industryLower.includes(p) || p.includes(industryLower))
-        ) {
+        } else if (preferred.some((p) => industryLower.includes(p) || p.includes(industryLower))) {
           pref = 25;
         }
 
@@ -271,7 +269,8 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
       })
       .filter((b) => !b.blockedFlag);
 
-    if (rows.length === 0) return { ok: false as const, error: "All matches filtered out by preferences" };
+    if (rows.length === 0)
+      return { ok: false as const, error: "All matches filtered out by preferences" };
 
     // One funnel per brand: never wipe in-flight rows. Only clear stale "new"/"queued"
     // rows so the fresh AI pass can replace them, and dedupe by normalized brand name.
@@ -335,7 +334,6 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
       )
       .select("id,brand_name,brand_industry,market_type");
 
-
     if (error) {
       console.error("[brand-match] insert failed", error);
       return { ok: false as const, error: "Failed to save brand matches. Please try again." };
@@ -366,7 +364,12 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
       } else {
         await supabaseAdmin
           .from("usage_tracking")
-          .insert({ user_id: userId, action_type: "match_brands", month_year: monthYear, count: 1 });
+          .insert({
+            user_id: userId,
+            action_type: "match_brands",
+            month_year: monthYear,
+            count: 1,
+          });
       }
     } catch (e) {
       console.error("[brand-match] usage track failed", e);
@@ -374,7 +377,9 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
 
     // Post a 2-sentence agent chat message announcing the matches
     try {
-      const sorted = [...freshRows].sort((a, b) => (b.fit_quality_score ?? 0) - (a.fit_quality_score ?? 0));
+      const sorted = [...freshRows].sort(
+        (a, b) => (b.fit_quality_score ?? 0) - (a.fit_quality_score ?? 0),
+      );
       const top = sorted[0];
       const skipped = rows.length - freshRows.length;
       const skipNote = skipped > 0 ? ` Skipped ${skipped} you already have in flight.` : "";
@@ -396,7 +401,6 @@ Score breakdowns must be honest — many brands should score below 70 in at leas
     }
 
     return { ok: true as const, count: freshRows.length };
-
   });
 
 export const listBrandMatches = createServerFn({ method: "POST" })
@@ -452,32 +456,37 @@ export const draftOutreachForBrand = createServerFn({ method: "POST" })
     }
 
     // Pull deep personalization context.
-    const [{ data: profile }, { data: prefs }, { data: stats }, { data: insights }, { data: pastOutreach }] =
-      await Promise.all([
-        supabaseAdmin.from("creator_profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabaseAdmin
-          .from("brand_preferences")
-          .select("preferred_categories, blocked_categories, values_to_avoid, additional_notes")
-          .eq("user_id", userId)
-          .maybeSingle(),
-        supabaseAdmin
-          .from("platform_stats")
-          .select("top_content_categories, engagement_rate, follower_count")
-          .eq("user_id", userId),
-        supabaseAdmin
-          .from("learning_insights")
-          .select("insight_title, recommendation")
-          .eq("user_id", userId)
-          .eq("applied", true)
-          .limit(5),
-        supabaseAdmin
-          .from("outreach_emails")
-          .select("subject, body, replied")
-          .eq("user_id", userId)
-          .eq("sent", true)
-          .order("created_at", { ascending: false })
-          .limit(6),
-      ]);
+    const [
+      { data: profile },
+      { data: prefs },
+      { data: stats },
+      { data: insights },
+      { data: pastOutreach },
+    ] = await Promise.all([
+      supabaseAdmin.from("creator_profiles").select("*").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin
+        .from("brand_preferences")
+        .select("preferred_categories, blocked_categories, values_to_avoid, additional_notes")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("platform_stats")
+        .select("top_content_categories, engagement_rate, follower_count")
+        .eq("user_id", userId),
+      supabaseAdmin
+        .from("learning_insights")
+        .select("insight_title, recommendation")
+        .eq("user_id", userId)
+        .eq("applied", true)
+        .limit(5),
+      supabaseAdmin
+        .from("outreach_emails")
+        .select("subject, body, replied")
+        .eq("user_id", userId)
+        .eq("sent", true)
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ]);
 
     const { data: pricing } = await supabaseAdmin
       .from("pricing_rules")
@@ -489,7 +498,6 @@ export const draftOutreachForBrand = createServerFn({ method: "POST" })
     const contact = await getBestContactEmail(brand.id);
     const { getCampaignBriefForBrand } = await import("./campaigns.functions");
     const campaignBrief = await getCampaignBriefForBrand({ userId, brandMatchId: brand.id });
-
 
     const {
       AGENT_VOICE_PRINCIPLES,
@@ -505,7 +513,11 @@ export const draftOutreachForBrand = createServerFn({ method: "POST" })
     const voiceGuide = personalizedVoiceGuide(profile);
 
     const themes = [
-      ...new Set((stats ?? []).flatMap((s) => (s as { top_content_categories?: string[] }).top_content_categories ?? [])),
+      ...new Set(
+        (stats ?? []).flatMap(
+          (s) => (s as { top_content_categories?: string[] }).top_content_categories ?? [],
+        ),
+      ),
     ].slice(0, 6);
 
     const personalizationContext = {
@@ -543,12 +555,12 @@ export const draftOutreachForBrand = createServerFn({ method: "POST" })
         creator_notes: prefs?.additional_notes ?? null,
       },
       learning: (insights ?? []).map((i) => i.insight_title),
-      past_winning_subjects: (pastOutreach ?? []).filter((o) => o.replied).map((o) => o.subject).slice(0, 3),
-      campaign_brief: campaignBrief
-        ? { name: campaignBrief.name, ...campaignBrief.brief }
-        : null,
+      past_winning_subjects: (pastOutreach ?? [])
+        .filter((o) => o.replied)
+        .map((o) => o.subject)
+        .slice(0, 3),
+      campaign_brief: campaignBrief ? { name: campaignBrief.name, ...campaignBrief.brief } : null,
     };
-
 
     const system = `${AGENT_VOICE_PRINCIPLES}
 
@@ -631,7 +643,10 @@ Return STRICT JSON only (no markdown, no commentary):
       const gateway = createLovableAiGatewayProvider(lovableKey);
       const model = gateway("google/gemini-2.5-pro");
       const { text } = await generateText({ model, system, prompt });
-      const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const cleaned = text
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
       const obj = JSON.parse(cleaned);
       parsed = z
         .object({
@@ -643,7 +658,12 @@ Return STRICT JSON only (no markdown, no commentary):
           signals_used: z
             .array(
               z.object({
-                category: z.enum(["brand_fit", "creator_content", "personalization", "pricing_offer"]),
+                category: z.enum([
+                  "brand_fit",
+                  "creator_content",
+                  "personalization",
+                  "pricing_offer",
+                ]),
                 signal: z.string().min(1),
                 value_from_context: z.string().min(1),
                 used_in: z.enum(["subject", "hook", "why_me", "idea", "offer", "ask"]),
@@ -658,7 +678,11 @@ Return STRICT JSON only (no markdown, no commentary):
               why: z.string().min(1),
             })
             .optional()
-            .default({ day_of_week: "Tue", local_hour_24: 10, why: "Tuesday mid-morning is a low-noise inbox window for most brand teams." }),
+            .default({
+              day_of_week: "Tue",
+              local_hour_24: 10,
+              why: "Tuesday mid-morning is a low-noise inbox window for most brand teams.",
+            }),
           quality_check: z.record(z.string(), z.boolean()),
         })
         .parse(obj);
@@ -696,7 +720,8 @@ Return STRICT JSON only (no markdown, no commentary):
         related_id: oe.id,
         related_table: "outreach_emails",
         ai_recommendation: parsed.ai_reason,
-        what_happens_next: "Nothing sends automatically. You can review the draft, copy it, or mark it as sent — and the deal opens internally either way.",
+        what_happens_next:
+          "Nothing sends automatically. You can review the draft, copy it, or mark it as sent — and the deal opens internally either way.",
       })
       .select("id")
       .single();
@@ -731,7 +756,6 @@ Return STRICT JSON only (no markdown, no commentary):
         ai_reason: parsed.ai_reason,
       },
     });
-
 
     return { ok: true as const, outreach_id: oe.id };
   });
@@ -847,22 +871,20 @@ export const sendOutreachFromChat = createServerFn({ method: "POST" })
       };
     }
 
-
-
     let sendResult: { messageId?: string | null; threadId?: string | null } = {};
     try {
       if (data.mode === "send") {
-          const r = await sendOutreach({
-            userId,
-            to: data.to,
-            subject: data.subject,
-            body: data.body,
-            outreachId: data.outreachId,
-            autonomyLevel: data.autonomyLevel,
-          });
-          if (!r.ok) throw new Error(r.error);
-          sendResult = { messageId: r.messageId, threadId: r.threadId };
-        }
+        const r = await sendOutreach({
+          userId,
+          to: data.to,
+          subject: data.subject,
+          body: data.body,
+          outreachId: data.outreachId,
+          autonomyLevel: data.autonomyLevel,
+        });
+        if (!r.ok) throw new Error(r.error);
+        sendResult = { messageId: r.messageId, threadId: r.threadId };
+      }
     } catch (e: unknown) {
       const err = e instanceof Error ? e.message : "Send failed";
       console.error("[sendOutreachFromChat]", err);
@@ -927,7 +949,6 @@ export const sendOutreachFromChat = createServerFn({ method: "POST" })
     });
     await supabaseAdmin.from("follow_up_sequences").insert(scheduledRows);
 
-
     await supabaseAdmin
       .from("agent_messages")
       .update({ approval_status: "executed", action_result: sendResult as never })
@@ -964,7 +985,6 @@ export const sendOutreachFromChat = createServerFn({ method: "POST" })
     }
 
     return { ok: true as const, sentAt: now };
-
   });
 
 /* ---------------- Autosave chat draft (subject/body/to) ---------------- */
@@ -997,7 +1017,8 @@ export const saveDraftFromChat = createServerFn({ method: "POST" })
     if (typeof data.to === "string") patch.to_email = data.to.trim() || null;
     if (typeof data.subject === "string" && data.subject.trim()) patch.subject = data.subject;
     if (typeof data.body === "string" && data.body.trim()) patch.body = data.body;
-    if (Object.keys(patch).length === 0) return { ok: true as const, savedAt: new Date().toISOString() };
+    if (Object.keys(patch).length === 0)
+      return { ok: true as const, savedAt: new Date().toISOString() };
     await supabaseAdmin
       .from("outreach_emails")
       .update(patch)
@@ -1005,8 +1026,6 @@ export const saveDraftFromChat = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     return { ok: true as const, savedAt: new Date().toISOString() };
   });
-
-
 
 export const listApprovals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1169,7 +1188,10 @@ Revise the draft now.`;
       const gateway = createLovableAiGatewayProvider(lovableKey);
       const model = gateway("google/gemini-2.5-pro");
       const { text } = await generateText({ model, system, prompt });
-      const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const cleaned = text
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
       parsed = z
         .object({
           subject: z.string().min(3).max(300),
@@ -1247,13 +1269,8 @@ export const markOutreachSentManually = createServerFn({ method: "POST" })
     });
     await supabase.from("follow_up_sequences").insert(scheduledRows);
 
-
     return { ok: true };
   });
-
-
-
-
 
 /* ---------------- Internal email sending (MatchAI's own sender) ---------------- */
 
@@ -1272,7 +1289,6 @@ const SendInternalSchema = z.object({
   to_email: z.string().email(),
   attachments: z.array(AttachmentSchema).max(10).optional(),
 });
-
 
 const SENDER_DOMAIN = "notify.www.matchapp.ai";
 const FROM_DOMAIN = "www.matchapp.ai";
@@ -1373,7 +1389,6 @@ export const sendOutreachInternal = createServerFn({ method: "POST" })
       },
     });
 
-
     if (enqueueError) {
       console.error("[sendOutreachInternal] enqueue failed", enqueueError);
       await supabaseAdmin.from("email_send_log").insert({
@@ -1435,11 +1450,8 @@ export const sendOutreachInternal = createServerFn({ method: "POST" })
     });
     await supabase.from("follow_up_sequences").insert(rows);
 
-
     return { ok: true as const, sentAt: now };
   });
-
-
 
 const SendViaGmailSchema = z.object({
   outreach_id: z.string().uuid(),
@@ -1509,10 +1521,8 @@ export const sendOutreachViaGmail = createServerFn({ method: "POST" })
     });
     await supabase.from("follow_up_sequences").insert(scheduledRows);
 
-
     return { ok: true as const };
   });
-
 
 const RejectSchema = z.object({ approval_id: z.string().uuid() });
 export const rejectApproval = createServerFn({ method: "POST" })
@@ -1535,10 +1545,16 @@ export const listDealsAndPipeline = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const [{ data: deals }, { data: matches }] = await Promise.all([
-      supabase.from("deals").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase
+        .from("deals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
       supabase
         .from("brand_matches")
-        .select("id,brand_name,status,estimated_deal_min,estimated_deal_max,fit_quality_score,fit_score")
+        .select(
+          "id,brand_name,status,estimated_deal_min,estimated_deal_max,fit_quality_score,fit_score",
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false }),
     ]);
@@ -1551,7 +1567,7 @@ const STAGES = [
   "interested",
   "negotiating",
   "contract_sent",
-  "escrow_funded",
+  "terms_agreed",
   "deliverables_due",
   "payment_pending",
   "paid",
@@ -1563,7 +1579,7 @@ const MoveCardSchema = z.object({
   to_stage: z.enum(STAGES),
 });
 
-function matchStatusToStage(s: string): typeof STAGES[number] {
+function matchStatusToStage(s: string): (typeof STAGES)[number] {
   if (s === "new") return "matched";
   if (s === "pitched") return "outreach_sent";
   if (s === "replied") return "interested";
@@ -1574,12 +1590,12 @@ function matchStatusToStage(s: string): typeof STAGES[number] {
 function dealStage(d: {
   status: string;
   contract_status: string;
-  escrow_status: string;
   invoice_status: string;
-}): typeof STAGES[number] {
+}): (typeof STAGES)[number] {
   if (d.invoice_status === "paid") return "paid";
   if (d.invoice_status === "invoiced") return "payment_pending";
-  if (d.escrow_status === "funded") return "deliverables_due";
+  if (d.status === "in_progress") return "deliverables_due";
+  if (d.contract_status === "accepted") return "terms_agreed";
   if (d.contract_status === "sent") return "contract_sent";
   return "negotiating";
 }
@@ -1628,7 +1644,7 @@ export const moveDealCard = createServerFn({ method: "POST" })
     // deal
     const { data: d } = await supabase
       .from("deals")
-      .select("status,contract_status,escrow_status,invoice_status")
+      .select("status,contract_status,invoice_status")
       .eq("user_id", userId)
       .eq("id", data.id)
       .maybeSingle();
@@ -1641,7 +1657,6 @@ export const moveDealCard = createServerFn({ method: "POST" })
 
     const patch: {
       contract_status?: string;
-      escrow_status?: string;
       invoice_status?: string;
       status?: string;
     } = {};
@@ -1649,11 +1664,12 @@ export const moveDealCard = createServerFn({ method: "POST" })
       case "contract_sent":
         patch.contract_status = "sent";
         break;
-      case "escrow_funded":
-        patch.escrow_status = "funded";
+      case "terms_agreed":
+        patch.contract_status = "accepted";
         break;
       case "deliverables_due":
-        patch.escrow_status = "funded";
+        patch.contract_status = "accepted";
+        patch.status = "in_progress";
         break;
       case "payment_pending":
         patch.invoice_status = "invoiced";
@@ -1796,8 +1812,6 @@ export { releaseProtectedPayment as releaseEscrow } from "@/lib/escrow.functions
 
 // Pricing constants now live in src/lib/plans.ts (single source of truth).
 
-
-
 export const getPaymentsOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -1819,7 +1833,9 @@ export const getPaymentsOverview = createServerFn({ method: "POST" })
       .filter((e) => e.status === "funded")
       .reduce((s, e) => s + Number(e.gross_amount ?? 0), 0);
     const inEscrow = escrowFunded;
-    const upcoming = (escrows ?? []).filter((e) => e.status === "released" && e.expected_payout_date);
+    const upcoming = (escrows ?? []).filter(
+      (e) => e.status === "released" && e.expected_payout_date,
+    );
     const platformFees = (escrows ?? []).reduce((s, e) => s + Number(e.platform_fee ?? 0), 0);
     const netPayout = grossRevenue - platformFees;
     const planPrice = resolvePlan(profile?.plan).monthlyUsd;
@@ -1879,7 +1895,12 @@ export const setBrandMatchStatus = createServerFn({ method: "POST" })
     try {
       await supabaseAdmin.from("learning_insights").insert({
         user_id: userId,
-        insight_title: data.status === "saved" ? "User saved a brand" : data.status === "rejected" ? "User rejected a brand" : "User reset a brand",
+        insight_title:
+          data.status === "saved"
+            ? "User saved a brand"
+            : data.status === "rejected"
+              ? "User rejected a brand"
+              : "User reset a brand",
         recommendation: `brand_match_id=${data.id}`,
         applied: false,
       });

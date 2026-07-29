@@ -16,7 +16,6 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { MatchAILogo } from "@/components/brand/MatchAILogo";
 import { cn } from "@/lib/utils";
 
-
 type NavItem = { to: string; label: string; icon: typeof Home };
 type NavGroup = { label: string | null; items: NavItem[] };
 
@@ -28,7 +27,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/dashboard", label: "Home", icon: Home },
       { to: "/dashboard/brands", label: "Brand Matches", icon: Sparkles },
-      { to: "/dashboard/approvals", label: "Replies", icon: Inbox },
+      { to: "/dashboard/inbox", label: "Inbox", icon: Inbox },
       { to: "/dashboard/deals", label: "Deals", icon: Briefcase },
       { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
     ],
@@ -38,9 +37,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [{ to: "/dashboard/settings", label: "Settings", icon: Settings }],
   },
 ];
-
-
-
 
 type Props = {
   fullName: string | null;
@@ -52,7 +48,15 @@ type Props = {
   isStaff?: boolean;
 };
 
-export function DashboardSidebar({ fullName, tier, avatarUrl, verified, verifiedHandle, verifiedPlatform, isStaff }: Props) {
+export function DashboardSidebar({
+  fullName,
+  tier,
+  avatarUrl,
+  verified,
+  verifiedHandle,
+  verifiedPlatform,
+  isStaff,
+}: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const reduce = useReducedMotion();
@@ -67,7 +71,6 @@ export function DashboardSidebar({ fullName, tier, avatarUrl, verified, verified
         ...NAV_GROUPS.slice(-1),
       ]
     : NAV_GROUPS;
-
 
   const drawerEase = [0.32, 0.72, 0, 1] as const;
 
@@ -99,9 +102,7 @@ export function DashboardSidebar({ fullName, tier, avatarUrl, verified, verified
             )}
             {group.items.map((item) => {
               const active =
-                item.to === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.to);
+                item.to === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.to);
               const Icon = item.icon;
               return (
                 <Link
@@ -133,13 +134,17 @@ export function DashboardSidebar({ fullName, tier, avatarUrl, verified, verified
         ))}
       </nav>
 
-
       {/* User card */}
       <div className="border-t border-foreground/5 px-3 py-4">
         <div className="flex items-center gap-3 rounded-xl bg-foreground/[0.03] px-3 py-3">
           <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary hover:bg-primary/90 transition-colors text-sm font-semibold text-primary-foreground">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={fullName ?? "avatar"} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+              <img
+                src={avatarUrl}
+                alt={fullName ?? "avatar"}
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               (fullName ?? "U").slice(0, 1).toUpperCase()
             )}

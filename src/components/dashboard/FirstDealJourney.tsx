@@ -30,10 +30,12 @@ export function FirstDealJourney() {
     currentStep.key === "setup"
       ? "/dashboard/settings"
       : currentStep.key === "matches" || currentStep.key === "drafted"
-      ? "/dashboard/brands"
-      : currentStep.key === "sent" || currentStep.key === "opened" || currentStep.key === "replied"
-      ? "/dashboard/approvals"
-      : "/dashboard/wallet";
+        ? "/dashboard/brands"
+        : currentStep.key === "sent" ||
+            currentStep.key === "opened" ||
+            currentStep.key === "replied"
+          ? "/dashboard/inbox"
+          : "/dashboard/deals";
 
   return (
     <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/[0.02] p-4 sm:p-5">
@@ -77,27 +79,21 @@ export function FirstDealJourney() {
                 s.done
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
                   : isCurrent
-                  ? "border-primary/40 bg-primary/10 text-foreground"
-                  : "border-border bg-background/60 text-muted-foreground",
+                    ? "border-primary/40 bg-primary/10 text-foreground"
+                    : "border-border bg-background/60 text-muted-foreground",
               )}
               title={s.hint}
             >
               {s.done ? (
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               ) : (
-                <Circle
-                  className={cn(
-                    "w-3.5 h-3.5 shrink-0",
-                    isCurrent && "text-primary",
-                  )}
-                />
+                <Circle className={cn("w-3.5 h-3.5 shrink-0", isCurrent && "text-primary")} />
               )}
               <span className="font-medium break-words">{s.label}</span>
             </li>
           );
         })}
       </ol>
-
     </div>
   );
 }

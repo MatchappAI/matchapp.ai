@@ -28,7 +28,9 @@ export const loadAgentPanel = createServerFn({ method: "GET" })
         .maybeSingle(),
       supabaseAdmin
         .from("brand_matches")
-        .select("id, brand_name, brand_industry, fit_quality_score, fit_score, status, estimated_deal_min, estimated_deal_max")
+        .select(
+          "id, brand_name, brand_industry, fit_quality_score, fit_score, status, estimated_deal_min, estimated_deal_max",
+        )
         .eq("user_id", userId)
         .order("fit_quality_score", { ascending: false, nullsFirst: false })
         .limit(5),
@@ -60,7 +62,6 @@ export const loadAgentPanel = createServerFn({ method: "GET" })
       activity: activity.data ?? [],
     };
   });
-
 
 export const loadOnboardingMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -219,9 +220,7 @@ export const importLandingChat = createServerFn({ method: "POST" })
     if (!data.messages.length) return { imported: 0 };
 
     // Keep only the substantive turns — trim the canned greeting.
-    const cleaned = data.messages
-      .filter((m) => m.text.trim().length > 0)
-      .slice(-30);
+    const cleaned = data.messages.filter((m) => m.text.trim().length > 0).slice(-30);
 
     // 1) An assistant-visible "picking up where we left off" line.
     // 2) A hidden context row (marker-prefixed) capturing the transcript so
@@ -255,9 +254,7 @@ export const importLandingChat = createServerFn({ method: "POST" })
  */
 export const approveAndExecute = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ messageId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ messageId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { userId } = context;
     const { data: msg } = await supabaseAdmin
@@ -320,32 +317,24 @@ export const approveAndExecute = createServerFn({ method: "POST" })
             };
           });
           await supabaseAdmin.from("follow_up_sequences").insert(scheduledRows);
-          result = { messageId: send.messageId, threadId: send.threadId, followUpsScheduled: days.length };
+          result = {
+            messageId: send.messageId,
+            threadId: send.threadId,
+            followUpsScheduled: days.length,
+          };
           confirmation = `Sent. I scheduled ${days.length} follow-ups (+2d, +5d, +9d) — they'll auto-cancel the moment the brand replies.`;
           break;
         }
 
         case "release_payment": {
-          const dealId = params.dealId as string | undefined;
-          if (!dealId) throw new Error("Missing dealId");
-          await supabaseAdmin
-            .from("deals")
-            .update({ invoice_status: "paid" })
-            .eq("id", dealId)
-            .eq("user_id", userId);
-          confirmation = "Payment released. The net payout will land per your payout method.";
-          break;
+          throw new Error(
+            "This legacy action is retired. MatchAI never releases creator-brand payments.",
+          );
         }
         case "request_escrow": {
-          const dealId = params.dealId as string | undefined;
-          if (!dealId) throw new Error("Missing dealId");
-          await supabaseAdmin
-            .from("deals")
-            .update({ escrow_status: "requested" })
-            .eq("id", dealId)
-            .eq("user_id", userId);
-          confirmation = "Escrow requested. I'll let you know as soon as the brand funds it.";
-          break;
+          throw new Error(
+            "This legacy action is retired. Creator-brand payments are handled externally.",
+          );
         }
         case "approve_followups": {
           const outreachId = params.outreachId as string | undefined;
@@ -378,7 +367,12 @@ export const approveAndExecute = createServerFn({ method: "POST" })
             .eq("user_id", userId)
             .maybeSingle();
           const list = Array.isArray(row?.agent_memory)
-            ? (row.agent_memory as Array<{ id: string; text: string; source?: string; created_at?: string }>)
+            ? (row.agent_memory as Array<{
+                id: string;
+                text: string;
+                source?: string;
+                created_at?: string;
+              }>)
             : [];
           if (!list.some((m) => m.text.toLowerCase().trim() === text.toLowerCase())) {
             const entry = {
@@ -404,7 +398,8 @@ export const approveAndExecute = createServerFn({ method: "POST" })
             .update({ status: "completed" })
             .eq("id", dealId)
             .eq("user_id", userId);
-          confirmation = "Marked delivered. When the brand confirms, payment releases automatically.";
+          confirmation =
+            "Marked delivered. When the brand confirms, payment releases automatically.";
           break;
         }
 
@@ -428,7 +423,8 @@ export const approveAndExecute = createServerFn({ method: "POST" })
             .update({ status: "disputed" })
             .eq("id", dealId)
             .eq("user_id", userId);
-          confirmation = "Flagged. Payment release is blocked while we look into it — you'll hear back within 1 business day.";
+          confirmation =
+            "Flagged. Payment release is blocked while we look into it — you'll hear back within 1 business day.";
           break;
         }
 
@@ -441,9 +437,10 @@ export const approveAndExecute = createServerFn({ method: "POST" })
             .update({ active: action === "resume_campaign" })
             .eq("id", campaignId)
             .eq("user_id", userId);
-          confirmation = action === "pause_campaign"
-            ? "Paused. No new sends until you resume."
-            : "Resumed. Outreach will send on schedule.";
+          confirmation =
+            action === "pause_campaign"
+              ? "Paused. No new sends until you resume."
+              : "Resumed. Outreach will send on schedule.";
           break;
         }
 
@@ -470,21 +467,23 @@ export const approveAndExecute = createServerFn({ method: "POST" })
           }
           const parts = [
             patch.rate_floor !== undefined ? `floor $${patch.rate_floor.toLocaleString()}` : null,
-            patch.target_rate !== undefined ? `target $${patch.target_rate.toLocaleString()}` : null,
-            patch.walk_away_rate !== undefined ? `walkaway $${patch.walk_away_rate.toLocaleString()}` : null,
-          ].filter(Boolean).join(", ");
+            patch.target_rate !== undefined
+              ? `target $${patch.target_rate.toLocaleString()}`
+              : null,
+            patch.walk_away_rate !== undefined
+              ? `walkaway $${patch.walk_away_rate.toLocaleString()}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(", ");
           confirmation = `Updated pricing (${parts}). Every new draft will use these numbers.`;
           break;
         }
 
         case "connect_payout": {
-          const { createConnectOnboardingLink } = await import("@/lib/payments.functions");
-          const link = await createConnectOnboardingLink({ data: {} as never });
-          const url = (link as { url?: string } | null)?.url;
-          if (!url) throw new Error("Could not create Stripe onboarding link");
-          result = { url };
-          confirmation = `Stripe onboarding is ready — [open it here](${url}) to link your bank. Takes about 3 minutes.`;
-          break;
+          throw new Error(
+            "This legacy action is retired. MatchAI does not connect or process creator payouts.",
+          );
         }
 
         case "update_brief": {
@@ -553,9 +552,7 @@ export const approveAndExecute = createServerFn({ method: "POST" })
 
 export const declineApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ messageId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ messageId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     await supabaseAdmin
       .from("agent_messages")

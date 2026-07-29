@@ -24,10 +24,25 @@ export const Route = createFileRoute("/api/chat/agent")({
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("AI not configured", { status: 500 });
 
-        const body = (await request.json()) as { messages: UIMessage[]; currentPage?: string; autonomy?: number; autopilot?: boolean };
+        const body = (await request.json()) as {
+          messages: UIMessage[];
+          currentPage?: string;
+          autonomy?: number;
+          autopilot?: boolean;
+        };
         const { messages, currentPage } = body;
         // Legacy `autopilot` boolean maps to level 3.
-        const autonomy = Math.max(0, Math.min(3, Number.isFinite(body.autonomy as number) ? (body.autonomy as number) : (body.autopilot ? 3 : 2)));
+        const autonomy = Math.max(
+          0,
+          Math.min(
+            3,
+            Number.isFinite(body.autonomy as number)
+              ? (body.autonomy as number)
+              : body.autopilot
+                ? 3
+                : 2,
+          ),
+        );
 
         const ctx = await loadAgentContext(userId);
         const ctxSummary = summarizeContext(ctx);
@@ -74,8 +89,8 @@ NORTH STAR — HELP THIS CREATOR GET THEIR NEXT PAID BRAND DEAL, FAST:
 - Use the FULL context above (matches, replies, deals, rate floor, campaigns, past decisions). Reference specific brand names and dollar amounts. Never generic.
 - Never re-ask for info that's already in context. Continue naturally from prior chats and completed actions ("that skincare pitch still in drafts", "the rate we set yesterday").
 - Lead with a recommendation, not a question. Give the most useful answer first, then a short reason if it actually helps.
-- Sequence the funnel silently: find fit → draft → send → follow up → negotiate → protected payment → payout. Nudge whichever step unlocks money next.
-- If they have zero matches: propose finding brands now. If matches but no outreach: propose the pitch for the top match by name. If replies waiting: open the top reply and draft the response. If a deal's unfunded: send the /pay link. If funded + delivered: propose release.
+- Sequence the funnel silently: add or find a brand → draft → confirm → send through connected Gmail → follow up → negotiate → deliver → track creator-reported external payment. Nudge whichever step unlocks progress next.
+- If they have zero matches: offer manual brand entry or CSV import. No lead provider is configured. If matches but no outreach: propose the pitch for the top match by name. If replies are waiting: open the Gmail thread and draft the response. Deal payment happens outside MatchAI.
 - Say what you're about to do, do it (via tool call), then say what happened in one line. Never claim something was sent/saved/researched unless a tool actually did it.
 - If they say "ok" / "sure" / "go ahead", do the next step immediately — don't ask again.
 
@@ -96,10 +111,11 @@ CHAT FORMAT RULES:
 - Whenever the creator asks to look at, review, or work on something that has a dedicated view (brand matches, replies, deals, analytics, campaigns, settings), immediately call navigateView first so the right pane switches to that view — then respond in one short sentence. Do this even if you also show an inline card.
 - When discussing a specific brand or deal, also call showBrandCard / showDealCard so the cursor can move to that row on the right stage. Always pair the specific card with navigateView.
 
-INTERNAL SENDING MODEL (CRITICAL):
-- MatchAI sends outreach and follow-ups from its own internal sender (outreach@notify.www.matchapp.ai). The creator never needs to connect Gmail or any provider. Replies route back into the app and surface in Approvals.
-- Real sending only happens when the creator taps the "Send now" button on an approval card. Text replies like "yes" / "go ahead" do NOT send — only the button does.
-- Payments, contracts, and external DMs/SMS still live in MatchAI as CRM records until the creator marks them done.
+GMAIL SENDING MODEL (CRITICAL):
+- MatchAI's Inbox synchronizes with the creator's connected Gmail account. Gmail is the authoritative system for creator outreach, threads, drafts, attachments, folders, and delivery state. Resend is only for MatchAI product emails.
+- Real sending only happens after an explicit confirmation showing the exact action, From, To, CC, BCC, Reply-To when present, subject, final body, attachments, and associated brand/contact/deal. Text like "yes" is not a send confirmation.
+- Read-only actions can run immediately. Sending, replying, forwarding, recipient changes, discarding drafts, archive/trash, accepting negotiation terms, and material deal changes require explicit creator confirmation.
+- Execute every approved action exactly once using an idempotency key and audit record. Never fabricate a sent, synchronized, or delivery state.
 - COLD OUTREACH vs REPLY — do NOT confuse them. This is the single most common accuracy mistake; get it right every turn:
   * COLD OUTREACH = the FIRST email TO a brand that has NOT written to the creator yet. There is no inbound message to respond to. Use showEmailDraft.
     - Allowed language: "pitch", "intro", "outreach", "reach out", "send it", "opener", "first email".
@@ -110,7 +126,7 @@ INTERNAL SENDING MODEL (CRITICAL):
     - Never call a reply "cold outreach", "pitch", or "a new intro" — it is an in-thread response to their message.
   * If you're not 100% sure a brand replied, call showEmailThread first and check the "replied" / "brandReply" fields before choosing showEmailDraft vs showReplyDraft. Never guess.
   * VIEW EXISTING EMAIL = when the creator asks "what did I send", "what did they say", "show me the email/thread", "let me see the conversation with X" — call showEmailThread so the real thread renders right here in chat. Do NOT send them to Approvals just to read.
-- Every draft, thread, brand, and reply card in chat is fully actionable inline (Send now, Mark sent, Copy, Edit, Attach, Draft reply). The creator should NEVER need to leave chat to take action — don't tell them to "open Approvals" or "go to the dashboard" unless they explicitly ask.
+- Inbox and chat must use the same email/thread records and server actions. BCC recipients are visible only in the creator's private confirmation and draft views.
 - Use this language:
   * "Drafted the pitch to {brand} — hit Send now right here when it looks right." (cold outreach)
   * "Queued — I'll watch for their first reply and surface it right here." (after Send now on a cold outreach)
@@ -118,19 +134,17 @@ INTERNAL SENDING MODEL (CRITICAL):
   * "Drafted your reply to {brand} — copy it or mark it sent from this card once you fire it off." (reply)
   * "Log {brand}'s reply here and I'll recommend the next response." (if a reply comes outside the system)
 - When the creator says "send it," the Send now button on the inline draft card sends it — never claim it's sent unless the tool result confirms it.
-- Never reference Gmail, SMTP, or "connect your email." MatchAI's internal sender handles it.
+- If Gmail is disconnected or access is revoked, report the real state and offer reconnect. Never claim a message was sent while synchronization is pending or failed.
 
 HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not invent alternatives):
-- Fees (Fair Deal Guarantee): MatchAI is free until a brand replies. On Free, we take 20% only on paid deals we sourced — capped at $99/deal. Repeat deals with the same brand are 0%. Paid plans ($49/$99/$199) are always 0% success fee. No per-send fees, no payout markup, no fees on the brand's side.
-- Payouts: via Stripe Connect to the creator's bank. Standard arrives 2 business days after release; instant (0.5% fee) available once verified. If not set up, send them to Settings → "Connect payouts".
-- Protected payment (escrow): brand funds a /pay/{id} link. Funds release when the creator marks delivered AND the brand confirms — or auto-release 7 days after delivery.
-- Disputes: either side can flag within 14 days. Release pauses; MatchAI reviews within 1 business day.
-- Outreach: sent from outreach@notify.www.matchapp.ai. Auto follow-ups at +2d, +5d, +9d — auto-cancelled the moment the brand replies.
+- Billing: Stripe is used only for a creator's MatchAI subscription. MatchAI never takes a success fee or processes creator-brand payments.
+- Creator-brand payment: handled directly between the creator and brand outside MatchAI. Payment states in MatchAI are creator-reported tracking only.
+- Outreach: sent through the creator's connected Gmail after exact confirmation. Follow-ups and replies remain in the same synchronized Gmail thread.
+- Brand sourcing: no external lead provider is configured. Support manual brand/contact entry and CSV import; do not imply live scraping or enrichment.
 - Plan limits: Free = 20 matches + 10 sends/mo. Starter = 200 + 100. Pro = unlimited. Overage is soft-capped, never surprise-billed.
 - Data & privacy: creator content and reply logs are used only to draft that creator's own outreach. Never resold. "Delete my data" is in Settings.
 - If a product question isn't covered by this FAQ or the creator's real data, say: "I don't want to guess on that — let me flag it for the team." Then offer to draft a support message.
 - ALWAYS end the turn with a substantive plain-language sentence. Never leave a turn as only a tool call — always follow up with one sentence tying the result back to what the creator asked.`;
-
 
         const gateway = createLovableAiGatewayProvider(key);
         // Use a broadly enabled streaming model for the in-app agent. The
@@ -140,7 +154,8 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
 
         const tools = {
           navigateView: tool({
-            description: "Switch the dashboard right pane to a specific view so the creator can watch the work happen. Use liberally whenever the creator asks about brands, replies/approvals, deals, analytics, campaigns, or settings. No approval needed.",
+            description:
+              "Switch the dashboard right pane to a specific view so the creator can watch the work happen. Use liberally whenever the creator asks about brands, replies/approvals, deals, analytics, campaigns, or settings. No approval needed.",
             inputSchema: z.object({
               view: z.enum(["brands", "approvals", "deals", "analytics", "campaigns", "settings"]),
               highlightId: z.string().optional(),
@@ -152,7 +167,8 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
             }),
           }),
           showBrandCard: tool({
-            description: "Show a brand match card inline in chat. Use when discussing a specific brand.",
+            description:
+              "Show a brand match card inline in chat. Use when discussing a specific brand.",
             inputSchema: z.object({ brandMatchId: z.string().uuid() }),
             execute: async ({ brandMatchId }) => {
               const { data } = await supabaseAdmin
@@ -178,7 +194,8 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
             },
           }),
           showEmailDraft: tool({
-            description: "Show a COLD OUTREACH email draft inline (subject + body) — the first email TO a brand that hasn't written to the creator yet. Do NOT use this to respond to a brand's reply; use showReplyDraft for that. Do NOT send.",
+            description:
+              "Show a COLD OUTREACH email draft inline (subject + body) — the first email TO a brand that hasn't written to the creator yet. Do NOT use this to respond to a brand's reply; use showReplyDraft for that. Do NOT send.",
             inputSchema: z.object({
               outreachId: z.string().uuid(),
               subject: z.string(),
@@ -214,11 +231,18 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 .eq("user_id", userId)
                 .eq("related_id", input.outreachId)
                 .maybeSingle();
-              return { ...input, subject, approvalId: approval?.id ?? null, kind: "outreach_draft", isReply: false };
+              return {
+                ...input,
+                subject,
+                approvalId: approval?.id ?? null,
+                kind: "outreach_draft",
+                isReply: false,
+              };
             },
           }),
           showReplyDraft: tool({
-            description: "Show a REPLY draft inline — a response back to a brand that already emailed the creator. Use this (never showEmailDraft) after a brand reply arrives in Approvals. The creator will send it from their own inbox as a reply in the existing thread. Do NOT send.",
+            description:
+              "Show a REPLY draft inline — a response back to a brand that already emailed the creator. Use this (never showEmailDraft) after a brand reply arrives in Approvals. The creator will send it from their own inbox as a reply in the existing thread. Do NOT send.",
             inputSchema: z.object({
               outreachId: z.string().uuid(),
               brandName: z.string(),
@@ -250,19 +274,36 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 .eq("related_id", input.outreachId)
                 .eq("approval_type", "reply_received")
                 .maybeSingle();
-              return { ...input, approvalId: approval?.id ?? null, kind: "reply_draft", isReply: true };
+              return {
+                ...input,
+                approvalId: approval?.id ?? null,
+                kind: "reply_draft",
+                isReply: true,
+              };
             },
           }),
           suggestAttachments: tool({
-            description: "Suggest specific portfolio files (screenshots, clips, media kits, decks, PDFs, docs) the creator should attach to the current outreach or reply draft. Use exact filenames from what the creator uploaded in Settings → Creator setup → Portfolio. Only call this after showEmailDraft or showReplyDraft so a compose window is open. When the creator confirms in chat, the files auto-attach in the compose window.",
+            description:
+              "Suggest specific portfolio files (screenshots, clips, media kits, decks, PDFs, docs) the creator should attach to the current outreach or reply draft. Use exact filenames from what the creator uploaded in Settings → Creator setup → Portfolio. Only call this after showEmailDraft or showReplyDraft so a compose window is open. When the creator confirms in chat, the files auto-attach in the compose window.",
             inputSchema: z.object({
               outreachId: z.string().uuid(),
               kind: z.enum(["outreach", "reply"]),
               brandName: z.string(),
-              names: z.array(z.string()).min(1).max(6).describe("Filenames as they appear in the creator's portfolio."),
-              reason: z.string().max(300).describe("Short, warm reason why these help this specific brand."),
+              names: z
+                .array(z.string())
+                .min(1)
+                .max(6)
+                .describe("Filenames as they appear in the creator's portfolio."),
+              reason: z
+                .string()
+                .max(300)
+                .describe("Short, warm reason why these help this specific brand."),
             }),
-            execute: async (input) => ({ ...input, target: input.kind, cardKind: "attachment_suggestion" as const }),
+            execute: async (input) => ({
+              ...input,
+              target: input.kind,
+              cardKind: "attachment_suggestion" as const,
+            }),
           }),
 
           showEmailThread: tool({
@@ -282,9 +323,15 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 .limit(1);
               if (input.outreachId) query = query.eq("id", input.outreachId);
               else if (input.brandMatchId) query = query.eq("brand_match_id", input.brandMatchId);
-              else return { error: "Need outreachId or brandMatchId", kind: "email_thread" as const };
+              else
+                return { error: "Need outreachId or brandMatchId", kind: "email_thread" as const };
               const { data } = await query.maybeSingle();
-              if (!data) return { error: "No email found yet for this brand.", kind: "email_thread" as const, brandName: input.brandName };
+              if (!data)
+                return {
+                  error: "No email found yet for this brand.",
+                  kind: "email_thread" as const,
+                  brandName: input.brandName,
+                };
               return {
                 kind: "email_thread" as const,
                 brandName: input.brandName,
@@ -298,9 +345,9 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
             },
           }),
 
-
           proposeSendOutreach: tool({
-            description: "DEPRECATED — do not use. MatchAI is fully internal; never propose sending email. Use showEmailDraft (cold outreach) or showReplyDraft (reply) and instruct the creator to open Approvals.",
+            description:
+              "DEPRECATED — do not use. MatchAI is fully internal; never propose sending email. Use showEmailDraft (cold outreach) or showReplyDraft (reply) and instruct the creator to open Approvals.",
             inputSchema: z.object({
               outreachId: z.string().uuid(),
               brandName: z.string(),
@@ -319,103 +366,6 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 ],
               },
             }),
-          }),
-          proposeReleasePayment: tool({
-            description: "Propose releasing the protected payment for a deal. Returns APPROVAL CARD.",
-            inputSchema: z.object({
-              dealId: z.string().uuid(),
-              brandName: z.string(),
-              amount: z.number(),
-            }),
-            execute: async (input) => ({
-              requiresApproval: true,
-              action: "release_payment",
-              params: { dealId: input.dealId },
-              card: {
-                title: `Release payment from ${input.brandName}`,
-                details: [
-                  { label: "Gross brand payment", value: `$${input.amount.toFixed(2)}` },
-                  { label: "Stripe processing (~2.9% + $0.30)", value: `$${(input.amount * 0.029 + 0.3).toFixed(2)}` },
-                  { label: "Estimated net to you", value: `$${Math.max(0, input.amount - (input.amount * 0.029 + 0.3)).toFixed(2)}` },
-                  { label: "MatchAI success fee", value: "Shown on your deal — only on MatchAI-sourced completed deals" },
-                ],
-              },
-            }),
-          }),
-          proposeRequestEscrow: tool({
-            description: "Propose creating a branded payment link and sending it to the brand. Returns APPROVAL CARD. On approval, the escrow row is created and a /pay/{id} link is generated.",
-            inputSchema: z.object({
-              dealId: z.string().uuid(),
-              brandName: z.string(),
-              amount: z.number(),
-            }),
-            execute: async (input) => ({
-              requiresApproval: true,
-              action: "request_escrow",
-              params: { dealId: input.dealId, amount: input.amount },
-              card: {
-                title: `Request payment from ${input.brandName}`,
-                details: [
-                  { label: "Gross brand payment", value: `$${input.amount.toFixed(2)}` },
-                  { label: "Stripe processing (~2.9% + $0.30)", value: `$${(input.amount * 0.029 + 0.3).toFixed(2)}` },
-                  { label: "Estimated net to you", value: `$${Math.max(0, input.amount - (input.amount * 0.029 + 0.3)).toFixed(2)}` },
-                  { label: "MatchAI success fee", value: "Only on MatchAI-sourced deals — capped at $99, 0% on repeat brands" },
-                ],
-              },
-            }),
-          }),
-          requestBrandPayment: tool({
-            description:
-              "Immediately create a protected-payment (escrow) row for an existing deal and return the branded /pay/{id} URL the creator can send to the brand. Use when the creator asks 'get me the pay link', 'create the payment link', 'give me the invoice URL' — no approval card needed because no money moves and no external message is sent.",
-            inputSchema: z.object({
-              dealId: z.string().uuid(),
-              amount: z.number().positive(),
-            }),
-            execute: async (input) => {
-              const { data: deal } = await supabaseAdmin
-                .from("deals")
-                .select("id, brand_name")
-                .eq("id", input.dealId)
-                .eq("user_id", userId)
-                .maybeSingle();
-              if (!deal) return { error: "Deal not found." };
-              const fee = Math.round(input.amount * 0.03 * 100) / 100;
-              const net = Math.round((input.amount - fee) * 100) / 100;
-              const { data: row, error } = await supabaseAdmin
-                .from("escrow_transactions")
-                .insert({
-                  user_id: userId,
-                  deal_id: deal.id,
-                  brand_name: deal.brand_name ?? null,
-                  gross_amount: input.amount,
-                  platform_fee: fee,
-                  net_payout: net,
-                  status: "awaiting",
-                })
-                .select("id")
-                .single();
-              if (error || !row) return { error: "Could not create the payment link." };
-              await supabaseAdmin
-                .from("deals")
-                .update({ escrow_status: "awaiting", deal_value: input.amount })
-                .eq("id", deal.id)
-                .eq("user_id", userId);
-              return {
-                escrowId: row.id,
-                dealId: deal.id,
-                brandName: deal.brand_name ?? "the brand",
-                amount: input.amount,
-                payUrl: `/pay/${row.id}`,
-                card: {
-                  title: `Payment link ready — ${deal.brand_name ?? "brand"}`,
-                  details: [
-                    { label: "Amount", value: `$${input.amount.toFixed(2)}` },
-                    { label: "Net to you", value: `$${net.toFixed(2)}` },
-                    { label: "Link", value: `/pay/${row.id}` },
-                  ],
-                },
-              };
-            },
           }),
           proposeApplyInsight: tool({
             description: "Propose applying a learning insight that will change agent behavior.",
@@ -596,8 +546,7 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
           }),
 
           proposeResumeCampaign: tool({
-            description:
-              "Propose resuming a paused outreach campaign. APPROVAL CARD.",
+            description: "Propose resuming a paused outreach campaign. APPROVAL CARD.",
             inputSchema: z.object({
               campaignId: z.string().uuid(),
               campaignName: z.string(),
@@ -642,26 +591,6 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
             }),
           }),
 
-          proposeConnectPayout: tool({
-            description:
-              "Propose starting Stripe Connect onboarding so the creator can receive payouts. APPROVAL CARD. Use when they ask 'how do I get paid', 'connect my bank', 'set up payouts'.",
-            inputSchema: z.object({}),
-            execute: async () => ({
-              requiresApproval: true,
-              action: "connect_payout",
-              params: {},
-              card: {
-                title: "Connect payouts (Stripe)",
-                details: [
-                  { label: "What happens", value: "Opens Stripe's secure onboarding in a new tab" },
-                  { label: "Time", value: "~3 minutes (bank + ID)" },
-                  { label: "Stripe fees", value: "Stripe charges ~2.9% + $0.30 per payment (paid to Stripe, not MatchAI)" },
-                  { label: "MatchAI fee", value: "Success fee only on MatchAI-sourced completed deals — see pricing" },
-                ],
-              },
-            }),
-          }),
-
           proposeUpdateBrief: tool({
             description:
               "Propose updating an outreach campaign's brief (objective, audience, talking points, budget, voice). APPROVAL CARD. Use when the creator gives new direction like 'change the budget to $2k' or 'the angle should be sustainability, not price'.",
@@ -684,7 +613,10 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 title: `Update brief — "${input.campaignName}"`,
                 details: Object.entries(input.patch)
                   .filter(([, v]) => typeof v === "string" && v.length > 0)
-                  .map(([k, v]) => ({ label: k.charAt(0).toUpperCase() + k.slice(1), value: String(v) })),
+                  .map(([k, v]) => ({
+                    label: k.charAt(0).toUpperCase() + k.slice(1),
+                    value: String(v),
+                  })),
               },
             }),
           }),
@@ -725,7 +657,6 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
           }),
         };
 
-
         const result = streamText({
           model,
           system,
@@ -759,7 +690,11 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 if (toolPart && toolPart.output) {
                   cardType = toolPart.type.replace(/^tool-/, "");
                   cardData = toolPart.output;
-                  const out = toolPart.output as { requiresApproval?: boolean; action?: string; params?: unknown };
+                  const out = toolPart.output as {
+                    requiresApproval?: boolean;
+                    action?: string;
+                    params?: unknown;
+                  };
                   if (out.requiresApproval) {
                     requiresApproval = true;
                     action = out.action ?? null;

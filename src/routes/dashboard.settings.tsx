@@ -16,7 +16,11 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import { getOnboardingAnswers, updateOnboardingAnswers, addSocialHandle } from "@/lib/onboarding-v3.functions";
+import {
+  getOnboardingAnswers,
+  updateOnboardingAnswers,
+  addSocialHandle,
+} from "@/lib/onboarding-v3.functions";
 import { startScrapeAll } from "@/lib/onboarding-scrape.functions";
 import { PlatformIcon } from "@/components/icons/PlatformIcon";
 import { AgentPersonalizationSection } from "@/components/settings/AgentPersonalizationSection";
@@ -32,16 +36,12 @@ import {
   setAgentMode,
 } from "@/lib/dashboard.functions";
 
-
 import {
   getSubscriptionStatus,
   cancelSubscription,
   resumeSubscription,
-  getConnectStatus,
-  createConnectOnboardingLink,
 } from "@/lib/payments.functions";
-import { CreditCard, Mail, Banknote } from "lucide-react";
-
+import { CreditCard, Mail } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -68,13 +68,48 @@ type NotifPrefs = {
   inapp_activity?: boolean;
 };
 
-const NOTIF_ITEMS: { key: keyof NotifPrefs; label: string; description: string; group: "email" | "inapp" }[] = [
-  { key: "email_brand_match", label: "New brand matches", description: "When the agent surfaces a new brand fit.", group: "email" },
-  { key: "email_brand_reply", label: "Brand replies", description: "When a brand responds to your outreach.", group: "email" },
-  { key: "email_payment", label: "Payments", description: "Internal payment records updated or marked paid.", group: "email" },
-  { key: "email_weekly_digest", label: "Weekly digest", description: "A Monday morning summary of activity.", group: "email" },
-  { key: "inapp_approvals", label: "Approval requests", description: "Show a banner when the agent needs you.", group: "inapp" },
-  { key: "inapp_activity", label: "Activity feed", description: "Live updates on the dashboard activity panel.", group: "inapp" },
+const NOTIF_ITEMS: {
+  key: keyof NotifPrefs;
+  label: string;
+  description: string;
+  group: "email" | "inapp";
+}[] = [
+  {
+    key: "email_brand_match",
+    label: "New brand matches",
+    description: "When the agent surfaces a new brand fit.",
+    group: "email",
+  },
+  {
+    key: "email_brand_reply",
+    label: "Brand replies",
+    description: "When a brand responds to your outreach.",
+    group: "email",
+  },
+  {
+    key: "email_payment",
+    label: "Payments",
+    description: "Internal payment records updated or marked paid.",
+    group: "email",
+  },
+  {
+    key: "email_weekly_digest",
+    label: "Weekly digest",
+    description: "A Monday morning summary of activity.",
+    group: "email",
+  },
+  {
+    key: "inapp_approvals",
+    label: "Approval requests",
+    description: "Show a banner when the agent needs you.",
+    group: "inapp",
+  },
+  {
+    key: "inapp_activity",
+    label: "Activity feed",
+    description: "Live updates on the dashboard activity panel.",
+    group: "inapp",
+  },
 ];
 
 function SettingsPage() {
@@ -82,7 +117,7 @@ function SettingsPage() {
   const qc = useQueryClient();
 
   const getData = useServerFn(getSettingsData);
-  
+
   const saveProfile = useServerFn(updateProfile);
   const saveNotif = useServerFn(updateNotificationPrefs);
   const reAvatar = useServerFn(refreshAvatar);
@@ -94,7 +129,6 @@ function SettingsPage() {
     queryKey: ["settings-data"],
     queryFn: () => getData({ data: {} as never }),
   });
-
 
   const agentMode = useQuery({
     queryKey: ["agent-mode"],
@@ -133,38 +167,6 @@ function SettingsPage() {
       setSubBusy(false);
     }
   };
-
-  // Payouts / Stripe Connect
-  const connectFn = useServerFn(getConnectStatus);
-  const startConnect = useServerFn(createConnectOnboardingLink);
-  const connect = useQuery({
-    queryKey: ["connect-status"],
-    queryFn: () => connectFn({ data: {} as never }),
-  });
-  const [connectBusy, setConnectBusy] = useState(false);
-  const onStartConnect = async () => {
-    setConnectBusy(true);
-    try {
-      const { url } = await startConnect({ data: { origin: window.location.origin } });
-      window.location.href = url;
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not start payout onboarding");
-      setConnectBusy(false);
-    }
-  };
-  // Refresh connect status when user returns from Stripe-hosted onboarding.
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("connect")) {
-      qc.invalidateQueries({ queryKey: ["connect-status"] });
-      url.searchParams.delete("connect");
-      window.history.replaceState({}, "", url.toString());
-    }
-  }, [qc]);
-
-
-
-
 
   // Realtime: refetch when the profile row changes server-side (e.g. agent
   // fills it in via chat) so the visible flash animation plays.
@@ -214,7 +216,7 @@ function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [refreshingAvatar, setRefreshingAvatar] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [prefs, setPrefs] = useState<NotifPrefs>({});
 
@@ -248,9 +250,7 @@ function SettingsPage() {
       if (res.ok) {
         setSavedSenderEmail(trimmed || null);
         toast.success(
-          trimmed
-            ? `Saved — outreach will be sent from ${trimmed}`
-            : "Profile updated",
+          trimmed ? `Saved — outreach will be sent from ${trimmed}` : "Profile updated",
         );
         qc.invalidateQueries({ queryKey: ["settings-data"] });
         qc.invalidateQueries({ queryKey: ["dashboard-user"] });
@@ -261,15 +261,12 @@ function SettingsPage() {
       toast.error(
         e?.message?.includes("email")
           ? "Please enter a valid email address"
-          : e?.message ?? "Could not update profile",
+          : (e?.message ?? "Could not update profile"),
       );
     } finally {
       setSavingProfile(false);
     }
   };
-
-
-
 
   const onTogglePref = async (key: keyof NotifPrefs, value: boolean) => {
     const next = { ...prefs, [key]: value };
@@ -345,7 +342,6 @@ function SettingsPage() {
 
   const initials = (displayName || fullName || profile?.email || "?").slice(0, 2).toUpperCase();
 
-
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       {/* Header */}
@@ -364,7 +360,11 @@ function SettingsPage() {
       </div>
 
       {/* 1. Social handles — identity foundation, required for matching */}
-      <Section icon={Link2} title="Social handles" description="Type a handle — we pull the public data. No login needed. At least one is required.">
+      <Section
+        icon={Link2}
+        title="Social handles"
+        description="Type a handle — we pull the public data. No login needed. At least one is required."
+      >
         <div className="space-y-3">
           {platforms.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-foreground/[0.08] p-4 text-sm text-muted-foreground">
@@ -399,60 +399,6 @@ function SettingsPage() {
         </div>
       </Section>
 
-      {/* 2. Payouts — get paid. Highest-impact money setting. */}
-      <Section
-        icon={Banknote}
-        title="Payouts"
-        description="Link a bank account so you can transfer your MatchAI balance out. Success fee is 20% on Free (capped at $99/deal, 0% on repeat brands), 0% on paid plans — Stripe adds a small processing fee."
-      >
-        {(() => {
-          const c = connect.data;
-          const ready = Boolean(c?.onboarded && c?.payoutsEnabled);
-          return (
-            <div className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-[220px] flex-1">
-                  <div className="flex min-w-0 items-start gap-2 text-sm font-medium">
-                    {ready ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                        <span className="break-words">Ready to receive payouts</span>
-                      </>
-                    ) : c?.accountId ? (
-                      <>
-                        <Loader2 className="h-4 w-4 shrink-0 text-amber-600" />
-                        <span className="break-words">Onboarding incomplete</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="break-words">No payout account connected</span>
-                      </>
-                    )}
-                  </div>
-                  <p className="mt-1 break-words text-xs text-muted-foreground">
-                    {ready
-                      ? "Released deal payments will land in your linked bank account within 1–2 business days."
-                      : c?.accountId
-                        ? "Finish the Stripe onboarding steps to enable payouts."
-                        : "Takes ~2 minutes. Powered by Stripe — MatchAI never sees your bank details."}
-                  </p>
-                </div>
-                <Button
-                  onClick={onStartConnect}
-                  disabled={connectBusy || connect.isLoading}
-                  variant={ready ? "outline" : "default"}
-                  className="rounded-lg"
-                >
-                  {connectBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {ready ? "Manage payouts" : c?.accountId ? "Continue setup" : "Connect bank account"}
-                </Button>
-              </div>
-            </div>
-          );
-        })()}
-      </Section>
-
       {/* 2b. Sender identity & do-not-contact — CAN-SPAM compliance + suppression list */}
       <Section
         icon={Shield}
@@ -462,9 +408,12 @@ function SettingsPage() {
         <ComplianceSection />
       </Section>
 
-
       {/* 3. Billing — plan & fees */}
-      <Section icon={CreditCard} title="Billing" description="Manage your plan. Cancel or resume anytime.">
+      <Section
+        icon={CreditCard}
+        title="Billing"
+        description="Manage your plan. Cancel or resume anytime."
+      >
         {(() => {
           const s = subscription.data;
           const planLabel = s?.plan ?? profile?.plan ?? "free";
@@ -523,7 +472,6 @@ function SettingsPage() {
       {/* 4b. Rate helper — quick "what should I charge" */}
       <RateHelperCard />
 
-
       {/* 5. Agent permissions — how much freedom */}
       <Section
         icon={Shield}
@@ -531,7 +479,7 @@ function SettingsPage() {
         description="How much freedom does your agent have? You can change this any time."
       >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {([
+          {[
             {
               id: "draft_only" as const,
               label: "Draft only",
@@ -550,7 +498,7 @@ function SettingsPage() {
               tag: "Low touch",
               body: "I pitch approved brand types, follow up, and only ask when a brand replies, pricing is needed, or a contract/payment issue comes up.",
             },
-          ]).map((m) => {
+          ].map((m) => {
             const active = agentMode.data?.mode === m.id;
             return (
               <button
@@ -577,7 +525,9 @@ function SettingsPage() {
                   <span
                     className={
                       "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider " +
-                      (active ? "bg-primary/20 text-primary" : "bg-foreground/[0.06] text-muted-foreground")
+                      (active
+                        ? "bg-primary/20 text-primary"
+                        : "bg-foreground/[0.06] text-muted-foreground")
                     }
                   >
                     {active ? "Active" : m.tag}
@@ -600,7 +550,11 @@ function SettingsPage() {
       </Section>
 
       {/* 7. Profile — how you appear */}
-      <Section icon={UserIcon} title="Profile" description="How you appear to brands and inside the app.">
+      <Section
+        icon={UserIcon}
+        title="Profile"
+        description="How you appear to brands and inside the app."
+      >
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           <div className="flex flex-col items-center gap-2">
             <div className="group relative">
@@ -710,7 +664,11 @@ function SettingsPage() {
       </Section>
 
       {/* 8. Notifications */}
-      <Section icon={Bell} title="Notifications" description="Decide when the agent should ping you.">
+      <Section
+        icon={Bell}
+        title="Notifications"
+        description="Decide when the agent should ping you."
+      >
         <div className="space-y-6">
           <PrefGroup
             label="Email"
@@ -732,28 +690,24 @@ function SettingsPage() {
       <OnboardingAnswersSection />
 
       {/* 10. Email sending — info only */}
-      <Section icon={Mail} title="Email sending" description="MatchAI handles the send — no inbox to connect.">
+      <Section
+        icon={Mail}
+        title="Gmail & Inbox"
+        description="Connect Gmail to synchronize creator outreach with the MatchAI Inbox."
+      >
         <div className="space-y-3">
           <div className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] p-4">
-            <p className="text-sm font-medium text-foreground">MatchAI verified sender</p>
+            <p className="text-sm font-medium text-foreground">Creator-controlled sending</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Every pitch and follow-up goes out from
-              {" "}
-              <span className="font-mono text-foreground">outreach@notify.www.matchapp.ai</span>
-              {" "}shown as
-              {" "}
-              <span className="text-foreground">You via MatchAI</span>. Replies route
-              straight back into your MatchAI inbox — no Gmail, Outlook, or SMTP setup.
+              Outreach sends from the creator&apos;s connected Gmail account. MatchAI product and
+              transactional email remains separate and never impersonates creator outreach.
             </p>
           </div>
         </div>
       </Section>
-
     </div>
   );
 }
-
-
 
 function Section({
   icon: Icon,
@@ -815,7 +769,11 @@ function PrefGroup({
               <p className="break-words text-sm font-medium">{item.label}</p>
               <p className="break-words text-xs text-muted-foreground">{item.description}</p>
             </div>
-            <Switch className="shrink-0" checked={!!prefs[item.key]} onCheckedChange={(v) => onToggle(item.key, v)} />
+            <Switch
+              className="shrink-0"
+              checked={!!prefs[item.key]}
+              onCheckedChange={(v) => onToggle(item.key, v)}
+            />
           </div>
         ))}
       </div>
@@ -877,15 +835,27 @@ function ConnectionRow({
             </span>
           )}
           {canVerify && (
-            <Button size="sm" variant={open ? "ghost" : "default"} onClick={() => setOpen((o) => !o)} className="rounded-lg">
+            <Button
+              size="sm"
+              variant={open ? "ghost" : "default"}
+              onClick={() => setOpen((o) => !o)}
+              className="rounded-lg"
+            >
               {open ? "Close" : "Verify"}
             </Button>
           )}
           {onConnect && !connected && (
-            <Button size="sm" onClick={onConnect} className="rounded-lg">Connect</Button>
+            <Button size="sm" onClick={onConnect} className="rounded-lg">
+              Connect
+            </Button>
           )}
           {onDisconnect && connected && (
-            <Button size="sm" variant="ghost" onClick={onDisconnect} className="rounded-lg text-muted-foreground">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onDisconnect}
+              className="rounded-lg text-muted-foreground"
+            >
               Disconnect
             </Button>
           )}
@@ -909,7 +879,6 @@ function ConnectionRow({
     </div>
   );
 }
-
 
 function titleCase(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -999,7 +968,11 @@ function OnboardingAnswersSection() {
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full name">
-              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
+              <Input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Jane Doe"
+              />
             </Field>
             <Field label="Niche">
               <Input
@@ -1081,13 +1054,7 @@ const ADDABLE_PLATFORMS = [
   { id: "podcast", name: "Podcast" },
 ] as const;
 
-function AddHandleForm({
-  existing,
-  onAdded,
-}: {
-  existing: string[];
-  onAdded: () => void;
-}) {
+function AddHandleForm({ existing, onAdded }: { existing: string[]; onAdded: () => void }) {
   const addHandle = useServerFn(addSocialHandle);
   const startScrape = useServerFn(startScrapeAll);
   const [open, setOpen] = useState(false);
@@ -1120,9 +1087,17 @@ function AddHandleForm({
     setErr(null);
     try {
       const cleanHandle = handle.trim().replace(/^@+/, "");
-      await addHandle({ data: { platform: platform as "tiktok" | "instagram" | "youtube" | "linkedin" | "twitch" | "podcast", handle: cleanHandle } });
+      await addHandle({
+        data: {
+          platform: platform as
+            "tiktok" | "instagram" | "youtube" | "linkedin" | "twitch" | "podcast",
+          handle: cleanHandle,
+        },
+      });
       // Fire scrape in background — data will appear on next refresh.
-      startScrape({ data: { handles: [{ platform, handle: cleanHandle }] } }).catch(() => undefined);
+      startScrape({ data: { handles: [{ platform, handle: cleanHandle }] } }).catch(
+        () => undefined,
+      );
       setPlatform("");
       setHandle("");
       setOpen(false);
@@ -1144,9 +1119,13 @@ function AddHandleForm({
           onChange={(e) => setPlatform(e.target.value)}
           className="h-10 rounded-xl border border-foreground/[0.08] bg-background px-3 text-sm text-foreground outline-none focus:border-primary/60"
         >
-          <option value="" disabled>Platform…</option>
+          <option value="" disabled>
+            Platform…
+          </option>
           {available.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
           ))}
         </select>
         <input
@@ -1156,7 +1135,15 @@ function AddHandleForm({
           className="h-10 rounded-xl border border-foreground/[0.08] bg-background px-3 text-sm text-foreground outline-none placeholder:text-foreground/40 focus:border-primary/60"
         />
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setOpen(false); setErr(null); }} className="rounded-xl">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setOpen(false);
+              setErr(null);
+            }}
+            className="rounded-xl"
+          >
             Cancel
           </Button>
           <Button size="sm" onClick={onAdd} disabled={!canSubmit} className="rounded-xl">
@@ -1171,6 +1158,3 @@ function AddHandleForm({
     </div>
   );
 }
-
-
-
