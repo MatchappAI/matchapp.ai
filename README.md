@@ -4,10 +4,12 @@
 
 MatchAI is a chat-first AI agent for UGC creators and micro-influencers who
 want more paid brand deals. It finds fastest-to-cash opportunities, drafts
-personalized pitches, manages replies in a unified inbox, negotiates,
-protects payment via Stripe-held escrow, and pays out to the creator's
-bank via Stripe Connect. The agent can operate at four autonomy levels
-(Manual / Suggest / Draft / Autopilot).
+personalized pitches, manages replies in a unified inbox, negotiates, and
+tracks creator-reported external payment status. Stripe is used for
+MatchAI subscriptions only. Brand-to-creator payment happens outside
+MatchAI, and some selected deals may include a separate MatchAI commission
+agreed up front. The agent can operate at four autonomy levels (Manual /
+Suggest / Draft / Autopilot).
 
 Live: <https://www.matchapp.ai>
 Preview: <https://showcase-smith-spot.lovable.app>
@@ -55,7 +57,7 @@ Detailed setup, migration replay, and cutover from Lovable:
 | `bun run format` | Prettier |
 | `bunx tsgo --noEmit` | Type-check only |
 
-No test runner is currently wired into the repo.
+Playwright browser coverage is wired in under `tests/e2e/`.
 
 ## Deployment
 
@@ -73,6 +75,7 @@ Target is Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`, entry
 - [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — Cloudflare Workers cutover
 - [`docs/SECURITY.md`](./docs/SECURITY.md) — RLS, secrets, open findings
 - [`docs/LOVABLE_EXIT_CHECKLIST.md`](./docs/LOVABLE_EXIT_CHECKLIST.md) — Step-by-step exit
+- [`docs/CONTINUATION.md`](./docs/CONTINUATION.md) — Current state and resume point
 - [`MATCHAI_CURRENT_STATE_AUDIT.md`](./MATCHAI_CURRENT_STATE_AUDIT.md) — Feature/state audit
 
 ## Known limitations at handoff time
@@ -81,6 +84,7 @@ Target is Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`, entry
   Gateway — see [`docs/LOVABLE_EXIT_CHECKLIST.md`](./docs/LOVABLE_EXIT_CHECKLIST.md).
 - Cron work is currently invoked by Lovable; must be recreated as
   Cloudflare cron triggers before decommissioning Lovable.
-- No test suite yet.
+- Live deployment may lag behind the merged GitHub branch until the host
+  publishing step is executed on the deployment platform.
 - Three financial-table RLS findings from the last security scan remain
   open — see [`docs/SECURITY.md`](./docs/SECURITY.md).
