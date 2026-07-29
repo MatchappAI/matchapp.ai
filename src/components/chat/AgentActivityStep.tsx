@@ -39,13 +39,15 @@ export function labelForToolCall(type: string, input: unknown, output: unknown):
             ? "Replies"
             : v === "deals"
               ? "Deals"
-              : v === "analytics"
-                ? "Analytics"
-                : v === "campaigns"
-                  ? "Campaigns"
-                  : v === "settings"
-                    ? "Settings"
-                    : v;
+              : v === "tracker"
+                ? "Tracker"
+                : v === "tools"
+                  ? "Tools"
+                  : v === "campaigns"
+                    ? "Campaigns"
+                    : v === "settings"
+                      ? "Settings"
+                      : v;
       return `Opening ${nice}`;
     }
     case "showBrandCard":

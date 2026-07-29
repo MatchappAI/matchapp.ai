@@ -29,12 +29,19 @@ function analyze(text: string): Teaser {
     score -= 30;
   }
   // Exposure pay
-  if (/(exposure|for our platform|great opportunity|build your portfolio|tag us)/.test(t) && !/\$\d/.test(t)) {
+  if (
+    /(exposure|for our platform|great opportunity|build your portfolio|tag us)/.test(t) &&
+    !/\$\d/.test(t)
+  ) {
     flags.push("'Exposure' framing without a cash rate");
     score -= 15;
   }
   // Perpetual / broad usage
-  if (/(perpetual|in perpetuity|forever|unlimited use|all media|worldwide|whitelisting|paid ads)/.test(t)) {
+  if (
+    /(perpetual|in perpetuity|forever|unlimited use|all media|worldwide|whitelisting|paid ads)/.test(
+      t,
+    )
+  ) {
     flags.push("Broad/perpetual usage rights — usually worth 2–3× base");
     score -= 15;
   }
@@ -114,7 +121,10 @@ function analyze(text: string): Teaser {
   return { verdict, headline, oneLiner, score, flags, suggestedCounter };
 }
 
-const VERDICT_STYLES: Record<Verdict, { ring: string; text: string; icon: React.ReactNode; label: string }> = {
+const VERDICT_STYLES: Record<
+  Verdict,
+  { ring: string; text: string; icon: React.ReactNode; label: string }
+> = {
   fair: {
     ring: "border-emerald-400/40 bg-emerald-500/[0.06]",
     text: "text-emerald-700 dark:text-emerald-300",
@@ -155,12 +165,17 @@ export function DealChecker() {
             Got a brand offer? Find out if it's actually fair.
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-            Paste any brand DM, email, or offer. MatchAI reads it for cash rate, usage rights, exclusivity, and deadline — then tells you if it's fair, low, or a walk-away.
+            Paste any brand DM, email, or offer. MatchAI reads it for cash rate, usage rights,
+            exclusivity, payment terms, and deadline — then tells you if it's fair, low, or a
+            walk-away.
           </p>
         </div>
 
         <div className="mt-8 rounded-2xl border border-border/60 bg-card/40 p-4 backdrop-blur sm:p-6">
-          <label htmlFor="deal-input" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="deal-input"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          >
             Paste the offer
           </label>
           <textarea
@@ -170,12 +185,15 @@ export function DealChecker() {
               setText(e.target.value);
               if (checked) setChecked(false);
             }}
-            placeholder={"Hey! We'd love to gift you our new serum in exchange for one Reel and one Story tagging us. Could you post this weekend?"}
+            placeholder={
+              "Hey! We'd love to gift you our new serum in exchange for one Reel and one Story tagging us. Could you post this weekend?"
+            }
             className="mt-2 h-32 w-full resize-none rounded-xl border border-border/60 bg-background/60 p-3 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary/60 focus:outline-none"
           />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">
-              Nothing is stored. The teaser runs on-device. Sign up free for the full breakdown.
+              Nothing is stored. The teaser runs on-device. Create your free account to see the full
+              deal check.
             </p>
             <button
               type="button"
@@ -197,7 +215,9 @@ export function DealChecker() {
               >
                 {/* Teaser (always visible) */}
                 <div className={`rounded-2xl border p-5 ${VERDICT_STYLES[result.verdict].ring}`}>
-                  <div className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${VERDICT_STYLES[result.verdict].text}`}>
+                  <div
+                    className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${VERDICT_STYLES[result.verdict].text}`}
+                  >
                     {VERDICT_STYLES[result.verdict].icon}
                     Verdict · {VERDICT_STYLES[result.verdict].label}
                   </div>
@@ -263,10 +283,11 @@ export function DealChecker() {
                         className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_oklch(0_0_0/0.22)] transition-all hover:-translate-y-0.5"
                       >
                         <Sparkles className="mr-1.5 inline h-4 w-4" />
-                        Unlock the full read — free
+                        Create your free account
                       </Link>
                       <p className="text-[11px] text-muted-foreground">
-                        Free account. No card. Also unlocks your Inbox, brand matches, and pitch drafts.
+                        Free account. No card. Also unlocks your Inbox, brand matches, and pitch
+                        drafts.
                       </p>
                     </div>
                   </div>

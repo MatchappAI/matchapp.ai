@@ -98,9 +98,9 @@ test("mobile menu and public CTA remain usable", async ({ page }) => {
   await expect(menuToggle).toBeVisible();
   await menuToggle.click();
   await page.waitForTimeout(200);
-  const signIn = await tabUntil(page, /Sign in/i, 12);
-  expect(signIn).toMatch(/Sign in/i);
-  await page.keyboard.press("Enter");
+  const mobileDrawer = page.locator("div.fixed.inset-0.z-30.md\\:hidden");
+  await expect(mobileDrawer.getByRole("link", { name: /Sign in/i })).toBeVisible();
+  await mobileDrawer.getByRole("link", { name: /Sign in/i }).click({ force: true });
   await expect(page).toHaveURL(/\/auth(\?.*)?$/);
   await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
 

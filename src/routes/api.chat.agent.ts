@@ -53,7 +53,7 @@ export const Route = createFileRoute("/api/chat/agent")({
             ? `\n# AUTONOMY: AUTOPILOT (creator opted in — level 3 of 3)
 - Act autonomously. Take the next best step immediately without asking "should I?" for anything that isn't money, contract terms, or brand-specific judgment.
 - Chain actions in one turn: find → draft → queue → follow up. Narrate briefly what you did.
-- STILL require the creator to tap Send now / Release on approval cards for real external sends and payment releases — autopilot never bypasses the button, just gets everything ready.
+- STILL require the creator to tap Send now / Confirm on approval cards for real external sends and external payment-status changes — autopilot never bypasses the button, just gets everything ready.
 - CLARIFY ONLY when a critical fact is truly missing (rate floor, deliverables ambiguous, brand identity unclear, contradictory instructions). Ask ONE sharp question, then stop.
 - If the ask is fully specified, skip clarifying questions entirely and just do it.`
             : autonomy === 2
@@ -108,7 +108,7 @@ CHAT FORMAT RULES:
 - When the creator corrects you ("that's not me", "more casual", "stop recommending gifted", "be more direct", "don't mention follower count"), call proposeRememberPreference with a short, durable rule so it persists across future drafts and chats.
 - For any action involving money, external communication, or irreversible change, ALWAYS call a "propose_*" tool that returns an approval card. Text replies like "yes" or "go ahead" do NOT trigger actions — only the card button does.
 - When the creator asks you to draft, find, price, or check something — DO IT (call the right tool / draft inline). Do not narrate what you're "going to do" without doing it.
-- Whenever the creator asks to look at, review, or work on something that has a dedicated view (brand matches, replies, deals, analytics, campaigns, settings), immediately call navigateView first so the right pane switches to that view — then respond in one short sentence. Do this even if you also show an inline card.
+- Whenever the creator asks to look at, review, or work on something that has a dedicated view (brand matches, replies, deals, tracker, tools, campaigns, settings), immediately call navigateView first so the right pane switches to that view — then respond in one short sentence. Do this even if you also show an inline card.
 - When discussing a specific brand or deal, also call showBrandCard / showDealCard so the cursor can move to that row on the right stage. Always pair the specific card with navigateView.
 
 INTERNAL MATCHAI EMAIL MODEL (CRITICAL):
@@ -156,9 +156,17 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
         const tools = {
           navigateView: tool({
             description:
-              "Switch the dashboard right pane to a specific view so the creator can watch the work happen. Use liberally whenever the creator asks about brands, replies/approvals, deals, analytics, campaigns, or settings. No approval needed.",
+              "Switch the dashboard right pane to a specific view so the creator can watch the work happen. Use liberally whenever the creator asks about brands, replies/approvals, deals, tracker, tools, campaigns, or settings. No approval needed.",
             inputSchema: z.object({
-              view: z.enum(["brands", "approvals", "deals", "analytics", "campaigns", "settings"]),
+              view: z.enum([
+                "brands",
+                "approvals",
+                "deals",
+                "tracker",
+                "tools",
+                "campaigns",
+                "settings",
+              ]),
               highlightId: z.string().optional(),
             }),
             execute: async (input) => ({
@@ -522,7 +530,7 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 title: `Flag dispute on ${input.brandName}`,
                 details: [
                   { label: "Reason", value: input.reason },
-                  { label: "Effect", value: "Payment release is blocked pending review" },
+                  { label: "Effect", value: "External payment status is blocked pending review" },
                 ],
               },
             }),

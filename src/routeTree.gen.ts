@@ -31,6 +31,8 @@ import { Route as DashboardCampaignsRouteImport } from './routes/dashboard.campa
 import { Route as DashboardDealsRouteImport } from './routes/dashboard.deals'
 import { Route as DashboardInboxRouteImport } from './routes/dashboard.inbox'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardToolsRouteImport } from './routes/dashboard.tools'
+import { Route as DashboardTrackerRouteImport } from './routes/dashboard.tracker'
 import { Route as DashboardWalletRouteImport } from './routes/dashboard.wallet'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as OnboardingStep1RouteImport } from './routes/onboarding.step-1'
@@ -168,6 +170,16 @@ const DashboardInboxRoute = DashboardInboxRouteImport.update({
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardToolsRoute = DashboardToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTrackerRoute = DashboardTrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardWalletRoute = DashboardWalletRouteImport.update({
@@ -332,6 +344,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/deals': typeof DashboardDealsRouteWithChildren
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/tools': typeof DashboardToolsRoute
+  '/dashboard/tracker': typeof DashboardTrackerRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/onboarding/step-1': typeof OnboardingStep1Route
@@ -380,6 +394,8 @@ export interface FileRoutesByTo {
   '/dashboard/deals': typeof DashboardDealsRouteWithChildren
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/tools': typeof DashboardToolsRoute
+  '/dashboard/tracker': typeof DashboardTrackerRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/onboarding/step-1': typeof OnboardingStep1Route
@@ -431,6 +447,8 @@ export interface FileRoutesById {
   '/dashboard/deals': typeof DashboardDealsRouteWithChildren
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/tools': typeof DashboardToolsRoute
+  '/dashboard/tracker': typeof DashboardTrackerRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/onboarding/step-1': typeof OnboardingStep1Route
@@ -483,6 +501,8 @@ export interface FileRouteTypes {
     | '/dashboard/deals'
     | '/dashboard/inbox'
     | '/dashboard/settings'
+    | '/dashboard/tools'
+    | '/dashboard/tracker'
     | '/dashboard/wallet'
     | '/email/unsubscribe'
     | '/onboarding/step-1'
@@ -531,6 +551,8 @@ export interface FileRouteTypes {
     | '/dashboard/deals'
     | '/dashboard/inbox'
     | '/dashboard/settings'
+    | '/dashboard/tools'
+    | '/dashboard/tracker'
     | '/dashboard/wallet'
     | '/email/unsubscribe'
     | '/onboarding/step-1'
@@ -581,6 +603,8 @@ export interface FileRouteTypes {
     | '/dashboard/deals'
     | '/dashboard/inbox'
     | '/dashboard/settings'
+    | '/dashboard/tools'
+    | '/dashboard/tracker'
     | '/dashboard/wallet'
     | '/email/unsubscribe'
     | '/onboarding/step-1'
@@ -802,6 +826,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSettingsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/tools': {
+      id: '/dashboard/tools'
+      path: '/tools'
+      fullPath: '/dashboard/tools'
+      preLoaderRoute: typeof DashboardToolsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/tracker': {
+      id: '/dashboard/tracker'
+      path: '/tracker'
+      fullPath: '/dashboard/tracker'
+      preLoaderRoute: typeof DashboardTrackerRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/wallet': {
       id: '/dashboard/wallet'
       path: '/wallet'
@@ -1020,6 +1058,8 @@ interface DashboardRouteChildren {
   DashboardDealsRoute: typeof DashboardDealsRouteWithChildren
   DashboardInboxRoute: typeof DashboardInboxRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardToolsRoute: typeof DashboardToolsRoute
+  DashboardTrackerRoute: typeof DashboardTrackerRoute
   DashboardWalletRoute: typeof DashboardWalletRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
@@ -1033,6 +1073,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardDealsRoute: DashboardDealsRouteWithChildren,
   DashboardInboxRoute: DashboardInboxRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardToolsRoute: DashboardToolsRoute,
+  DashboardTrackerRoute: DashboardTrackerRoute,
   DashboardWalletRoute: DashboardWalletRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

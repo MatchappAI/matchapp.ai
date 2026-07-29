@@ -15,7 +15,8 @@ const GROUPS: Group[] = [
   {
     icon: Target,
     title: "Finding best-fit brands",
-    caption: "Every brand is ranked using audience fit, category relevance, sponsorship likelihood, deal potential, timing, brand credibility, and relationship strength.",
+    caption:
+      "Every brand is ranked using audience fit, category relevance, sponsorship likelihood, deal potential, timing, brand credibility, and relationship strength.",
     signals: [
       { label: "Audience Fit" },
       { label: "Category Relevance" },
@@ -75,11 +76,10 @@ const GROUPS: Group[] = [
       { label: "Walk-away floor (never go below)" },
       { label: "Counter-offer scripts per objection" },
       { label: "Multi-deliverable & retainer upsell" },
-      { label: "Payment terms: 50% upfront, protected payment" },
+      { label: "Payment terms: 50% upfront, external payment" },
     ],
   },
 ];
-
 
 export function PersonalizationSignals({ compact = false }: { compact?: boolean }) {
   return (
@@ -94,7 +94,8 @@ export function PersonalizationSignals({ compact = false }: { compact?: boolean 
             Every signal that goes into your next pitch
           </h2>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-            Nothing generic. See exactly what your agent reads about you, scores about each brand, and stitches into the email.
+            Nothing generic. See exactly what your agent reads about you, scores about each brand,
+            and stitches into the email.
           </p>
         </div>
       </Reveal>

@@ -26,7 +26,13 @@ type QuickAction = {
   icon: typeof Sparkles;
   label: string;
   hint: string;
-  to: "/dashboard/brands" | "/dashboard/approvals" | "/dashboard/deals" | "/dashboard/analytics" | "/dashboard/settings";
+  to:
+    | "/dashboard/brands"
+    | "/dashboard/approvals"
+    | "/dashboard/deals"
+    | "/dashboard/tracker"
+    | "/dashboard/tools"
+    | "/dashboard/settings";
   prompt: string;
 };
 
@@ -54,10 +60,17 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
   {
     icon: BarChart3,
-    label: "Analytics",
-    hint: "See revenue & performance",
-    to: "/dashboard/analytics",
-    prompt: "Open Analytics and highlight what changed this week.",
+    label: "Tracker",
+    hint: "See follow-ups & status",
+    to: "/dashboard/tracker",
+    prompt: "Open Tracker and highlight the threads that need action today.",
+  },
+  {
+    icon: Sparkles,
+    label: "Tools",
+    hint: "Check deals & price faster",
+    to: "/dashboard/tools",
+    prompt: "Open Tools and check the latest offer or rate question with me.",
   },
   {
     icon: Settings,
@@ -67,7 +80,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     prompt: "Open Settings so I can tune what MatchAI can act on.",
   },
 ];
-
 
 type StoredMessage = {
   id: string;
@@ -102,7 +114,10 @@ export function HomeChatStream() {
     queryFn: () => loadMsgs({ data: {} as never }),
   });
 
-  const stored = (historyData?.messages ?? []) as StoredMessage[];
+  const stored = useMemo(
+    () => (historyData?.messages ?? []) as StoredMessage[],
+    [historyData?.messages],
+  );
 
   const initialUIMessages = useMemo<UIMessage[]>(() => {
     if (!stored.length) return [];
@@ -157,7 +172,6 @@ export function HomeChatStream() {
   }, [openerShown, initialUIMessages.length]);
   void opener; // keep import used in case we re-enable later
 
-
   useEffect(() => {
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -170,10 +184,8 @@ export function HomeChatStream() {
   useEffect(() => {
     const channel = supabase
       .channel("agent_messages_home")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "agent_messages" },
-        () => refetchHistory(),
+      .on("postgres_changes", { event: "*", schema: "public", table: "agent_messages" }, () =>
+        refetchHistory(),
       )
       .subscribe();
     return () => {
@@ -206,7 +218,6 @@ export function HomeChatStream() {
 
   const navigate = useNavigate();
 
-
   const hasConversation = messages.length > 0;
 
   return (
@@ -238,9 +249,7 @@ export function HomeChatStream() {
         )}
 
         {messages.map((m) => {
-          const text = m.parts
-            .map((p) => (p.type === "text" ? p.text : ""))
-            .join("");
+          const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
           const dbRow = storedById.get(m.id);
           const isUser = m.role === "user";
           if (isUser) {
@@ -283,7 +292,11 @@ export function HomeChatStream() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKey}
             rows={1}
-            placeholder={hasConversation ? "Message MatchAI" : "Tell MatchAI what to do — it will ask before acting"}
+            placeholder={
+              hasConversation
+                ? "Message MatchAI"
+                : "Tell MatchAI what to do — it will ask before acting"
+            }
             className="max-h-40 min-h-[48px] flex-1 resize-none border-0 bg-transparent px-1 py-3 text-[15px] placeholder:text-muted-foreground/60 focus-visible:ring-0"
           />
           <button
@@ -316,15 +329,18 @@ export function HomeChatStream() {
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-foreground break-words">{a.label}</span>
-                    <span className="block text-[12px] text-muted-foreground break-words">{a.hint}</span>
+                    <span className="block text-sm font-medium text-foreground break-words">
+                      {a.label}
+                    </span>
+                    <span className="block text-[12px] text-muted-foreground break-words">
+                      {a.hint}
+                    </span>
                   </span>
                 </button>
               );
             })}
           </div>
         )}
-
 
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
           MatchAI acts on your behalf. Every send, reply, and deal waits for your approval.
@@ -333,7 +349,6 @@ export function HomeChatStream() {
     </div>
   );
 }
-
 
 function AgentAvatar() {
   return (
@@ -357,9 +372,7 @@ function AgentTurn({
       <AgentAvatar />
       <div className="min-w-0 flex-1 pt-1">
         {text && (
-          <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
-            {text}
-          </p>
+          <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{text}</p>
         )}
         {dbRow?.requires_approval && (
           <div className="mt-3">
@@ -368,12 +381,8 @@ function AgentTurn({
               data={dbRow.inline_card_data}
               cardType={dbRow.inline_card_type}
               status={
-                (dbRow.approval_status as
-                  | "pending"
-                  | "executed"
-                  | "declined"
-                  | "failed"
-                  | null) ?? "pending"
+                (dbRow.approval_status as "pending" | "executed" | "declined" | "failed" | null) ??
+                "pending"
               }
               onChange={onChange}
             />

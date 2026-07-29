@@ -179,7 +179,7 @@ function labelFor(view: string): string {
     deals: "Checking the deal…",
     approvals: "Reviewing to approve…",
     campaigns: "Pulling up the campaign…",
-    wallet: "Opening external payment tracking…",
+    tracker: "Opening external payment tracking…",
     outreach: "Prepping this pitch…",
   };
   return map[view] || "MatchAI is on it…";

@@ -246,7 +246,7 @@ function TermsPanel({ deal }: { deal: DealRecord }) {
         <SummaryRow k="Timeline" v={form.timeline_days ? `${form.timeline_days} days` : "—"} />
         <SummaryRow k="Package" v={form.package_name || "—"} />
         <SummaryRow k="Contract" v={deal.contract_status} />
-        <SummaryRow k="External payment status" v={deal.escrow_status} />
+        <SummaryRow k="Creator-reported payment status" v={deal.escrow_status} />
         <SummaryRow k="Invoice" v={deal.invoice_status} />
         <div className="border-t border-foreground/[0.06] pt-3">
           <FlagProblemButton dealId={deal.id} />
@@ -264,7 +264,7 @@ function FlagProblemButton({ dealId }: { dealId: string }) {
   const mut = useMutation({
     mutationFn: () => flag({ data: { deal_id: dealId, reason } }),
     onSuccess: () => {
-      toast.success("Flagged. Your protected payment is on hold pending review.");
+      toast.success("Flagged. The payment status is on hold pending review.");
       setOpen(false);
       setReason("");
       qc.invalidateQueries({ queryKey: ["deal", dealId] });
@@ -286,7 +286,7 @@ function FlagProblemButton({ dealId }: { dealId: string }) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        Freezes any protected payment until reviewed. Tell us what went wrong.
+        Freezes the external payment status until reviewed. Tell us what went wrong.
       </p>
       <Textarea
         rows={3}

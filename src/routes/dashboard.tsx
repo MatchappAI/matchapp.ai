@@ -58,7 +58,10 @@ function DashboardLayout() {
     data?.profile?.display_name ?? data?.profile?.full_name ?? data?.profile?.email ?? null;
 
   return (
-    <div data-app-scope="dashboard" className="flex h-screen w-full min-w-0 flex-col overflow-hidden bg-background text-foreground">
+    <div
+      data-app-scope="dashboard"
+      className="flex h-screen w-full min-w-0 flex-col overflow-hidden bg-background text-foreground"
+    >
       {DEMO_MODE && <DemoBanner />}
       <SetupWelcomeModal />
       {/* Body: chat left 50% + live agent stage right 50% */}
@@ -68,32 +71,31 @@ function DashboardLayout() {
         </aside>
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col md:w-1/2">
-
           {/* Right-side top bar: tabs + avatar (logo lives in the chat panel) */}
           <header className="grid shrink-0 gap-2 border-b border-border/60 bg-card/40 px-4 py-2 backdrop-blur-xl lg:px-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="min-w-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Workspace
               </div>
-            <Link
-              to="/dashboard/settings"
-              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              aria-label="Open settings"
-            >
-              {data?.profile?.avatar_url ? (
-                <img
-                  src={data.profile.avatar_url}
-                  alt={fullName ?? "avatar"}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                (fullName ?? "U").slice(0, 1).toUpperCase()
-              )}
-            </Link>
+              <Link
+                to="/dashboard/settings"
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                aria-label="Open settings"
+              >
+                {data?.profile?.avatar_url ? (
+                  <img
+                    src={data.profile.avatar_url}
+                    alt={fullName ?? "avatar"}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  (fullName ?? "U").slice(0, 1).toUpperCase()
+                )}
+              </Link>
             </div>
             <div className="min-w-0">
-              <DashboardTabs isStaff={!!rolesData?.isStaff} />
+              <DashboardTabs />
             </div>
           </header>
 
@@ -107,7 +109,6 @@ function DashboardLayout() {
           </section>
         </main>
       </div>
-
 
       {/* Mobile chat toggle */}
       <button

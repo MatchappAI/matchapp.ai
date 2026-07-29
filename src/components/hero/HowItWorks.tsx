@@ -31,7 +31,7 @@ export function HowItWorks() {
       <Reveal className="max-w-2xl">
         <SectionEyebrow>HOW MATCHAI WORKS</SectionEyebrow>
         <h2 className="mt-6 text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-          Four steps from "I need a brand deal" to "email sent."
+          Four steps from brand match to paid deal.
         </h2>
       </Reveal>
 

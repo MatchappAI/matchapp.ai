@@ -4,26 +4,20 @@ import { cn } from "@/lib/utils";
 
 type Tab = { to: string; label: string };
 
-// Primary nav is intentionally slim: Inbox (thread with each brand),
-// Deals (opportunities + pipeline in one place), Settings.
-// Brands, Replies, Analytics, Campaigns, Admin remain routable but out of
-// the primary tab bar to reduce cognitive load. Access them from Deals,
-// Inbox actions, or direct URL.
 const TABS: Tab[] = [
-  { to: "/dashboard/inbox", label: "Inbox" },
   { to: "/dashboard/deals", label: "Deals" },
+  { to: "/dashboard/inbox", label: "Inbox" },
+  { to: "/dashboard/tracker", label: "Tracker" },
+  { to: "/dashboard/tools", label: "Tools" },
   { to: "/dashboard/settings", label: "Settings" },
 ];
 
-export function DashboardTabs({ isStaff }: { isStaff?: boolean }) {
+export function DashboardTabs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const tabs: Tab[] = isStaff
-    ? [...TABS.slice(0, -1), { to: "/dashboard/admin", label: "Insights" }, TABS[TABS.length - 1]]
-    : TABS;
 
   return (
     <nav className="flex min-w-0 flex-wrap items-center gap-1 py-1">
-      {tabs.map((t) => (
+      {TABS.map((t) => (
         <TabLink key={t.to} to={t.to} active={pathname.startsWith(t.to)} label={t.label} />
       ))}
     </nav>

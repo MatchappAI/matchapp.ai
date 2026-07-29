@@ -29,9 +29,9 @@ export function Hero() {
               transition={{ duration: 0.9, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
               className="text-[2.6rem] font-bold leading-[1.04] tracking-[-0.022em] text-foreground sm:text-5xl lg:text-[3.65rem]"
             >
-              Find paid brand deals.{" "}
+              Find paid brand deals without the pitching, chasing, or bad offers.{" "}
               <span className="bg-gradient-to-br from-[#1E1B4B] via-[#4F46E5] to-[#8B5CF6] bg-clip-text text-transparent">
-                Skip the cold DMs.
+                Keep payment external.
               </span>
             </motion.h1>
 
@@ -41,9 +41,9 @@ export function Hero() {
               transition={{ duration: 0.8, delay: 0.25 }}
               className="mt-6 max-w-md text-[15.5px] leading-[1.7] text-muted-foreground/90"
             >
-              For UGC creators and micro-influencers who want more paid work. Your AI manager finds
-              the right brands, writes the pitch in your voice, and keeps your creator inbox,
-              drafts, and approvals in one place. You just tap{" "}
+              MatchAI helps UGC creators and micro-influencers find brand-fit opportunities, write
+              pitches in their voice, track replies, know what to charge, check offer terms, and
+              turn brand conversations into paid deals. You just tap{" "}
               <span className="font-semibold text-foreground">Approve</span>.
             </motion.p>
             <motion.p
@@ -52,8 +52,8 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.28 }}
               className="mt-3 max-w-md text-[13.5px] leading-[1.6] text-foreground/75"
             >
-              You already make the content. MatchAI finds paid opportunities that fit it and helps
-              you pursue them.
+              You already make the content. MatchAI helps you find the deals that fit it and close
+              them cleanly.
             </motion.p>
 
             <motion.div
@@ -195,7 +195,7 @@ export function Hero() {
             For creators doing this solo — no manager, no agency, no monthly retainer.
           </p>
           <div className="flex flex-wrap gap-2 text-[10.5px] font-semibold tracking-wider text-muted-foreground">
-            {["REAL BRANDS ONLY", "YOU APPROVE EVERY SEND", "PROTECTED PAYMENTS"].map((t) => (
+            {["REAL BRANDS ONLY", "YOU APPROVE EVERY SEND", "PAYMENT STAYS EXTERNAL"].map((t) => (
               <span
                 key={t}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/40 px-3 py-1.5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:text-foreground"

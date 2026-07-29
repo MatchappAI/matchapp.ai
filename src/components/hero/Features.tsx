@@ -5,7 +5,7 @@ import { Reveal, StaggerGroup, itemVariants } from "./Reveal";
 const features = [
   {
     title: "Brands worth pitching",
-    body: "Real beauty, skincare, haircare, fashion and accessories companies actively paying creators — ranked by fit for your niche, aesthetic, audience, and city. Every match shows the reasoning.",
+    body: "Real beauty, skincare, haircare, fashion and accessories companies ranked by fit for your niche, aesthetic, audience, and city. Every match shows the reasoning and next step.",
   },
   {
     title: "Specific paid offers, not vague collabs",
@@ -13,7 +13,7 @@ const features = [
   },
   {
     title: "One internal MatchAI Inbox",
-    body: "Keep each pitch, reply, draft, attachment, and negotiation in a single thread without connecting a personal mailbox. Provider-backed sending and synchronization remain unavailable until an external transport is selected.",
+    body: "Keep each pitch, reply, draft, attachment, and negotiation in a single thread without connecting a personal mailbox. Provider-backed sending and synchronization stay honest until an external transport is selected.",
   },
   {
     title: "Negotiation and deal tracking",
@@ -32,7 +32,7 @@ export function Features() {
         <div className="max-w-2xl">
           <SectionEyebrow>WHAT YOUR AGENT HANDLES</SectionEyebrow>
           <h2 className="mt-6 text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            The work of a brand manager. Without the $2K monthly retainer.
+            The work of a brand manager. Without the agency overhead.
           </h2>
         </div>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">

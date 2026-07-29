@@ -1,14 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Home,
   Sparkles,
   Inbox,
   Briefcase,
   BarChart3,
+  Wrench,
   Settings,
   Menu,
   X,
   Shield,
+  type LucideIcon,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -16,25 +17,29 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { MatchAILogo } from "@/components/brand/MatchAILogo";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: string; label: string; icon: typeof Home };
+type NavItem = { to: string; label: string; icon: LucideIcon };
 type NavGroup = { label: string | null; items: NavItem[] };
 
-// Four persistent sections + Home. Campaigns, Money, and Billing live inside
-// Replies/Deals/Settings — not as top-level rails.
+// Primary creator rails are Deals, Inbox, Tracker, Tools, Settings.
+// Brand discovery remains available, but it should not compete with the
+// main creator flow in the primary navigation.
 const NAV_GROUPS: NavGroup[] = [
   {
     label: null,
     items: [
-      { to: "/dashboard", label: "Home", icon: Home },
-      { to: "/dashboard/brands", label: "Brand Matches", icon: Sparkles },
-      { to: "/dashboard/inbox", label: "Inbox", icon: Inbox },
       { to: "/dashboard/deals", label: "Deals", icon: Briefcase },
-      { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+      { to: "/dashboard/inbox", label: "Inbox", icon: Inbox },
+      { to: "/dashboard/tracker", label: "Tracker", icon: BarChart3 },
+      { to: "/dashboard/tools", label: "Tools", icon: Wrench },
     ],
   },
   {
     label: null,
     items: [{ to: "/dashboard/settings", label: "Settings", icon: Settings }],
+  },
+  {
+    label: "Discovery",
+    items: [{ to: "/dashboard/brands", label: "Brand Matches", icon: Sparkles }],
   },
 ];
 

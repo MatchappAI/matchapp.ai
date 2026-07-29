@@ -48,7 +48,7 @@ const AUTONOMY_LEVELS = [
   {
     key: "draft",
     label: "Draft",
-    tooltip: "I draft, queue, and set everything up. You tap Send / Release.",
+    tooltip: "I draft, queue, and set everything up. You tap Send / confirm.",
   },
   {
     key: "auto",
@@ -449,7 +449,7 @@ export function DashboardChatPanel() {
               break;
 
             case "tool-showEarnings":
-              emitAgentHighlight("wallet", "balance", "Checking external payment status…");
+              emitAgentHighlight("tracker", "money", "Checking external payment status…");
               break;
             case "tool-suggestAttachments": {
               const names: string[] = Array.isArray(output.names) ? output.names : [];
@@ -783,7 +783,7 @@ export function DashboardChatPanel() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKey}
-          placeholder="Ask MatchAI to find, draft, send, release, or update anything…"
+          placeholder="Ask MatchAI to find, draft, send, confirm, or update anything…"
           className="max-h-32 flex-1 resize-none rounded-xl border border-foreground/[0.06] bg-background/40 px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
           disabled={isLoading}
         />
@@ -857,7 +857,7 @@ function thinkingStatesFor(pathname: string): string[] {
       "Preparing the next best action…",
     ];
   }
-  if (pathname.startsWith("/dashboard/analytics")) {
+  if (pathname.startsWith("/dashboard/tracker")) {
     return [
       "Aggregating outreach → reply → close…",
       "Computing conversion by cohort…",

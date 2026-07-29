@@ -10,7 +10,6 @@ import {
   Check,
   MessageSquare,
   Copy,
-  
   Loader2,
   Send,
   Wand2,
@@ -144,7 +143,11 @@ export function InlineToolCard({ type, output, messageId, onQuickPrompt, onNavig
                   size="sm"
                   variant="ghost"
                   className="h-6 rounded-full px-2.5 text-[10.5px]"
-                  onClick={() => onQuickPrompt(`Tell me more about ${b.brand_name} — why it fits and what to lead with`)}
+                  onClick={() =>
+                    onQuickPrompt(
+                      `Tell me more about ${b.brand_name} — why it fits and what to lead with`,
+                    )
+                  }
                 >
                   Why it fits
                 </Button>
@@ -235,7 +238,15 @@ export function InlineToolCard({ type, output, messageId, onQuickPrompt, onNavig
                     )
                   }
                 >
-                  {isReply ? (<><Reply className="mr-1 h-3 w-3" /> Draft reply</>) : (<><ArrowRight className="mr-1 h-3 w-3" /> Handle it</>)}
+                  {isReply ? (
+                    <>
+                      <Reply className="mr-1 h-3 w-3" /> Draft reply
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="mr-1 h-3 w-3" /> Handle it
+                    </>
+                  )}
                 </Button>
                 <Button
                   size="sm"
@@ -258,7 +269,11 @@ export function InlineToolCard({ type, output, messageId, onQuickPrompt, onNavig
     const items: Array<{ label: string; value: string; tone?: "good" | "warn" }> = [
       { label: "Earned this month", value: `$${e.monthEarned.toLocaleString()}`, tone: "good" },
       { label: "Year to date", value: `$${e.yearEarned.toLocaleString()}` },
-      { label: "Awaiting release", value: `$${e.pendingRelease.toLocaleString()}`, tone: "warn" },
+      {
+        label: "Awaiting external update",
+        value: `$${e.pendingRelease.toLocaleString()}`,
+        tone: "warn",
+      },
       { label: "In flight", value: `$${e.inFlight.toLocaleString()}` },
     ];
     return (
@@ -270,7 +285,9 @@ export function InlineToolCard({ type, output, messageId, onQuickPrompt, onNavig
         <div className="grid grid-cols-2 gap-2 text-xs">
           {items.map((i) => (
             <div key={i.label} className="rounded-lg bg-foreground/[0.03] px-2 py-1.5">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{i.label}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {i.label}
+              </p>
               <p
                 className={cn(
                   "mt-0.5 text-sm font-semibold",
@@ -349,7 +366,9 @@ export function InlineToolCard({ type, output, messageId, onQuickPrompt, onNavig
           <Button
             size="sm"
             className="h-6 rounded-full px-2.5 text-[10.5px]"
-            onClick={() => onQuickPrompt(`Attach those to the ${brandName} draft and show me the updated email`)}
+            onClick={() =>
+              onQuickPrompt(`Attach those to the ${brandName} draft and show me the updated email`)
+            }
           >
             <Check className="mr-1 h-3 w-3" /> Attach & show
           </Button>
@@ -375,7 +394,14 @@ export function InlineToolCard({ type, output, messageId, onQuickPrompt, onNavig
       );
     }
     const fmt = (iso?: string | null) =>
-      iso ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null;
+      iso
+        ? new Date(iso).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        : null;
     return (
       <div className="mt-2 overflow-hidden rounded-xl border border-border/60 bg-card/80 text-xs">
         <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-foreground/[0.03] px-3 py-1.5">
@@ -451,7 +477,8 @@ function InlineDraftCard({
   const brandName = (data.brandName as string | undefined) ?? "Brand";
   const outreachId = data.outreachId as string | undefined;
   const approvalId = (data.approvalId as string | null | undefined) ?? null;
-  const initialSubject = (data.subject as string | undefined) ?? (isReply ? `Re: ${brandName}` : "");
+  const initialSubject =
+    (data.subject as string | undefined) ?? (isReply ? `Re: ${brandName}` : "");
   const initialBody = (data.body as string | undefined) ?? "";
   const initialTo = (data.toEmail as string | undefined) ?? "";
 
@@ -461,7 +488,7 @@ function InlineDraftCard({
   const [subject, setSubject] = useState(initialSubject);
   const [body, setBody] = useState(initialBody);
   const [to, setTo] = useState(initialTo);
-  
+
   const [busy, setBusy] = useState<"send" | "mark" | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -503,7 +530,6 @@ function InlineDraftCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subject, body, to, outreachId, isDoneForSave]);
 
-
   const handleCopy = async () => {
     const text = subject ? `Subject: ${subject}\n\n${body}` : body;
     try {
@@ -538,14 +564,16 @@ function InlineDraftCard({
           mode: mode === "send" ? "send" : "mark_sent",
           autonomyLevel:
             typeof window !== "undefined"
-              ? Math.max(0, Math.min(3, Number(localStorage.getItem("matchai:autonomy") ?? "2") || 0))
+              ? Math.max(
+                  0,
+                  Math.min(3, Number(localStorage.getItem("matchai:autonomy") ?? "2") || 0),
+                )
               : undefined,
         },
       });
       if (res.ok) {
         setStatus(mode === "send" ? "sent" : "marked");
         setSentAt(res.sentAt ?? new Date().toISOString());
-        
       } else {
         setError(res.error ?? "Action failed.");
       }
@@ -574,7 +602,9 @@ function InlineDraftCard({
           <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="h-3 w-3" />
             {status === "sent" ? "Sent" : "Logged"}
-            {sentAt ? ` · ${new Date(sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+            {sentAt
+              ? ` · ${new Date(sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+              : ""}
           </span>
         ) : outreachId ? (
           <span
@@ -591,7 +621,8 @@ function InlineDraftCard({
             ) : saveState === "saved" && savedAt ? (
               <>
                 <Check className="h-3 w-3" />
-                Saved · {new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                Saved ·{" "}
+                {new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </>
             ) : (
               <span className="text-muted-foreground">Draft</span>

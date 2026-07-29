@@ -177,7 +177,7 @@ export const getJourneyStatus = createServerFn({ method: "POST" })
         label: "First deal paid",
         done: closed > 0,
         count: closed,
-        hint: closed > 0 ? `${closed} paid` : "protected payment on close",
+        hint: closed > 0 ? `${closed} paid` : "external payment on close",
       },
     ];
 
@@ -231,7 +231,7 @@ export const getJourneyStatus = createServerFn({ method: "POST" })
         title: `Deal paid: ${d.brand_name}`,
         detail: `$${Number(d.deal_value ?? 0).toLocaleString()} released`,
         at: (d.updated_at ?? new Date().toISOString()) as string,
-        route: "/dashboard/wallet",
+        route: "/dashboard/tracker",
       });
     }
     overnight.sort((a, b) => (a.at < b.at ? 1 : -1));

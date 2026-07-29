@@ -10,7 +10,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  *  - Always returns exactly 5 actions (padded from a growth bucket).
  *  - Max 3 actions of the same `kind` so one bucket can't dominate.
  *  - Ranked by where the creator is in the journey toward a paid deal:
- *      verify → brand kit → rates → payout → find brands → approve →
+ *      verify → brand kit → rates → payment clarity → find brands → approve →
  *      send → follow-up → reply → propose → contract → deliverable → paid → growth.
  */
 
@@ -48,70 +48,65 @@ export const getTopActions = createServerFn({ method: "POST" })
     const userId = context.userId;
     const page = data.currentPage;
 
-    const [
-      profile,
-      pricing,
-      payment,
-      brands,
-      approvals,
-      outreach,
-      deals,
-      contracts,
-      deliverables,
-    ] = await Promise.all([
-      supabaseAdmin
-        .from("creator_profiles")
-        .select("verified, verification_status, niche, primary_platform, full_name")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("pricing_rules")
-        .select("configured, rate_floor, target_rate")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("payment_accounts")
-        .select("stripe_connected, payout_method, setup_skipped")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("brand_matches")
-        .select("id, brand_name, fit_score, status")
-        .eq("user_id", userId)
-        .order("fit_score", { ascending: false })
-        .limit(20),
-      supabaseAdmin
-        .from("approvals")
-        .select("id, brand_name, approval_type, amount, status, created_at")
-        .eq("user_id", userId)
-        .eq("status", "pending")
-        .order("created_at", { ascending: true })
-        .limit(10),
-      supabaseAdmin
-        .from("outreach_emails")
-        .select("id, to_email, sent, replied, bounced, cancelled, scheduled_for, sent_at, brand_match_id")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabaseAdmin
-        .from("deals")
-        .select("id, brand_name, status, escrow_status, invoice_status, contract_status, deal_value")
-        .eq("user_id", userId)
-        .neq("status", "completed")
-        .limit(20),
-      supabaseAdmin
-        .from("contracts")
-        .select("id, brand_name, status")
-        .eq("user_id", userId)
-        .in("status", ["draft", "sent"])
-        .limit(10),
-      supabaseAdmin
-        .from("deliverables")
-        .select("id, brand_name, status, post_date")
-        .eq("user_id", userId)
-        .in("status", ["pending", "revision"])
-        .limit(10),
-    ]);
+    const [profile, pricing, payment, brands, approvals, outreach, deals, contracts, deliverables] =
+      await Promise.all([
+        supabaseAdmin
+          .from("creator_profiles")
+          .select("verified, verification_status, niche, primary_platform, full_name")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("pricing_rules")
+          .select("configured, rate_floor, target_rate")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("payment_accounts")
+          .select("stripe_connected, payout_method, setup_skipped")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("brand_matches")
+          .select("id, brand_name, fit_score, status")
+          .eq("user_id", userId)
+          .order("fit_score", { ascending: false })
+          .limit(20),
+        supabaseAdmin
+          .from("approvals")
+          .select("id, brand_name, approval_type, amount, status, created_at")
+          .eq("user_id", userId)
+          .eq("status", "pending")
+          .order("created_at", { ascending: true })
+          .limit(10),
+        supabaseAdmin
+          .from("outreach_emails")
+          .select(
+            "id, to_email, sent, replied, bounced, cancelled, scheduled_for, sent_at, brand_match_id",
+          )
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabaseAdmin
+          .from("deals")
+          .select(
+            "id, brand_name, status, escrow_status, invoice_status, contract_status, deal_value",
+          )
+          .eq("user_id", userId)
+          .neq("status", "completed")
+          .limit(20),
+        supabaseAdmin
+          .from("contracts")
+          .select("id, brand_name, status")
+          .eq("user_id", userId)
+          .in("status", ["draft", "sent"])
+          .limit(10),
+        supabaseAdmin
+          .from("deliverables")
+          .select("id, brand_name, status, post_date")
+          .eq("user_id", userId)
+          .in("status", ["pending", "revision"])
+          .limit(10),
+      ]);
 
     const isVerified = !!profile.data?.verified;
     const hasNiche = !!profile.data?.niche;
@@ -176,9 +171,9 @@ export const getTopActions = createServerFn({ method: "POST" })
       c.push({
         kind: "payout",
         priority: 88,
-        label: "Hook up your payouts",
+        label: "Review payment clarity",
         prompt:
-          "Walk me through connecting Stripe so protected payments can land in my bank. What do I need to have ready?",
+          "Walk me through the external payment story so I can explain it clearly to creators and brands. What should we show in the product?",
       });
     }
 
@@ -198,16 +193,16 @@ export const getTopActions = createServerFn({ method: "POST" })
       c.push({
         kind: "contract",
         priority: 84 - i,
-        label: `Get paid — release ${d.brand_name ?? "funds"}`,
-        prompt: `Release the funded payout from ${d.brand_name ?? "this brand"}. Confirm deliverables are approved, then trigger the release and show me the receipt.`,
+        label: `Mark ${d.brand_name ?? "deal"} externally paid`,
+        prompt: `Confirm the external payment status for ${d.brand_name ?? "this brand"}. Show the creator-reported update and keep it outside MatchAI.`,
       });
     });
     dealsAwaitingEscrow.slice(0, 2).forEach((d, i) => {
       c.push({
         kind: "contract",
         priority: 78 - i,
-        label: `Ask ${d.brand_name ?? "them"} to fund the deal`,
-        prompt: `Send ${d.brand_name ?? "the brand"} the protected-payment funding link and follow up so we don't do work unpaid.`,
+        label: `Clarify ${d.brand_name ?? "their"} payment terms`,
+        prompt: `Draft a short note to ${d.brand_name ?? "the brand"} that confirms the external payment method, due date, and payment terms so nothing is ambiguous.`,
       });
     });
     openContracts.slice(0, 2).forEach((k, i) => {
@@ -255,7 +250,10 @@ export const getTopActions = createServerFn({ method: "POST" })
         prompt: `Draft outreach to ${topBrand.brand_name} now — short, personal, ready to send. Show the draft for my approval.`,
       });
       if (newMatches.length >= 3) {
-        const top3 = newMatches.slice(0, 3).map((b) => b.brand_name).join(", ");
+        const top3 = newMatches
+          .slice(0, 3)
+          .map((b) => b.brand_name)
+          .join(", ");
         c.push({
           kind: "outreach",
           priority: 64,
@@ -280,43 +278,59 @@ export const getTopActions = createServerFn({ method: "POST" })
       kind: "growth",
       priority: 30,
       label: "Find more brands like you",
-      prompt: "Find 10 more brand matches that fit my niche and rate floor. Add the top ones and tell me which to pitch first and why.",
+      prompt:
+        "Find 10 more brand matches that fit my niche and rate floor. Add the top ones and tell me which to pitch first and why.",
     });
     c.push({
       kind: "growth",
       priority: 28,
       label: "Show me what's working",
-      prompt: "Plain-English breakdown: which niches, subject lines, and price points are converting best for me, and what should I change this week?",
+      prompt:
+        "Plain-English breakdown: which niches, subject lines, and price points are converting best for me, and what should I change this week?",
     });
     c.push({
       kind: "growth",
       priority: 26,
       label: "Time to raise your rates?",
-      prompt: "Should I raise my rates 10%? Look at my reply and close rates, then recommend a specific new rate floor and target with a one-line justification.",
+      prompt:
+        "Should I raise my rates 10%? Look at my reply and close rates, then recommend a specific new rate floor and target with a one-line justification.",
     });
     c.push({
       kind: "growth",
       priority: 24,
       label: "Just run it all for me",
-      prompt: "Take the wheel — find best-fit brands, draft outreach in my voice, queue follow-ups, and set up protected payments. Narrate each step here and stop for approval before anything sends or a payout releases.",
+      prompt:
+        "Take the wheel — find best-fit brands, draft outreach in my voice, queue follow-ups, and keep the payment story external. Narrate each step here and stop for approval before anything sends or a material status changes.",
     });
     c.push({
       kind: "growth",
       priority: 22,
       label: "What can you actually do?",
-      prompt: "In 4 short sentences, tell me exactly what you can do for me end-to-end — with real examples from my account.",
+      prompt:
+        "In 4 short sentences, tell me exactly what you can do for me end-to-end — with real examples from my account.",
     });
-
 
     // ---- Page nudges: small boost so the current-tab action floats ----
     const bump = (kind: ActionKind, by = 6) => {
       for (const x of c) if (x.kind === kind) x.priority += by;
     };
-    if (page.includes("/dashboard/brands")) { bump("outreach"); bump("brands"); }
-    else if (page.includes("/dashboard/approvals")) { bump("reply"); bump("approve"); }
-    else if (page.includes("/dashboard/deals")) { bump("contract"); bump("deliverable"); }
-    else if (page.includes("/dashboard/campaigns")) { bump("outreach"); bump("approve"); }
-    else if (page.includes("/dashboard/settings")) { bump("payout"); bump("rates"); bump("brandkit"); }
+    if (page.includes("/dashboard/brands")) {
+      bump("outreach");
+      bump("brands");
+    } else if (page.includes("/dashboard/approvals")) {
+      bump("reply");
+      bump("approve");
+    } else if (page.includes("/dashboard/deals")) {
+      bump("contract");
+      bump("deliverable");
+    } else if (page.includes("/dashboard/campaigns")) {
+      bump("outreach");
+      bump("approve");
+    } else if (page.includes("/dashboard/settings")) {
+      bump("payout");
+      bump("rates");
+      bump("brandkit");
+    }
 
     // Sort by priority desc, then apply max-per-kind cap, then take 5.
     c.sort((a, b) => b.priority - a.priority);

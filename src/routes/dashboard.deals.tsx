@@ -385,7 +385,7 @@ function DealDetailPanel({
           <p className="text-xs leading-relaxed text-muted-foreground">
             The brand pays you outside MatchAI. Any due or paid status in this pipeline is reported
             by you for organization only; MatchAI does not hold funds, provide escrow, or process a
-            payout. If a selected deal includes a MatchAI commission, that is handled as a separate
+            payment. If a selected deal includes a MatchAI commission, that is handled as a separate
             agreement and tracked outside the payment flow.
           </p>
           <p className="rounded-xl bg-foreground/[0.04] p-3 text-xs text-muted-foreground">

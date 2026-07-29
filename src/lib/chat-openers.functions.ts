@@ -164,8 +164,8 @@ export const getChatOpener = createServerFn({ method: "POST" })
         });
         break;
       }
-      case page === "/dashboard/analytics":
-        message = `Looking at your numbers. Want me to break down what's working and where you're leaking deals?`;
+      case page === "/dashboard/tracker":
+        message = `Looking at your tracker. Want me to break down what's active, what's stuck, and what needs action today?`;
         suggestions.push({
           label: "This week",
           prompt: `Plain-English summary of this week's outreach, replies, and closes.`,
@@ -177,6 +177,21 @@ export const getChatOpener = createServerFn({ method: "POST" })
         suggestions.push({
           label: "Grow my income",
           prompt: `Recommend 3 concrete moves to grow my income next month based on my real data.`,
+        });
+        break;
+      case page === "/dashboard/tools":
+        message = `On Tools. Want me to check an offer, price a package, or draft a counteroffer?`;
+        suggestions.push({
+          label: "Check this offer",
+          prompt: `Check a brand offer for usage rights, payment terms, and other red flags.`,
+        });
+        suggestions.push({
+          label: "What should I charge?",
+          prompt: `Help me price a real deal using my creator setup.`,
+        });
+        suggestions.push({
+          label: "Draft a counter",
+          prompt: `Draft a counteroffer for the last offer I pasted in.`,
         });
         break;
       case page === "/dashboard/campaigns":

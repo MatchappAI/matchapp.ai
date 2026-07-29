@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Send, Check, Pencil, CornerDownLeft, ShieldCheck, Clock, Wallet } from "lucide-react";
+import { Send, Check, Pencil, CornerDownLeft, ShieldCheck, Clock } from "lucide-react";
 import { SectionEyebrow } from "./SectionEyebrow";
 import { Reveal } from "./Reveal";
 import { MatchAILogo } from "@/components/brand/MatchAILogo";
@@ -101,13 +101,13 @@ export function ProductShowcase() {
         <h2 className="mt-6 text-3xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
           From brand match to{" "}
           <span className="bg-gradient-to-br from-[#1E1B4B] via-[#4F46E5] to-[#8B5CF6] bg-clip-text text-transparent">
-            money in your account.
+            paid deal, tracked externally.
           </span>
         </h2>
         <p className="mt-5 text-[15px] leading-[1.7] text-muted-foreground">
-          Your agent finds the brand, sends the pitch from our verified domain, handles replies in
-          one thread per brand, negotiates the rate, tracks payment through Stripe, and pays out to
-          your bank. You just tap Approve.
+          Your agent finds the brand, writes the pitch in your voice, keeps every thread in one
+          place, negotiates the rate, checks terms, and tracks creator-reported payment status
+          outside MatchAI. You just tap Approve.
         </p>
       </Reveal>
 
@@ -301,7 +301,7 @@ export function ProductShowcase() {
               <div className="rounded-2xl rounded-tl-sm border border-emerald-400/20 bg-gradient-to-br from-emerald-500/[0.08] via-emerald-500/[0.02] to-transparent p-3.5">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-300/90">
                   <ShieldCheck className="h-3 w-3" />
-                  Deal closed · payment tracked
+                  Deal closed · payment tracked externally
                 </div>
                 <div className="mt-2.5 grid grid-cols-3 gap-1.5">
                   <StatPill label="Deal value" value="$700" tone="emerald" />
@@ -309,8 +309,8 @@ export function ProductShowcase() {
                   <StatPill label="External status" value="Creator-reported" />
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
-                  <Wallet className="h-3 w-3 text-emerald-300" />
-                  Creator-brand payment is tracked externally and recorded here for context.
+                  <ShieldCheck className="h-3 w-3 text-emerald-300" />
+                  Creator-brand payment is handled outside MatchAI and recorded here for context.
                 </div>
               </div>
             </AgentBubble>

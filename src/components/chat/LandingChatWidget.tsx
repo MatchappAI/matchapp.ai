@@ -58,7 +58,6 @@ function loadPersisted(): Persisted {
   }
 }
 
-
 type PageGuide = { label: string; context: string; nudge: string };
 
 function describePage(pathname: string): PageGuide {
@@ -66,38 +65,82 @@ function describePage(pathname: string): PageGuide {
   if (p === "/" || p.startsWith("/#")) {
     return {
       label: "Landing",
-      context: "User is on the public landing page. They haven't signed up yet. Help them understand if MatchAI fits their niche and nudge a free start.",
+      context:
+        "User is on the public landing page. They haven't signed up yet. Help them understand if MatchAI fits their niche and nudge a free start.",
       nudge: "Curious if MatchAI fits your niche? Ask me anything — takes 30 seconds.",
     };
   }
   if (p.startsWith("/auth")) {
     return {
       label: "Sign in",
-      context: "User is on the auth page. Reassure them: free to start, no card. Answer quick questions blocking sign-up.",
+      context:
+        "User is on the auth page. Reassure them: free to start, no card. Answer quick questions blocking sign-up.",
       nudge: "Stuck on sign-in? I can walk you through it.",
     };
   }
   if (p.startsWith("/onboarding")) {
     return {
       label: "Onboarding",
-      context: "User is mid-onboarding. Guide them step by step: connect socials, set niche, set goals. Be encouraging and concrete.",
+      context:
+        "User is mid-onboarding. Guide them step by step: connect socials, set niche, set goals. Be encouraging and concrete.",
       nudge: "Want me to walk you through this step?",
     };
   }
   if (p.startsWith("/dashboard/approvals")) {
-    return { label: "Approvals", context: "User is reviewing AI-drafted outreach awaiting their approval. Explain how approvals work, when to edit, when to send.", nudge: "Need a hand reviewing a draft?" };
+    return {
+      label: "Approvals",
+      context:
+        "User is reviewing AI-drafted outreach awaiting their approval. Explain how approvals work, when to edit, when to send.",
+      nudge: "Need a hand reviewing a draft?",
+    };
   }
   if (p.startsWith("/dashboard/deals")) {
-    return { label: "Deals", context: "User is on the deals tracker. Help them read deal stages, replies, and what to do next.", nudge: "Want me to read a brand reply for you?" };
+    return {
+      label: "Deals",
+      context:
+        "User is on the deals tracker. Help them read deal stages, replies, and what to do next.",
+      nudge: "Want me to read a brand reply for you?",
+    };
+  }
+  if (p.startsWith("/dashboard/tracker")) {
+    return {
+      label: "Tracker",
+      context:
+        "User is on the tracker. Help them read thread status, follow-up timing, next actions, and how to move a deal forward.",
+      nudge: "Want me to flag what needs action?",
+    };
+  }
+  if (p.startsWith("/dashboard/tools")) {
+    return {
+      label: "Tools",
+      context:
+        "User is on the tools page. Help them check offers, estimate rates, draft counteroffers, and write replies.",
+      nudge: "Want me to check an offer?",
+    };
   }
   if (p.startsWith("/dashboard/brands")) {
-    return { label: "Brand matches", context: "User is browsing brand matches. Explain fit scores, why brands match, and what to do next.", nudge: "Want me to explain a match?" };
+    return {
+      label: "Brand matches",
+      context:
+        "User is browsing brand matches. Explain fit scores, why brands match, and what to do next.",
+      nudge: "Want me to explain a match?",
+    };
   }
   if (p.startsWith("/dashboard/settings")) {
-    return { label: "Settings", context: "User is in settings. Help them connect socials, set preferences, manage integrations.", nudge: "Need help configuring something?" };
+    return {
+      label: "Settings",
+      context:
+        "User is in settings. Help them connect socials, set preferences, manage integrations.",
+      nudge: "Need help configuring something?",
+    };
   }
   if (p.startsWith("/dashboard")) {
-    return { label: "Dashboard", context: "User is signed in and on the dashboard. Be a hands-on operator: tell them what to do next.", nudge: "Want me to suggest your next move?" };
+    return {
+      label: "Dashboard",
+      context:
+        "User is signed in and on the dashboard. Be a hands-on operator: tell them what to do next.",
+      nudge: "Want me to suggest your next move?",
+    };
   }
   return {
     label: "MatchAI",
@@ -105,7 +148,6 @@ function describePage(pathname: string): PageGuide {
     nudge: "Need a hand? I'm here.",
   };
 }
-
 
 export function LandingChatWidget() {
   const [mounted, setMounted] = useState(false);
@@ -123,7 +165,6 @@ export function LandingChatWidget() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
 
   const { messages, sendMessage, status, setMessages } = useChat({
     id: initial.current.threadId,
@@ -165,7 +206,11 @@ export function LandingChatWidget() {
     if (isLanding) {
       const t = setTimeout(() => {
         setOpen(true);
-        try { sessionStorage.setItem(AUTO_OPEN_SESSION_KEY, "1"); } catch { /* ignore */ }
+        try {
+          sessionStorage.setItem(AUTO_OPEN_SESSION_KEY, "1");
+        } catch {
+          /* ignore */
+        }
       }, 600);
       return () => clearTimeout(t);
     }
@@ -220,8 +265,6 @@ export function LandingChatWidget() {
     return () => clearTimeout(t);
   }, [messages, open, status, setMessages]);
 
-
-
   function dismissNudge() {
     setShowNudge(false);
     try {
@@ -235,7 +278,11 @@ export function LandingChatWidget() {
     setOpen(true);
     dismissNudge();
     // User re-opened intentionally — allow future idle nudges again.
-    try { localStorage.removeItem(CLOSED_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(CLOSED_KEY);
+    } catch {
+      /* ignore */
+    }
     idleNudgeCountRef.current = 0;
   }
 
@@ -249,7 +296,6 @@ export function LandingChatWidget() {
     }
   }
 
-
   // Page-aware context — route the assistant to act as a guide on the current page/section
   const pageContext = useMemo(() => describePage(pathname), [pathname]);
 
@@ -257,10 +303,7 @@ export function LandingChatWidget() {
     const trimmed = text.trim();
     if (!trimmed || status === "submitted" || status === "streaming") return;
     setInput("");
-    await sendMessage(
-      { text: trimmed },
-      { body: { pathname, pageContext: pageContext.context } },
-    );
+    await sendMessage({ text: trimmed }, { body: { pathname, pageContext: pageContext.context } });
   }
 
   if (!mounted) return null;
@@ -282,20 +325,19 @@ export function LandingChatWidget() {
             >
               <X className="h-3 w-3" />
             </button>
-            <button
-              type="button"
-              onClick={handleOpen}
-              className="block w-full text-left"
-            >
+            <button type="button" onClick={handleOpen} className="block w-full text-left">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
                 <span className="grid h-4 w-4 place-items-center overflow-hidden rounded-[5px] bg-transparent">
-                  <MatchAILogo variant="mark" size="sm" className="h-2.5 w-2.5" ariaLabel="MatchAI" />
+                  <MatchAILogo
+                    variant="mark"
+                    size="sm"
+                    className="h-2.5 w-2.5"
+                    ariaLabel="MatchAI"
+                  />
                 </span>
                 MatchAI · live
               </div>
-              <p className="mt-1.5 text-[12.5px] leading-snug text-foreground">
-                {nudgeCopy}
-              </p>
+              <p className="mt-1.5 text-[12.5px] leading-snug text-foreground">{nudgeCopy}</p>
             </button>
           </div>
           <div className="ml-auto mr-6 h-2 w-2 rotate-45 -translate-y-1 rounded-sm border-b border-r border-foreground/10 bg-background" />
@@ -310,14 +352,18 @@ export function LandingChatWidget() {
           aria-label="Chat with MatchAI"
           className="fixed bottom-5 right-4 z-[60] grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-background text-primary-foreground shadow-[0_18px_40px_-10px_rgba(99,102,241,0.55)] ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-12px_rgba(99,102,241,0.7)] sm:right-6"
         >
-          <img src={mark} alt="MatchAI" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={mark}
+            alt="MatchAI"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           <span className="absolute -right-0.5 -top-0.5 grid h-3.5 w-3.5 place-items-center">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-background" />
           </span>
         </button>
       )}
-
 
       {/* Chat panel */}
       {open && (
@@ -326,11 +372,11 @@ export function LandingChatWidget() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-foreground/[0.06] bg-gradient-to-b from-secondary/60 to-transparent px-4 py-3">
               <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-transparent">
-                <MatchAILogo variant="mark" size="sm" className="h-5 w-5" ariaLabel="MatchAI" />
-              </div>
-              <div>
-                <div className="text-[13px] font-semibold text-foreground">MatchAI</div>
+                <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-transparent">
+                  <MatchAILogo variant="mark" size="sm" className="h-5 w-5" ariaLabel="MatchAI" />
+                </div>
+                <div>
+                  <div className="text-[13px] font-semibold text-foreground">MatchAI</div>
                   <div className="flex items-center gap-1.5 text-[10.5px] text-emerald-600">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                     online · usually replies instantly
@@ -349,9 +395,12 @@ export function LandingChatWidget() {
                   type="button"
                   onClick={() => {
                     setOpen(false);
-                    try { localStorage.setItem(CLOSED_KEY, "1"); } catch { /* ignore */ }
+                    try {
+                      localStorage.setItem(CLOSED_KEY, "1");
+                    } catch {
+                      /* ignore */
+                    }
                   }}
-
                   aria-label="Close chat"
                   className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
                 >
@@ -361,14 +410,9 @@ export function LandingChatWidget() {
             </div>
 
             {/* Messages */}
-            <div
-              ref={scrollRef}
-              className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
-            >
+            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
               {messages.map((m) => {
-                const text = m.parts
-                  .map((p) => (p.type === "text" ? p.text : ""))
-                  .join("");
+                const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
                 const isUser = m.role === "user";
                 return (
                   <div
@@ -377,7 +421,12 @@ export function LandingChatWidget() {
                   >
                     {!isUser && (
                       <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-transparent">
-                        <MatchAILogo variant="mark" size="sm" className="h-4 w-4" ariaLabel="MatchAI" />
+                        <MatchAILogo
+                          variant="mark"
+                          size="sm"
+                          className="h-4 w-4"
+                          ariaLabel="MatchAI"
+                        />
                       </div>
                     )}
                     <div
