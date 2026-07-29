@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -262,12 +262,22 @@ function BrandsPage() {
 
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 max-[680px]:grid-cols-1">
         <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Brand Discovery
+          </p>
           <h1 className="break-words text-3xl font-semibold tracking-tight">Brands</h1>
           <p className="mt-1 break-words text-sm text-muted-foreground">
-            Add brands and contacts yourself or import a CSV. No lead provider is configured.
+            Add brands and contacts yourself or import a CSV. Discovery stays manual-first and no
+            paid provider is required.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild className="rounded-xl">
+            <Link to="/dashboard/discovery">Discovery hub</Link>
+          </Button>
+          <Button variant="outline" asChild className="rounded-xl">
+            <Link to="/dashboard/discovery/creator">Creator view</Link>
+          </Button>
           <Button variant="outline" onClick={() => setLibraryDialog("csv")} className="rounded-xl">
             <Upload className="mr-2 h-4 w-4" /> Import CSV
           </Button>
@@ -485,6 +495,8 @@ type CsvRow = {
   contactEmail?: string;
   notes: string;
   source: "csv_import";
+  sourceLabel?: "manual" | "csv";
+  confidence?: "low" | "medium" | "high";
 };
 
 function parseCsv(text: string): string[][] {
@@ -782,6 +794,8 @@ function BrandLibraryDialog({
                         <th className="px-3 py-2">Row</th>
                         <th className="px-3 py-2">Brand</th>
                         <th className="px-3 py-2">Contact</th>
+                        <th className="px-3 py-2">Source</th>
+                        <th className="px-3 py-2">Confidence</th>
                         <th className="px-3 py-2">Result</th>
                       </tr>
                     </thead>
@@ -791,6 +805,25 @@ function BrandLibraryDialog({
                           <td className="px-3 py-2">{row.rowNumber}</td>
                           <td className="px-3 py-2">{row.brandName || "—"}</td>
                           <td className="px-3 py-2">{row.contactEmail || "—"}</td>
+                          <td className="px-3 py-2">
+                            <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              {row.sourceLabel ?? row.source}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                                row.confidence === "high"
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : row.confidence === "medium"
+                                    ? "bg-sky-500/15 text-sky-300"
+                                    : "bg-amber-500/15 text-amber-300",
+                              )}
+                            >
+                              {row.confidence ?? "medium"}
+                            </span>
+                          </td>
                           <td
                             className={cn(
                               "px-3 py-2",

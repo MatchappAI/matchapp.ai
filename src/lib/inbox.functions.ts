@@ -25,6 +25,9 @@ export type InboxThreadSummary = {
   is_inbound: boolean;
   /** True when this inbound thread is beyond the free-plan cap and locked. */
   locked: boolean;
+  source: string;
+  opened: boolean;
+  replied: boolean;
 };
 
 export type InboxEvent =
@@ -108,7 +111,8 @@ function stageFromDeal(d: {
   if (d.escrow_status === "funded") return { key: "funded", label: "Funds secured" };
   if (d.escrow_status === "requested") return { key: "escrow_pending", label: "Awaiting funds" };
   if (d.contract_status === "sent") return { key: "contract_sent", label: "Contract sent" };
-  if (d.contract_status === "drafted") return { key: "contract_drafted", label: "Contract drafted" };
+  if (d.contract_status === "drafted")
+    return { key: "contract_drafted", label: "Contract drafted" };
   return { key: "negotiating", label: "Negotiating" };
 }
 
@@ -170,6 +174,16 @@ export const listInboxThreads = createServerFn({ method: "POST" })
         invoice_status: null,
         is_inbound: isInbound,
         locked: false,
+        source:
+          m.data_source === "real_ai_match"
+            ? "real"
+            : m.data_source === "csv_import"
+              ? "imported"
+              : m.data_source === "manual"
+                ? "manual"
+                : (m.data_source ?? "unknown"),
+        opened: false,
+        replied: false,
       });
     }
 
@@ -179,6 +193,8 @@ export const listInboxThreads = createServerFn({ method: "POST" })
       if (!t) continue;
       t.event_count += 1;
       if (o.sent && o.sent_at) {
+        t.opened = t.opened || Boolean(o.opened);
+        t.replied = t.replied || Boolean(o.replied);
         if (o.sent_at > t.last_activity_at) {
           t.last_activity_at = o.sent_at;
           t.last_activity_kind = "outreach_sent";

@@ -9,7 +9,7 @@ export function HeroCallout() {
           <p className="text-[13.5px] leading-relaxed text-muted-foreground">
             MatchAI finds brands, drafts personalized pitches, keeps your internal creator inbox
             organized, and follows up. MatchAI subscriptions cover the product; creator-brand
-            payment is handled externally and never through a MatchAI wallet.
+            payment is agreed and handled directly with the brand.
           </p>
         </div>
       </div>

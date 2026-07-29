@@ -154,6 +154,7 @@ function InboxPage() {
   });
   const identity = identityQuery.data?.identity;
   const providerConfigured = identityQuery.data?.transport.configured ?? false;
+  const inboundWebhookConfigured = identityQuery.data?.transport.inboundWebhookConfigured ?? false;
   const accountEmail = identity?.address ?? "";
 
   const threadsQuery = useQuery({
@@ -434,6 +435,10 @@ function InboxPage() {
           <p className="mt-0.5 text-xs text-muted-foreground">
             Your internal MatchAI address and drafts work now. Sending and external synchronization
             remain unavailable until an email API provider is selected.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Inbound webhook: {inboundWebhookConfigured ? "configured" : "not configured"}. Replies
+            cannot sync from an external mailbox in the MVP.
           </p>
         </div>
       )}

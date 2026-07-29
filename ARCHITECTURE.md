@@ -2,18 +2,18 @@
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | TanStack Start v1 (file-based router, server functions, SSR on Cloudflare Workers) |
-| UI | React 19 + Tailwind CSS v4 (`src/styles.css`) + Radix UI + shadcn-derived components in `src/components/ui/` |
-| State/data | TanStack Query, TanStack Router loaders, `createServerFn` for RPC |
-| Backend | Supabase (Postgres, Auth, Storage, RLS) |
-| AI | `ai` SDK + `@ai-sdk/openai-compatible` pointed at Lovable AI Gateway (`google/gemini-2.5-flash` default) |
-| Payments | Stripe subscriptions + Stripe Connect payouts + Stripe-held escrow |
-| Email | Resend (transactional + digests) via `@lovable.dev/email-js`; Gmail API for creator outbound |
-| Scraping | Apify (`src/lib/apify.*`) |
-| MCP | `@lovable.dev/mcp-js` mounted at `/api/mcp/*` and `/.well-known/oauth-protected-resource` |
-| Runtime | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`) |
+| Layer      | Choice                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| Framework  | TanStack Start v1 (file-based router, server functions, SSR on Cloudflare Workers)                           |
+| UI         | React 19 + Tailwind CSS v4 (`src/styles.css`) + Radix UI + shadcn-derived components in `src/components/ui/` |
+| State/data | TanStack Query, TanStack Router loaders, `createServerFn` for RPC                                            |
+| Backend    | Supabase (Postgres, Auth, Storage, RLS)                                                                      |
+| AI         | `ai` SDK + `@ai-sdk/openai-compatible` pointed at Lovable AI Gateway (`google/gemini-2.5-flash` default)     |
+| Payments   | Stripe subscriptions and billing only                                                                        |
+| Email      | Internal MatchAI Inbox; Resend remains product/transactional email only                                      |
+| Scraping   | Apify (`src/lib/apify.*`)                                                                                    |
+| MCP        | `@lovable.dev/mcp-js` mounted at `/api/mcp/*` and `/.well-known/oauth-protected-resource`                    |
+| Runtime    | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`)                                                       |
 
 ## Directory map
 
@@ -24,9 +24,11 @@ src/
     index.tsx                   # Landing page
     dashboard.tsx               # Dashboard shell (50/50 chat + live stage)
     dashboard.inbox.tsx         # Unified brand inbox
-    dashboard.deals.tsx         # Money path: Fastest-to-Cash, Ways to Earn, pipeline
-    dashboard.wallet.tsx        # Balance, payouts, transfers
-    dashboard.settings.tsx      # Socials, payouts, billing, creator setup
+    dashboard.deals.tsx         # Opportunity feed + application pipeline
+    dashboard.tracker.tsx       # Derived application/follow-up tracker
+    dashboard.tools.tsx         # Deal Checker, Rate Helper, counter/reply helpers
+    dashboard.wallet.tsx        # Legacy compatibility route, not in creator nav
+    dashboard.settings.tsx      # Socials, billing, creator setup
     dashboard.brands.tsx        # (hidden from primary nav, still routable)
     dashboard.campaigns.tsx     # (hidden) brand-side briefs
     dashboard.analytics.tsx     # (hidden)
@@ -87,8 +89,8 @@ public/                         # Static assets
 2. Route loaders that need DB use `createServerFn` with the `requireSupabaseAuth` middleware; the client-side `attachSupabaseAuth` middleware in `src/start.ts` forwards the Supabase bearer token.
 3. Chat routes (`/api/chat/agent`, `/api/chat/landing`, `/api/chat/onboarding`) stream from the AI gateway using the `ai` SDK; tools are declared inline and stream `InlineToolCard` payloads back to the chat panel.
 4. Public endpoints under `/api/public/*` bypass auth by convention — every handler must verify a signature or shared secret (`STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`, Resend HMAC).
-5. Stripe webhooks land at `/api/public/stripe-webhook` and drive wallet ledger + escrow transitions.
-6. Cron-driven work (`daily-digest`, `poll-replies`, `process-follow-ups`, `auto-release-escrow`) is exposed as public HTTP routes and invoked on a schedule by Lovable today — replace with Cloudflare cron triggers (see `docs/DEPLOYMENT.md`).
+5. Stripe webhooks land at `/api/public/stripe-webhook` and drive MatchAI subscription state only.
+6. Creator outreach drafts and threads use the internal Inbox model. Sending and inbound synchronization remain explicitly unavailable until an approved transport and webhook are configured.
 
 ## Data model (summary)
 
@@ -97,8 +99,8 @@ public/                         # Static assets
 - `profiles`, `user_roles` (roles kept in a separate table for privilege safety)
 - `brand_matches`, `brand_contacts`, `outreach_campaigns`, `outreach_messages`
 - `inbox_threads`, `inbox_messages`, `negotiations`
-- `deals`, `deal_milestones`, `escrow_holds`
-- `wallet_ledger`, `payout_attempts`, `stripe_connect_accounts`
+- `deals`, `deal_milestones` (creator-reported external payment status only)
+- Legacy `escrow_holds`, `wallet_ledger`, `payout_attempts`, and Connect tables remain backend compatibility data and are not creator MVP surfaces.
 - `agent_audit_log`, `analytics_events`, `error_events`, `suppression_list`
 - `plans`, `subscriptions`, `usage_counters`
 - `creator_setup`, `brand_kits`, `portfolio_items`

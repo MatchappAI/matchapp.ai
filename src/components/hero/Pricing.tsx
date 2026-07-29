@@ -31,14 +31,14 @@ const plans: Plan[] = [
     slug: "free",
     price: "$0",
     priceNote: "/ mo",
-    pitches: "100 personalized pitches / mo",
-    matches: "Limited inbound threads (free)",
-    tagline: "Start with no upfront cost. Upgrade when you want more inbox capacity and support.",
+    pitches: "100 personalized drafts / mo",
+    matches: "Browse matched opportunities",
+    tagline: "Set up your profile, explore matches, and build your first outreach workflow.",
     features: [
       "AI brand matching + personalized outreach",
-      "Automated follow-ups",
-      "Basic deal tracking",
-      "Human support from the MatchAI team",
+      "Follow-up drafts",
+      "Application tracking",
+      "Deal Checker + estimated Rate Helper",
       "No credit card required",
     ],
     cta: "Start Free",
@@ -48,14 +48,14 @@ const plans: Plan[] = [
     slug: "starter",
     price: "$49",
     priceNote: "/ mo",
-    pitches: "100 personalized pitches / mo",
-    matches: "Unlimited inbound + outbound",
+    pitches: "100 personalized drafts / mo",
+    matches: "More inbox and outreach capacity",
     tagline: "For creators closing their first paid deals.",
     features: [
       "Everything in Free",
       "AI negotiation support",
       "Creator pricing guidance",
-      "Advanced deal pipeline",
+      "Advanced tracker views",
     ],
     cta: "Choose Starter",
   },
@@ -64,13 +64,13 @@ const plans: Plan[] = [
     slug: "growth",
     price: "$99",
     priceNote: "/ mo",
-    pitches: "250 personalized pitches / mo",
-    matches: "Unlimited inbound + priority matching",
+    pitches: "250 personalized drafts / mo",
+    matches: "Higher limits + priority matching",
     tagline: "For active creators scaling volume and support.",
     features: [
       "Everything in Starter",
-      "Advanced follow-up sequences",
-      "Campaign & earnings analytics",
+      "Advanced follow-up drafts",
+      "Expanded analytics",
       "Faster support",
     ],
     cta: "Choose Growth",
@@ -81,14 +81,14 @@ const plans: Plan[] = [
     slug: "pro",
     price: "$199",
     priceNote: "/ mo",
-    pitches: "500 personalized pitches / mo",
-    matches: "Unlimited inbound + highest-priority matching",
-    tagline: "For high-volume creators who keep 100% of every deal.",
+    pitches: "500 personalized drafts / mo",
+    matches: "Highest limits + priority matching",
+    tagline: "For creators who want the most automation and negotiation support.",
     features: [
       "Everything in Growth",
       "Advanced AI negotiation",
       "Dedicated success support",
-      "Priority campaign & deal assistance",
+      "Priority deal assistance",
     ],
     cta: "Choose Pro",
   },
@@ -188,10 +188,10 @@ export function Pricing() {
         ))}
       </StaggerGroup>
 
-      {/* Fair Deal Guarantee */}
+      {/* MVP pricing promises */}
       <div className="mt-12 rounded-3xl border border-foreground/[0.08] bg-foreground/[0.02] p-6 sm:p-8">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/70">
-          The Fair Deal Guarantee
+          Clear MVP pricing promises
         </p>
         <h3 className="mt-2 text-xl font-bold text-foreground sm:text-2xl">
           Four promises we make on every subscription.

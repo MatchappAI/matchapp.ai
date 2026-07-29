@@ -68,8 +68,7 @@ const modules: Module[] = [
     tone: "fuchsia",
     kicker: "Personalization",
     title: "How every pitch sounds like you — to them",
-    formula:
-      "draft = your voice profile × brand context × recent post hook × deliverable proposal",
+    formula: "draft = your voice profile × brand context × recent post hook × deliverable proposal",
     signals: [
       "Your last 30 posts (tone & cadence)",
       "Phrases you actually use",
@@ -108,8 +107,7 @@ const modules: Module[] = [
     tone: "emerald",
     kicker: "Negotiation",
     title: "How we price the deal so you stop undercharging",
-    formula:
-      "rate = (CPM × reach) × deliverable mix × usage × exclusivity × brand size × scarcity",
+    formula: "rate = (CPM × reach) × deliverable mix × usage × exclusivity × brand size × scarcity",
     signals: [
       "Your true reach per platform",
       "Engagement-adjusted CPM",
@@ -120,9 +118,12 @@ const modules: Module[] = [
       "Brand size & budget tier",
       "Current demand for your niche",
       "Floor price — never go below",
-      "Built-in secure payment + delivery milestones",
+      "Clear terms + delivery milestones",
     ],
-    outcome: { label: "Result", value: "Recommended rate + counter-offer script + secure payment on close" },
+    outcome: {
+      label: "Result",
+      value: "Estimated rate + counter-offer script + clear payment terms",
+    },
   },
 ];
 
@@ -143,7 +144,8 @@ export function Engine() {
           </span>
         </h2>
         <p className="mt-5 text-[15.5px] leading-[1.7] text-muted-foreground">
-          Every match, pitch, follow-up, and rate comes out of a real formula — built from dozens of signals about you, the brand, and what's been closing for creators like you.
+          Every match, pitch, follow-up, and rate comes out of a real formula — built from dozens of
+          signals about you, the brand, and what's been closing for creators like you.
         </p>
       </Reveal>
 
@@ -167,7 +169,9 @@ export function Engine() {
                   <m.icon className={`h-4 w-4 ${t.accent}`} strokeWidth={1.9} />
                 </span>
                 <div className="flex flex-col">
-                  <span className={`text-[10.5px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}>
+                  <span
+                    className={`text-[10.5px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}
+                  >
                     {m.kicker}
                   </span>
                   <h3 className="text-[15.5px] font-semibold text-foreground">{m.title}</h3>
@@ -217,7 +221,8 @@ export function Engine() {
 
       <Reveal className="mt-10">
         <p className="text-xs text-muted-foreground">
-          Self-tuning: every reply and every close feeds back, so matches, drafts, cadence, and quotes sharpen week over week.
+          Self-tuning: every reply and every close feeds back, so matches, drafts, cadence, and
+          quotes sharpen week over week.
         </p>
       </Reveal>
     </section>

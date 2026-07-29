@@ -29,10 +29,7 @@ export function Hero() {
               transition={{ duration: 0.9, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
               className="text-[2.6rem] font-bold leading-[1.04] tracking-[-0.022em] text-foreground sm:text-5xl lg:text-[3.65rem]"
             >
-              Find paid brand deals without the pitching, chasing, or bad offers.{" "}
-              <span className="bg-gradient-to-br from-[#1E1B4B] via-[#4F46E5] to-[#8B5CF6] bg-clip-text text-transparent">
-                Keep payment external.
-              </span>
+              Get paid brand deals without the pitching, chasing, or bad offers.
             </motion.h1>
 
             <motion.p
@@ -41,10 +38,10 @@ export function Hero() {
               transition={{ duration: 0.8, delay: 0.25 }}
               className="mt-6 max-w-md text-[15.5px] leading-[1.7] text-muted-foreground/90"
             >
-              MatchAI helps UGC creators and micro-influencers find brand-fit opportunities, write
-              pitches in their voice, track replies, know what to charge, check offer terms, and
-              turn brand conversations into paid deals. You just tap{" "}
-              <span className="font-semibold text-foreground">Approve</span>.
+              MatchAI finds brand deals that fit you, writes the pitch, tracks every application,
+              and flags bad offers before you sign. Built for UGC creators and micro-influencers
+              under 50K. You just tap <span className="font-semibold text-foreground">Approve</span>
+              .
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 12 }}
@@ -124,8 +121,7 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.42 }}
               className="mt-5 max-w-md text-[14px] font-semibold leading-snug text-foreground"
             >
-              Start free. MatchAI subscriptions keep the product running while creator-brand payment
-              stays outside MatchAI.
+              Start free. Creator-brand payment is agreed and handled directly with the brand.
             </motion.p>
 
             <motion.p

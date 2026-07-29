@@ -5,11 +5,11 @@ import { Reveal, StaggerGroup, itemVariants } from "./Reveal";
 const features = [
   {
     title: "Brands worth pitching",
-    body: "Real beauty, skincare, haircare, fashion and accessories companies ranked by fit for your niche, aesthetic, audience, and city. Every match shows the reasoning and next step.",
+    body: "Brands across beauty, food, fashion, gaming, wellness, home, and more ranked by fit for your niche, audience, and content. Every match shows the reasoning and next step.",
   },
   {
-    title: "Specific paid offers, not vague collabs",
-    body: 'Concrete packages priced for your size — e.g. "3 skincare UGC videos + 60d paid usage for $1,200" or "1 TikTok + 1 Reel + 3 Story frames for a launch, $950" — shaped by your rates and the brand\'s category.',
+    title: "Clear scopes, not vague collabs",
+    body: "See the deliverables, estimated pay, timing, and usage-rights questions before you spend time pitching. Estimates are labeled when they are not backed by a confirmed offer.",
   },
   {
     title: "One internal MatchAI Inbox",

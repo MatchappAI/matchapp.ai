@@ -25,7 +25,7 @@ function analyze(text: string): Teaser {
 
   // Free product / gifting only
   if (/(gifted|gifting|free product|in exchange for|complimentary|product only)/.test(t)) {
-    flags.push("Gifted product only — no cash");
+    flags.push("High: gifted product only — no cash");
     score -= 30;
   }
   // Exposure pay
@@ -33,7 +33,7 @@ function analyze(text: string): Teaser {
     /(exposure|for our platform|great opportunity|build your portfolio|tag us)/.test(t) &&
     !/\$\d/.test(t)
   ) {
-    flags.push("'Exposure' framing without a cash rate");
+    flags.push("High: 'exposure' framing without a cash rate");
     score -= 15;
   }
   // Perpetual / broad usage
@@ -42,17 +42,17 @@ function analyze(text: string): Teaser {
       t,
     )
   ) {
-    flags.push("Broad/perpetual usage rights — usually worth 2–3× base");
+    flags.push("High: broad/perpetual usage rights — price the usage separately");
     score -= 15;
   }
   // Exclusivity without pay bump
   if (/(exclusive|exclusivity|no competitors|category exclusive)/.test(t)) {
-    flags.push("Exclusivity clause — should carry a premium");
+    flags.push("Medium: exclusivity clause — should carry a premium");
     score -= 8;
   }
   // Rush / short deadlines
   if (/(asap|rush|by tomorrow|within 24|by end of week|this week)/.test(t)) {
-    flags.push("Rush deadline — should carry a rush fee");
+    flags.push("Medium: rush deadline — should carry a rush fee");
     score -= 5;
   }
 
@@ -63,13 +63,29 @@ function analyze(text: string): Teaser {
     dollars = Number(dollarMatch[1].replace(/,/g, ""));
     if (dollarMatch[2] === "k") dollars *= 1000;
     if (dollars < 100) {
-      flags.push("Sub-$100 flat fee for content work");
+      flags.push("High: sub-$100 flat fee for content work");
       score -= 15;
     } else if (dollars >= 100 && dollars < 350) {
       score -= 5;
     } else if (dollars >= 750) {
       score += 10;
     }
+  }
+
+  if (!/(deliverable|reel|tiktok|post|story|video|photo|clip|ugc|content)/.test(t)) {
+    flags.push("Medium: deliverables are vague — ask for an exact list and revision limit");
+    score -= 8;
+  }
+  if (!/(net\s?(15|30|45|60)|payment\s?(within|due|terms)|payable|invoice|days\s?after)/.test(t)) {
+    flags.push("Medium: payment timing is missing — get a due date in writing");
+    score -= 8;
+  }
+  if (
+    /(whitelist|paid ads|boost|spark ads|allow us to run ads)/.test(t) &&
+    !/(days|week|month|duration|term|window)/.test(t)
+  ) {
+    flags.push("High: whitelisting or paid usage is mentioned without a time limit");
+    score -= 10;
   }
 
   // Positive signals

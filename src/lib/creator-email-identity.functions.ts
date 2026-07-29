@@ -26,6 +26,7 @@ export const getCreatorEmailIdentity = createServerFn({ method: "GET" })
         transport: {
           provider: transport.provider,
           configured: transport.configured,
+          inboundWebhookConfigured: false,
         },
       };
     }
@@ -47,6 +48,7 @@ export const getCreatorEmailIdentity = createServerFn({ method: "GET" })
       transport: {
         provider: transport.provider,
         configured: transport.configured,
+        inboundWebhookConfigured: false,
       },
     };
   });

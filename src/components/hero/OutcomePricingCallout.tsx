@@ -12,7 +12,7 @@ export function OutcomePricingCallout() {
           </h3>
           <p className="mt-3 max-w-3xl text-[14.5px] leading-relaxed text-muted-foreground">
             MatchAI finds the brands, drafts personalized pitches, keeps your internal creator inbox
-            in one place, and follows up automatically. MatchAI subscriptions are separate from
+            in one place, and helps you follow up. MatchAI subscriptions are separate from
             creator-brand payments, which happen externally.
           </p>
           <p className="mt-3 text-[12.5px] font-medium text-foreground/70">

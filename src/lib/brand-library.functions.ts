@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { indexBrandDiscoveryRecord } from "@/lib/discovery-engine.functions";
 
 const email = z.string().trim().email().max(320);
 const optionalEmail = z.union([email, z.literal("")]).optional();
@@ -71,6 +72,12 @@ export const createManualBrand = createServerFn({ method: "POST" })
       .single();
     if (brandError || !brand) throw new Error("Could not create brand");
 
+    void indexBrandDiscoveryRecord({
+      userId,
+      brandMatchId: brand.id,
+      sourceType: data.source === "csv_import" ? "csv" : "manual",
+    }).catch((error) => console.error("[brand-discovery] manual import analysis failed", error));
+
     if (data.contactEmail) {
       const { error: contactError } = await supabase.from("brand_contacts").insert({
         user_id: userId,
@@ -116,6 +123,9 @@ export const previewBrandImport = createServerFn({ method: "POST" })
       return {
         ...row,
         source: "csv_import" as const,
+        confidence:
+          duplicateExisting || duplicateInFile ? "low" : row.contactEmail ? "high" : "medium",
+        sourceLabel: "csv",
         duplicateExisting,
         duplicateInFile,
         valid: errors.length === 0,
@@ -168,6 +178,13 @@ export const importBrandRows = createServerFn({ method: "POST" })
           .select("id")
           .single();
         if (brandError || !brand) throw new Error("Brand insert failed");
+
+        void indexBrandDiscoveryRecord({
+          userId: context.userId,
+          brandMatchId: brand.id,
+          sourceType: "csv",
+        }).catch((error) => console.error("[brand-discovery] csv import analysis failed", error));
+
         if (parsed.contactEmail) {
           const { error: contactError } = await context.supabase.from("brand_contacts").insert({
             user_id: context.userId,

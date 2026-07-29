@@ -17,17 +17,21 @@ import { HeroCallout } from "@/components/hero/HeroCallout";
 import { OutcomePricingCallout } from "@/components/hero/OutcomePricingCallout";
 import { DealChecker } from "@/components/hero/DealChecker";
 
-
-
-
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "MatchAI — Your AI brand deals agent in your pocket" },
-      { name: "description", content: "Find brands, draft outreach in your voice, follow up, handle replies, price deals, and get paid — with one personal agent. Built for micro and nano creators. Free to start." },
-      { property: "og:title", content: "MatchAI — Your AI brand deals agent in your pocket" },
-      { property: "og:description", content: "Your personal agent finds brands, drafts outreach, follows up, and helps you get paid. You approve. It handles the awkward part." },
+      {
+        name: "description",
+        content:
+          "Get paid brand deals without the pitching, chasing, or bad offers. MatchAI helps UGC creators and micro-influencers find opportunities, draft outreach, track applications, and price offers.",
+      },
+      { property: "og:title", content: "MatchAI — Get paid brand deals without the chasing" },
+      {
+        property: "og:description",
+        content:
+          "Find brand-fit opportunities, write creator-approved pitches, track every application, and flag bad offers before you sign.",
+      },
     ],
   }),
   component: Index,
@@ -64,4 +68,3 @@ function Index() {
     </div>
   );
 }
-

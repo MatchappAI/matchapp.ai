@@ -30,6 +30,7 @@ import { Route as DashboardApprovalsRouteImport } from './routes/dashboard.appro
 import { Route as DashboardBrandsRouteImport } from './routes/dashboard.brands'
 import { Route as DashboardCampaignsRouteImport } from './routes/dashboard.campaigns'
 import { Route as DashboardDealsRouteImport } from './routes/dashboard.deals'
+import { Route as DashboardDiscoveryRouteImport } from './routes/dashboard.discovery'
 import { Route as DashboardInboxRouteImport } from './routes/dashboard.inbox'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardToolsRouteImport } from './routes/dashboard.tools'
@@ -47,7 +48,11 @@ import { Route as ApiChatLandingRouteImport } from './routes/api.chat.landing'
 import { Route as ApiChatOnboardingRouteImport } from './routes/api.chat.onboarding'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api.public.stripe-webhook'
 import { Route as DashboardAdminIndexRouteImport } from './routes/dashboard.admin.index'
+import { Route as DashboardAdminImportRouteImport } from './routes/dashboard.admin.import'
+import { Route as DashboardAdminOutreachRouteImport } from './routes/dashboard.admin.outreach'
 import { Route as DashboardDealsIdRouteImport } from './routes/dashboard.deals.$id'
+import { Route as DashboardDiscoveryCreatorRouteImport } from './routes/dashboard.discovery.creator'
+import { Route as DashboardDiscoveryReviewRouteImport } from './routes/dashboard.discovery.review'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicHooksAutoReleaseEscrowRouteImport } from './routes/api.public.hooks.auto-release-escrow'
 import { Route as ApiPublicHooksDailyDigestRouteImport } from './routes/api.public.hooks.daily-digest'
@@ -168,6 +173,11 @@ const DashboardDealsRoute = DashboardDealsRouteImport.update({
   path: '/deals',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardDiscoveryRoute = DashboardDiscoveryRouteImport.update({
+  id: '/discovery',
+  path: '/discovery',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardInboxRoute = DashboardInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -254,11 +264,33 @@ const DashboardAdminIndexRoute = DashboardAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardAdminRoute,
 } as any)
+const DashboardAdminImportRoute = DashboardAdminImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => DashboardAdminRoute,
+} as any)
+const DashboardAdminOutreachRoute = DashboardAdminOutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
+  getParentRoute: () => DashboardAdminRoute,
+} as any)
 const DashboardDealsIdRoute = DashboardDealsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => DashboardDealsRoute,
 } as any)
+const DashboardDiscoveryCreatorRoute =
+  DashboardDiscoveryCreatorRouteImport.update({
+    id: '/creator',
+    path: '/creator',
+    getParentRoute: () => DashboardDiscoveryRoute,
+  } as any)
+const DashboardDiscoveryReviewRoute =
+  DashboardDiscoveryReviewRouteImport.update({
+    id: '/review',
+    path: '/review',
+    getParentRoute: () => DashboardDiscoveryRoute,
+  } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -349,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/brands': typeof DashboardBrandsRoute
   '/dashboard/campaigns': typeof DashboardCampaignsRoute
   '/dashboard/deals': typeof DashboardDealsRouteWithChildren
+  '/dashboard/discovery': typeof DashboardDiscoveryRouteWithChildren
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/tools': typeof DashboardToolsRoute
@@ -366,7 +399,11 @@ export interface FileRoutesByFullPath {
   '/api/chat/landing': typeof ApiChatLandingRoute
   '/api/chat/onboarding': typeof ApiChatOnboardingRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/dashboard/admin/import': typeof DashboardAdminImportRoute
+  '/dashboard/admin/outreach': typeof DashboardAdminOutreachRoute
   '/dashboard/deals/$id': typeof DashboardDealsIdRoute
+  '/dashboard/discovery/creator': typeof DashboardDiscoveryCreatorRoute
+  '/dashboard/discovery/review': typeof DashboardDiscoveryReviewRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/dashboard/admin/': typeof DashboardAdminIndexRoute
   '/api/public/hooks/auto-release-escrow': typeof ApiPublicHooksAutoReleaseEscrowRoute
@@ -400,6 +437,7 @@ export interface FileRoutesByTo {
   '/dashboard/brands': typeof DashboardBrandsRoute
   '/dashboard/campaigns': typeof DashboardCampaignsRoute
   '/dashboard/deals': typeof DashboardDealsRouteWithChildren
+  '/dashboard/discovery': typeof DashboardDiscoveryRouteWithChildren
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/tools': typeof DashboardToolsRoute
@@ -417,7 +455,11 @@ export interface FileRoutesByTo {
   '/api/chat/landing': typeof ApiChatLandingRoute
   '/api/chat/onboarding': typeof ApiChatOnboardingRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/dashboard/admin/import': typeof DashboardAdminImportRoute
+  '/dashboard/admin/outreach': typeof DashboardAdminOutreachRoute
   '/dashboard/deals/$id': typeof DashboardDealsIdRoute
+  '/dashboard/discovery/creator': typeof DashboardDiscoveryCreatorRoute
+  '/dashboard/discovery/review': typeof DashboardDiscoveryReviewRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/dashboard/admin': typeof DashboardAdminIndexRoute
   '/api/public/hooks/auto-release-escrow': typeof ApiPublicHooksAutoReleaseEscrowRoute
@@ -454,6 +496,7 @@ export interface FileRoutesById {
   '/dashboard/brands': typeof DashboardBrandsRoute
   '/dashboard/campaigns': typeof DashboardCampaignsRoute
   '/dashboard/deals': typeof DashboardDealsRouteWithChildren
+  '/dashboard/discovery': typeof DashboardDiscoveryRouteWithChildren
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/tools': typeof DashboardToolsRoute
@@ -471,7 +514,11 @@ export interface FileRoutesById {
   '/api/chat/landing': typeof ApiChatLandingRoute
   '/api/chat/onboarding': typeof ApiChatOnboardingRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/dashboard/admin/import': typeof DashboardAdminImportRoute
+  '/dashboard/admin/outreach': typeof DashboardAdminOutreachRoute
   '/dashboard/deals/$id': typeof DashboardDealsIdRoute
+  '/dashboard/discovery/creator': typeof DashboardDiscoveryCreatorRoute
+  '/dashboard/discovery/review': typeof DashboardDiscoveryReviewRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/dashboard/admin/': typeof DashboardAdminIndexRoute
   '/api/public/hooks/auto-release-escrow': typeof ApiPublicHooksAutoReleaseEscrowRoute
@@ -509,6 +556,7 @@ export interface FileRouteTypes {
     | '/dashboard/brands'
     | '/dashboard/campaigns'
     | '/dashboard/deals'
+    | '/dashboard/discovery'
     | '/dashboard/inbox'
     | '/dashboard/settings'
     | '/dashboard/tools'
@@ -526,7 +574,11 @@ export interface FileRouteTypes {
     | '/api/chat/landing'
     | '/api/chat/onboarding'
     | '/api/public/stripe-webhook'
+    | '/dashboard/admin/import'
+    | '/dashboard/admin/outreach'
     | '/dashboard/deals/$id'
+    | '/dashboard/discovery/creator'
+    | '/dashboard/discovery/review'
     | '/lovable/email/suppression'
     | '/dashboard/admin/'
     | '/api/public/hooks/auto-release-escrow'
@@ -560,6 +612,7 @@ export interface FileRouteTypes {
     | '/dashboard/brands'
     | '/dashboard/campaigns'
     | '/dashboard/deals'
+    | '/dashboard/discovery'
     | '/dashboard/inbox'
     | '/dashboard/settings'
     | '/dashboard/tools'
@@ -577,7 +630,11 @@ export interface FileRouteTypes {
     | '/api/chat/landing'
     | '/api/chat/onboarding'
     | '/api/public/stripe-webhook'
+    | '/dashboard/admin/import'
+    | '/dashboard/admin/outreach'
     | '/dashboard/deals/$id'
+    | '/dashboard/discovery/creator'
+    | '/dashboard/discovery/review'
     | '/lovable/email/suppression'
     | '/dashboard/admin'
     | '/api/public/hooks/auto-release-escrow'
@@ -613,6 +670,7 @@ export interface FileRouteTypes {
     | '/dashboard/brands'
     | '/dashboard/campaigns'
     | '/dashboard/deals'
+    | '/dashboard/discovery'
     | '/dashboard/inbox'
     | '/dashboard/settings'
     | '/dashboard/tools'
@@ -630,7 +688,11 @@ export interface FileRouteTypes {
     | '/api/chat/landing'
     | '/api/chat/onboarding'
     | '/api/public/stripe-webhook'
+    | '/dashboard/admin/import'
+    | '/dashboard/admin/outreach'
     | '/dashboard/deals/$id'
+    | '/dashboard/discovery/creator'
+    | '/dashboard/discovery/review'
     | '/lovable/email/suppression'
     | '/dashboard/admin/'
     | '/api/public/hooks/auto-release-escrow'
@@ -832,6 +894,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDealsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/discovery': {
+      id: '/dashboard/discovery'
+      path: '/discovery'
+      fullPath: '/dashboard/discovery'
+      preLoaderRoute: typeof DashboardDiscoveryRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/inbox': {
       id: '/dashboard/inbox'
       path: '/inbox'
@@ -951,12 +1020,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAdminIndexRouteImport
       parentRoute: typeof DashboardAdminRoute
     }
+    '/dashboard/admin/import': {
+      id: '/dashboard/admin/import'
+      path: '/import'
+      fullPath: '/dashboard/admin/import'
+      preLoaderRoute: typeof DashboardAdminImportRouteImport
+      parentRoute: typeof DashboardAdminRoute
+    }
+    '/dashboard/admin/outreach': {
+      id: '/dashboard/admin/outreach'
+      path: '/outreach'
+      fullPath: '/dashboard/admin/outreach'
+      preLoaderRoute: typeof DashboardAdminOutreachRouteImport
+      parentRoute: typeof DashboardAdminRoute
+    }
     '/dashboard/deals/$id': {
       id: '/dashboard/deals/$id'
       path: '/$id'
       fullPath: '/dashboard/deals/$id'
       preLoaderRoute: typeof DashboardDealsIdRouteImport
       parentRoute: typeof DashboardDealsRoute
+    }
+    '/dashboard/discovery/creator': {
+      id: '/dashboard/discovery/creator'
+      path: '/creator'
+      fullPath: '/dashboard/discovery/creator'
+      preLoaderRoute: typeof DashboardDiscoveryCreatorRouteImport
+      parentRoute: typeof DashboardDiscoveryRoute
+    }
+    '/dashboard/discovery/review': {
+      id: '/dashboard/discovery/review'
+      path: '/review'
+      fullPath: '/dashboard/discovery/review'
+      preLoaderRoute: typeof DashboardDiscoveryReviewRouteImport
+      parentRoute: typeof DashboardDiscoveryRoute
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -1046,10 +1143,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface DashboardAdminRouteChildren {
+  DashboardAdminImportRoute: typeof DashboardAdminImportRoute
+  DashboardAdminOutreachRoute: typeof DashboardAdminOutreachRoute
   DashboardAdminIndexRoute: typeof DashboardAdminIndexRoute
 }
 
 const DashboardAdminRouteChildren: DashboardAdminRouteChildren = {
+  DashboardAdminImportRoute: DashboardAdminImportRoute,
+  DashboardAdminOutreachRoute: DashboardAdminOutreachRoute,
   DashboardAdminIndexRoute: DashboardAdminIndexRoute,
 }
 
@@ -1069,6 +1170,19 @@ const DashboardDealsRouteWithChildren = DashboardDealsRoute._addFileChildren(
   DashboardDealsRouteChildren,
 )
 
+interface DashboardDiscoveryRouteChildren {
+  DashboardDiscoveryCreatorRoute: typeof DashboardDiscoveryCreatorRoute
+  DashboardDiscoveryReviewRoute: typeof DashboardDiscoveryReviewRoute
+}
+
+const DashboardDiscoveryRouteChildren: DashboardDiscoveryRouteChildren = {
+  DashboardDiscoveryCreatorRoute: DashboardDiscoveryCreatorRoute,
+  DashboardDiscoveryReviewRoute: DashboardDiscoveryReviewRoute,
+}
+
+const DashboardDiscoveryRouteWithChildren =
+  DashboardDiscoveryRoute._addFileChildren(DashboardDiscoveryRouteChildren)
+
 interface DashboardRouteChildren {
   DashboardAdminRoute: typeof DashboardAdminRouteWithChildren
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
@@ -1076,6 +1190,7 @@ interface DashboardRouteChildren {
   DashboardBrandsRoute: typeof DashboardBrandsRoute
   DashboardCampaignsRoute: typeof DashboardCampaignsRoute
   DashboardDealsRoute: typeof DashboardDealsRouteWithChildren
+  DashboardDiscoveryRoute: typeof DashboardDiscoveryRouteWithChildren
   DashboardInboxRoute: typeof DashboardInboxRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardToolsRoute: typeof DashboardToolsRoute
@@ -1091,6 +1206,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardBrandsRoute: DashboardBrandsRoute,
   DashboardCampaignsRoute: DashboardCampaignsRoute,
   DashboardDealsRoute: DashboardDealsRouteWithChildren,
+  DashboardDiscoveryRoute: DashboardDiscoveryRouteWithChildren,
   DashboardInboxRoute: DashboardInboxRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardToolsRoute: DashboardToolsRoute,

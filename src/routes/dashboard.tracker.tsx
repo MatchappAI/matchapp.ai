@@ -40,20 +40,30 @@ function TrackerPage() {
       );
       const stage =
         deal?.invoice_status === "paid"
-          ? "paid"
-          : t.stage === "outreach_sent"
-            ? "follow-up due"
-            : t.stage_label.toLowerCase();
+          ? "won"
+          : t.stage === "rejected"
+            ? "lost"
+            : t.stage === "negotiating"
+              ? "negotiating"
+              : t.replied
+                ? "replied"
+                : t.opened
+                  ? "opened"
+                  : t.stage === "outreach_sent"
+                    ? "follow-up due"
+                    : t.stage_label.toLowerCase();
       const nextAction =
         deal?.invoice_status === "paid"
           ? "Closed — log the payment status if the brand paid you externally."
           : t.unread_reply
             ? "Open the reply and decide whether to counter."
-            : t.stage === "outreach_sent"
-              ? "Draft a follow-up and keep the thread warm."
-              : t.stage === "negotiating"
-                ? "Check terms and push your counter."
-                : "Review the match and decide whether to pursue it.";
+            : t.opened
+              ? "Follow up while the thread is warm."
+              : t.stage === "outreach_sent"
+                ? "Draft a follow-up and keep the thread warm."
+                : t.stage === "negotiating"
+                  ? "Check terms and push your counter."
+                  : "Review the match and decide whether to pursue it.";
       const followUpDue =
         t.unread_reply || t.stage === "paid"
           ? "—"
@@ -173,6 +183,9 @@ function TrackerPage() {
                     <p className="mt-1 text-sm text-muted-foreground">
                       Last touch: {row.last_activity_kind.replace(/_/g, " ")} ·{" "}
                       {row.last_activity_preview}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Source: <span className="text-foreground">{row.source}</span>
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       Next action: <span className="text-foreground">{row.nextAction}</span>

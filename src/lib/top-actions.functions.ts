@@ -10,7 +10,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  *  - Always returns exactly 5 actions (padded from a growth bucket).
  *  - Max 3 actions of the same `kind` so one bucket can't dominate.
  *  - Ranked by where the creator is in the journey toward a paid deal:
- *      verify → brand kit → rates → payment clarity → find brands → approve →
+ *      verify → brand kit → rates → find brands → approve →
  *      send → follow-up → reply → propose → contract → deliverable → paid → growth.
  */
 
@@ -18,7 +18,6 @@ export type ActionKind =
   | "verify"
   | "brandkit"
   | "rates"
-  | "payout"
   | "brands"
   | "approve"
   | "outreach"
@@ -48,7 +47,7 @@ export const getTopActions = createServerFn({ method: "POST" })
     const userId = context.userId;
     const page = data.currentPage;
 
-    const [profile, pricing, payment, brands, approvals, outreach, deals, contracts, deliverables] =
+    const [profile, pricing, brands, approvals, outreach, deals, contracts, deliverables] =
       await Promise.all([
         supabaseAdmin
           .from("creator_profiles")
@@ -58,11 +57,6 @@ export const getTopActions = createServerFn({ method: "POST" })
         supabaseAdmin
           .from("pricing_rules")
           .select("configured, rate_floor, target_rate")
-          .eq("user_id", userId)
-          .maybeSingle(),
-        supabaseAdmin
-          .from("payment_accounts")
-          .select("stripe_connected, payout_method, setup_skipped")
           .eq("user_id", userId)
           .maybeSingle(),
         supabaseAdmin
@@ -88,9 +82,7 @@ export const getTopActions = createServerFn({ method: "POST" })
           .limit(50),
         supabaseAdmin
           .from("deals")
-          .select(
-            "id, brand_name, status, escrow_status, invoice_status, contract_status, deal_value",
-          )
+          .select("id, brand_name, status, invoice_status, contract_status, deal_value")
           .eq("user_id", userId)
           .neq("status", "completed")
           .limit(20),
@@ -111,8 +103,6 @@ export const getTopActions = createServerFn({ method: "POST" })
     const isVerified = !!profile.data?.verified;
     const hasNiche = !!profile.data?.niche;
     const hasRateFloor = !!(pricing.data?.configured && pricing.data.rate_floor);
-    const hasPayout = !!payment.data?.stripe_connected;
-
     const matches = brands.data ?? [];
     const newMatches = matches.filter((b) => b.status === "new" || b.status === "pending");
     const topBrand = matches[0];
@@ -126,12 +116,6 @@ export const getTopActions = createServerFn({ method: "POST" })
     const sentNoReply = sentOutreach.filter((o) => !o.replied);
 
     const activeDeals = deals.data ?? [];
-    const dealsAwaitingEscrow = activeDeals.filter(
-      (d) => d.contract_status === "signed" && d.escrow_status !== "funded",
-    );
-    const escrowReady = activeDeals.filter(
-      (d) => d.escrow_status === "funded" && d.invoice_status !== "paid",
-    );
 
     const openContracts = contracts.data ?? [];
     const pendingDeliverables = deliverables.data ?? [];
@@ -167,16 +151,6 @@ export const getTopActions = createServerFn({ method: "POST" })
           "Recommend a smart rate floor, target rate, and walk-away rate based on my niche, platform, and audience. Explain your math in one paragraph.",
       });
     }
-    if (!hasPayout) {
-      c.push({
-        kind: "payout",
-        priority: 88,
-        label: "Review payment clarity",
-        prompt:
-          "Walk me through the external payment story so I can explain it clearly to creators and brands. What should we show in the product?",
-      });
-    }
-
     // ---- Replies (highest revenue urgency once setup exists) ----
     pendingApprovals.slice(0, 3).forEach((a, i) => {
       const who = a.brand_name ?? "a brand";
@@ -189,22 +163,6 @@ export const getTopActions = createServerFn({ method: "POST" })
     });
 
     // ---- Deal money-flow actions ----
-    escrowReady.slice(0, 3).forEach((d, i) => {
-      c.push({
-        kind: "contract",
-        priority: 84 - i,
-        label: `Mark ${d.brand_name ?? "deal"} externally paid`,
-        prompt: `Confirm the external payment status for ${d.brand_name ?? "this brand"}. Show the creator-reported update and keep it outside MatchAI.`,
-      });
-    });
-    dealsAwaitingEscrow.slice(0, 2).forEach((d, i) => {
-      c.push({
-        kind: "contract",
-        priority: 78 - i,
-        label: `Clarify ${d.brand_name ?? "their"} payment terms`,
-        prompt: `Draft a short note to ${d.brand_name ?? "the brand"} that confirms the external payment method, due date, and payment terms so nothing is ambiguous.`,
-      });
-    });
     openContracts.slice(0, 2).forEach((k, i) => {
       c.push({
         kind: "contract",
@@ -327,7 +285,6 @@ export const getTopActions = createServerFn({ method: "POST" })
       bump("outreach");
       bump("approve");
     } else if (page.includes("/dashboard/settings")) {
-      bump("payout");
       bump("rates");
       bump("brandkit");
     }

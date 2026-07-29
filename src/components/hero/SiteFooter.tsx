@@ -45,8 +45,8 @@ export function SiteFooter() {
               <MatchAILogo size="lg" />
             </div>
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-              The AI brand-deal manager for creators. Matches, pitches, follow-ups, negotiation, and
-              secure payment — in one chat.
+              The AI brand-deal workspace for creators. Find opportunities, draft pitches, track
+              applications, and negotiate with your approval.
             </p>
           </div>
 

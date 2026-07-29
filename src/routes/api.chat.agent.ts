@@ -13,6 +13,7 @@ import {
   personalizedVoiceGuide,
 } from "@/lib/agent-voice.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { makeInternalDraft } from "@/lib/internal-outreach.functions";
 
 export const Route = createFileRoute("/api/chat/agent")({
   server: {
@@ -86,7 +87,7 @@ CURRENT PAGE: ${currentPage ?? "(unknown)"} — anchor your suggestions to what 
 
 NORTH STAR — HELP THIS CREATOR GET THEIR NEXT PAID BRAND DEAL, FAST:
 - You're their smart friend who happens to be a great brand manager. Talk like you're texting them. Never say "as an AI".
-- Use the FULL context above (matches, replies, deals, rate floor, campaigns, past decisions). Reference specific brand names and dollar amounts. Never generic.
+- Use the FULL context above (matches, replies, deals, rate floor, and past decisions). Reference specific brand names and dollar amounts. Never generic.
 - Never re-ask for info that's already in context. Continue naturally from prior chats and completed actions ("that skincare pitch still in drafts", "the rate we set yesterday").
 - Lead with a recommendation, not a question. Give the most useful answer first, then a short reason if it actually helps.
 - Sequence the funnel silently: add or find a brand → draft → confirm → send through the configured creator-email transport → follow up → negotiate → deliver → track creator-reported external payment. Nudge whichever step unlocks progress next.
@@ -108,7 +109,7 @@ CHAT FORMAT RULES:
 - When the creator corrects you ("that's not me", "more casual", "stop recommending gifted", "be more direct", "don't mention follower count"), call proposeRememberPreference with a short, durable rule so it persists across future drafts and chats.
 - For any action involving money, external communication, or irreversible change, ALWAYS call a "propose_*" tool that returns an approval card. Text replies like "yes" or "go ahead" do NOT trigger actions — only the card button does.
 - When the creator asks you to draft, find, price, or check something — DO IT (call the right tool / draft inline). Do not narrate what you're "going to do" without doing it.
-- Whenever the creator asks to look at, review, or work on something that has a dedicated view (brand matches, replies, deals, tracker, tools, campaigns, settings), immediately call navigateView first so the right pane switches to that view — then respond in one short sentence. Do this even if you also show an inline card.
+- Whenever the creator asks to look at, review, or work on something that has a dedicated view (deals, inbox, tracker, tools, settings), immediately call navigateView first so the right pane switches to that view — then respond in one short sentence. Do this even if you also show an inline card.
 - When discussing a specific brand or deal, also call showBrandCard / showDealCard so the cursor can move to that row on the right stage. Always pair the specific card with navigateView.
 
 INTERNAL MATCHAI EMAIL MODEL (CRITICAL):
@@ -156,17 +157,9 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
         const tools = {
           navigateView: tool({
             description:
-              "Switch the dashboard right pane to a specific view so the creator can watch the work happen. Use liberally whenever the creator asks about brands, replies/approvals, deals, tracker, tools, campaigns, or settings. No approval needed.",
+              "Switch the dashboard right pane to a creator MVP view. Use deals, inbox, tracker, tools, or settings. No approval needed.",
             inputSchema: z.object({
-              view: z.enum([
-                "brands",
-                "approvals",
-                "deals",
-                "tracker",
-                "tools",
-                "campaigns",
-                "settings",
-              ]),
+              view: z.enum(["brands", "approvals", "deals", "tracker", "tools", "settings"]),
               highlightId: z.string().optional(),
             }),
             execute: async (input) => ({
@@ -432,6 +425,341 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
             },
           }),
 
+          showDiscoverySummary: tool({
+            description:
+              "Show a compact internal discovery summary across imported brands, signals, opportunities, creators, and review items. Use when the user asks for import status or a quick inventory of what the engine knows.",
+            inputSchema: z.object({
+              limit: z.number().int().min(1).max(10).default(5),
+            }),
+            execute: async ({ limit }) => {
+              const [brands, signals, opportunities, creators, reviewQueue, jobs] =
+                await Promise.all([
+                  supabaseAdmin
+                    .from("brand_matches")
+                    .select("id, brand_name, fit_score, status, created_at")
+                    .eq("user_id", userId)
+                    .order("fit_score", { ascending: false })
+                    .limit(limit),
+                  supabaseAdmin
+                    .from("buying_intent_signals")
+                    .select(
+                      "id, brand_name, signal_type, signal_summary, urgency_score, status, created_at",
+                    )
+                    .eq("user_id", userId)
+                    .order("urgency_score", { ascending: false })
+                    .limit(limit),
+                  supabaseAdmin
+                    .from("brand_opportunities")
+                    .select(
+                      "id, brand_name, opportunity_title, fit_score, cash_likelihood_score, fast_pay_score, status, source_record_type, created_at",
+                    )
+                    .eq("user_id", userId)
+                    .order("fit_score", { ascending: false })
+                    .limit(limit),
+                  supabaseAdmin
+                    .from("outreach_targets")
+                    .select(
+                      "id, display_name, company_name, target_type, outreach_direction, confidence, contact_readiness, created_at",
+                    )
+                    .eq("user_id", userId)
+                    .eq("target_type", "creator")
+                    .order("created_at", { ascending: false })
+                    .limit(limit),
+                  supabaseAdmin
+                    .from("review_queue")
+                    .select("id, title, status, direction, priority, queue_type, created_at")
+                    .eq("user_id", userId)
+                    .order("priority", { ascending: false })
+                    .limit(limit),
+                  supabaseAdmin
+                    .from("discovery_jobs")
+                    .select("id, job_type, direction, status, progress, created_at")
+                    .eq("user_id", userId)
+                    .order("created_at", { ascending: false })
+                    .limit(limit),
+                ]);
+
+              return {
+                kind: "discovery_summary",
+                counts: {
+                  brands: brands.data?.length ?? 0,
+                  signals: signals.data?.length ?? 0,
+                  opportunities: opportunities.data?.length ?? 0,
+                  creators: creators.data?.length ?? 0,
+                  review_queue: reviewQueue.data?.length ?? 0,
+                  discovery_jobs: jobs.data?.length ?? 0,
+                },
+                brands: brands.data ?? [],
+                signals: signals.data ?? [],
+                opportunities: opportunities.data ?? [],
+                creators: creators.data ?? [],
+                review_queue: reviewQueue.data ?? [],
+                discovery_jobs: jobs.data ?? [],
+              };
+            },
+          }),
+
+          showBestDealsToday: tool({
+            description:
+              "Show the best opportunities to pursue today using the canonical deal feed. Prioritize fit, active buying intent, fast pay, contact readiness, and estimated pay.",
+            inputSchema: z.object({
+              limit: z.number().int().min(1).max(10).default(5),
+              minFastPay: z.number().int().min(0).max(100).optional(),
+              minFit: z.number().int().min(0).max(100).optional(),
+              query: z.string().trim().min(1).max(120).optional(),
+              signalType: z.string().trim().min(1).max(120).optional(),
+            }),
+            execute: async ({ limit, minFastPay, minFit, query, signalType }) => {
+              const { data } = await supabaseAdmin
+                .from("brand_opportunities")
+                .select("*")
+                .eq("user_id", userId)
+                .order("fast_pay_score", { ascending: false })
+                .order("contact_readiness", { ascending: false })
+                .order("fit_score", { ascending: false })
+                .limit(40);
+              const q = query?.trim().toLowerCase() ?? "";
+              const items = (data ?? [])
+                .filter((row) => {
+                  const fastPay = Number(row.fast_pay_score ?? 0);
+                  const fit = Number(row.fit_score ?? 0);
+                  if (minFastPay !== undefined && fastPay < minFastPay) return false;
+                  if (minFit !== undefined && fit < minFit) return false;
+                  if (
+                    signalType &&
+                    String(row.signal_type ?? "").toLowerCase() !== signalType.toLowerCase()
+                  )
+                    return false;
+                  if (
+                    q &&
+                    ![
+                      row.brand_name,
+                      row.opportunity_title,
+                      row.signal_summary,
+                      row.why_now,
+                      row.pitch_angle,
+                    ]
+                      .filter(Boolean)
+                      .some((value) => String(value).toLowerCase().includes(q))
+                  ) {
+                    return false;
+                  }
+                  return true;
+                })
+                .slice(0, limit)
+                .map((row) => ({
+                  id: row.id,
+                  brand_name: row.brand_name,
+                  opportunity_title: row.opportunity_title,
+                  why_now: row.why_now,
+                  signal_type: row.signal_type,
+                  signal_summary: row.signal_summary,
+                  fit_score: Number(row.fit_score ?? 0),
+                  cash_likelihood_score: Number(row.cash_likelihood_score ?? 0),
+                  fast_pay_score: Number(row.fast_pay_score ?? 0),
+                  estimated_pay_min: row.estimated_pay_min,
+                  estimated_pay_max: row.estimated_pay_max,
+                  pitch_angle: row.pitch_angle,
+                  contact_readiness: Number(row.contact_readiness ?? 0),
+                  risks: row.risks ?? [],
+                  source_record_type: row.source_record_type,
+                }));
+              return { kind: "best_deals", items };
+            },
+          }),
+
+          showHighIntentBrands: tool({
+            description:
+              "Show brands with active buying intent signals. Use when the user wants the hottest brands, launches, ads, or creator-program signals.",
+            inputSchema: z.object({
+              limit: z.number().int().min(1).max(10).default(5),
+            }),
+            execute: async ({ limit }) => {
+              const { data } = await supabaseAdmin
+                .from("buying_intent_signals")
+                .select("*")
+                .eq("user_id", userId)
+                .order("urgency_score", { ascending: false })
+                .order("created_at", { ascending: false })
+                .limit(limit);
+              return {
+                kind: "high_intent_brands",
+                items:
+                  (data ?? []).map((row) => ({
+                    id: row.id,
+                    brand_name: row.brand_name,
+                    signal_type: row.signal_type,
+                    signal_name: row.signal_name,
+                    signal_summary: row.signal_summary,
+                    source_url: row.source_url,
+                    signal_date: row.signal_date,
+                    urgency_score: Number(row.urgency_score ?? 0),
+                    ease_to_close_score: Number(row.ease_to_close_score ?? 0),
+                    fast_pay_score: Number(row.fast_pay_score ?? 0),
+                    status: row.status,
+                  })) ?? [],
+              };
+            },
+          }),
+
+          showCreatorTargets: tool({
+            description:
+              "Show imported creator targets and recruiting candidates for internal outreach. Use when the user wants creators matching a niche, audience, platform, or rate floor.",
+            inputSchema: z.object({
+              limit: z.number().int().min(1).max(10).default(5),
+            }),
+            execute: async ({ limit }) => {
+              const { data } = await supabaseAdmin
+                .from("outreach_targets")
+                .select("*")
+                .eq("user_id", userId)
+                .eq("target_type", "creator")
+                .order("created_at", { ascending: false })
+                .limit(limit);
+              return {
+                kind: "creator_targets",
+                items:
+                  (data ?? []).map((row) => ({
+                    id: row.id,
+                    display_name: row.display_name,
+                    company_name: row.company_name,
+                    email: row.email,
+                    target_type: row.target_type,
+                    outreach_direction: row.outreach_direction,
+                    contact_readiness: Number(row.contact_readiness ?? 0),
+                    confidence: Number(row.confidence ?? 0),
+                    personalization_evidence: row.personalization_evidence,
+                    source_evidence: row.source_evidence,
+                    status: row.status,
+                  })) ?? [],
+              };
+            },
+          }),
+
+          showReviewQueue: tool({
+            description:
+              "Show review queue items that still need approval or rejection. Use when the user asks what is pending, what needs review, or what can be approved into Inbox drafts.",
+            inputSchema: z.object({
+              limit: z.number().int().min(1).max(10).default(5),
+            }),
+            execute: async ({ limit }) => {
+              const { data } = await supabaseAdmin
+                .from("review_queue")
+                .select("*")
+                .eq("user_id", userId)
+                .order("priority", { ascending: false })
+                .order("created_at", { ascending: false })
+                .limit(limit);
+              return {
+                kind: "review_queue",
+                items: data ?? [],
+              };
+            },
+          }),
+
+          createInternalOutreachDraft: tool({
+            description:
+              "Create an internal MatchAI Inbox draft from a selected opportunity or target. This does not send anything. Use when an admin wants a draft prepared from the canonical discovery system.",
+            inputSchema: z.object({
+              outreachTargetId: z.string().uuid().optional(),
+              opportunityId: z.string().uuid().optional(),
+            }),
+            execute: async ({ outreachTargetId, opportunityId }) => {
+              let targetId = outreachTargetId ?? null;
+              let opportunity = null as Record<string, unknown> | null;
+              if (opportunityId) {
+                const { data: opportunityRow } = await supabaseAdmin
+                  .from("brand_opportunities")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .eq("id", opportunityId)
+                  .maybeSingle();
+                if (!opportunityRow) return { error: "Opportunity not found" };
+                opportunity = opportunityRow as Record<string, unknown>;
+                const { data: existingTarget } = await supabaseAdmin
+                  .from("outreach_targets")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .eq("source_record_type", "brand_opportunity")
+                  .eq("source_record_id", opportunityId)
+                  .maybeSingle();
+                if (existingTarget?.id) {
+                  targetId = existingTarget.id as string;
+                } else {
+                  const { data: insertedTarget } = await supabaseAdmin
+                    .from("outreach_targets")
+                    .insert({
+                      user_id: userId,
+                      target_type: "opportunity",
+                      outreach_direction:
+                        (opportunity.outreach_direction as string | null) ?? "creator_to_brand",
+                      source_record_type: "brand_opportunity",
+                      source_record_id: opportunityId,
+                      display_name: String(opportunity.brand_name ?? "Opportunity"),
+                      company_name: String(opportunity.brand_name ?? "Opportunity"),
+                      email: null,
+                      cc_addresses: [],
+                      bcc_addresses: [],
+                      reply_to_addresses: [],
+                      attachments: [],
+                      personalization_evidence: {
+                        why_now: opportunity.why_now ?? null,
+                        signal_summary: opportunity.signal_summary ?? null,
+                        pitch_angle: opportunity.pitch_angle ?? null,
+                      },
+                      source_evidence: opportunity.source_evidence ?? {},
+                      owner_user_id: userId,
+                      assignee: null,
+                      status: "pending_approval",
+                      bounce_state: "none",
+                      compliance_footer: true,
+                      follow_up_state: {},
+                      contact_readiness: Number(opportunity.contact_readiness ?? 60),
+                      confidence: Number(opportunity.fit_score ?? 60),
+                      notes: String(opportunity.signal_summary ?? opportunity.why_now ?? ""),
+                    })
+                    .select("*")
+                    .single();
+                  targetId = insertedTarget?.id ?? null;
+                }
+              }
+
+              if (!targetId) return { error: "Need an outreach target or opportunity" };
+              const { data: target } = await supabaseAdmin
+                .from("outreach_targets")
+                .select("*")
+                .eq("user_id", userId)
+                .eq("id", targetId)
+                .maybeSingle();
+              if (!target) return { error: "Outreach target not found" };
+              if (!opportunity && target.source_record_type === "brand_opportunity") {
+                const { data: opportunityRow } = await supabaseAdmin
+                  .from("brand_opportunities")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .eq("id", String(target.source_record_id ?? ""))
+                  .maybeSingle();
+                opportunity = (opportunityRow as Record<string, unknown> | null) ?? null;
+              }
+              const draft = await makeInternalDraft({
+                userId,
+                target: target as Record<string, unknown>,
+                opportunity,
+                senderEmail: null,
+              });
+              await supabaseAdmin
+                .from("outreach_targets")
+                .update({ status: "pending_approval", inbox_draft_id: draft.draft_id })
+                .eq("user_id", userId)
+                .eq("id", targetId);
+              return {
+                kind: "internal_outreach_draft",
+                ...draft,
+                outreach_target_id: targetId,
+              };
+            },
+          }),
+
           showReplyList: tool({
             description:
               "Show pending replies / approvals inline. Use when the creator asks 'what needs my reply', 'show my replies', 'anything waiting', etc.",
@@ -450,12 +778,12 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
 
           showEarnings: tool({
             description:
-              "Return a live earnings stat card (earned this month, YTD, pending, potential). Use when the creator asks about money, ROI, 'how much have I made', 'what am I owed', etc. Answer with real numbers, no invention.",
+              "Return a live creator-reported deal status card (paid externally this month, YTD, in-flight). Use when the creator asks about money or deal progress. Never imply MatchAI holds or pays out funds.",
             inputSchema: z.object({}),
             execute: async () => {
               const { data: deals } = await supabaseAdmin
                 .from("deals")
-                .select("deal_value, status, invoice_status, escrow_status, created_at")
+                .select("deal_value, status, invoice_status, created_at")
                 .eq("user_id", userId);
               const rows = deals ?? [];
               const now = new Date();
@@ -467,9 +795,6 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 .reduce((s, r) => s + Number(r.deal_value ?? 0), 0);
               const paidYear = paid
                 .filter((r) => (r.created_at ?? "") >= yearStart)
-                .reduce((s, r) => s + Number(r.deal_value ?? 0), 0);
-              const pendingEscrow = rows
-                .filter((r) => r.escrow_status === "funded" && r.invoice_status !== "paid")
                 .reduce((s, r) => s + Number(r.deal_value ?? 0), 0);
               const inFlight = rows
                 .filter(
@@ -483,10 +808,10 @@ HOW MATCHAI WORKS — AUTHORITATIVE FAQ (use these answers when asked; do not in
                 kind: "earnings",
                 monthEarned: Math.round(paidMonth),
                 yearEarned: Math.round(paidYear),
-                pendingRelease: Math.round(pendingEscrow),
                 inFlight: Math.round(inFlight),
                 paidDeals: paid.length,
                 totalDeals: rows.length,
+                paymentNote: "Paid status is creator-reported and handled directly with the brand.",
               };
             },
           }),

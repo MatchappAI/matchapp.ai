@@ -35,7 +35,11 @@ function AdminLayout() {
     );
   }
 
-  const tabs = [{ to: "/dashboard/admin", label: "Insights" }];
+  const tabs = [
+    { to: "/dashboard/admin", label: "Insights" },
+    { to: "/dashboard/admin/import", label: "Import" },
+    { to: "/dashboard/admin/outreach", label: "Outreach" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -49,7 +53,9 @@ function AdminLayout() {
             key={t.to}
             to={t.to}
             className={`border-b-2 px-3 py-2 text-sm transition-colors ${
-              pathname === t.to ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+              pathname === t.to
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}
@@ -60,4 +66,3 @@ function AdminLayout() {
     </div>
   );
 }
-

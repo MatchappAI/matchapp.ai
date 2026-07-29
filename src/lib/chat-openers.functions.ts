@@ -35,7 +35,7 @@ export const getChatOpener = createServerFn({ method: "POST" })
         .eq("status", "pending"),
       supabaseAdmin
         .from("deals")
-        .select("id, brand_name, status, escrow_status, invoice_status")
+        .select("id, brand_name, status, invoice_status")
         .eq("user_id", userId)
         .neq("status", "completed")
         .limit(10),

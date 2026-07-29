@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Sparkles,
   Inbox,
   Briefcase,
   BarChart3,
@@ -20,9 +19,9 @@ import { cn } from "@/lib/utils";
 type NavItem = { to: string; label: string; icon: LucideIcon };
 type NavGroup = { label: string | null; items: NavItem[] };
 
-// Primary creator rails are Deals, Inbox, Tracker, Tools, Settings.
-// Brand discovery remains available, but it should not compete with the
-// main creator flow in the primary navigation.
+// Keep the creator journey narrow. Discovery, campaigns, approvals, billing,
+// and owner tooling remain routable compatibility surfaces but are not primary
+// creator destinations.
 const NAV_GROUPS: NavGroup[] = [
   {
     label: null,
@@ -36,10 +35,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: null,
     items: [{ to: "/dashboard/settings", label: "Settings", icon: Settings }],
-  },
-  {
-    label: "Discovery",
-    items: [{ to: "/dashboard/brands", label: "Brand Matches", icon: Sparkles }],
   },
 ];
 
@@ -68,12 +63,11 @@ export function DashboardSidebar({
 
   const navGroups: NavGroup[] = isStaff
     ? [
-        ...NAV_GROUPS.slice(0, -1),
+        ...NAV_GROUPS,
         {
           label: "Owner",
           items: [{ to: "/dashboard/admin", label: "Insights", icon: Shield }],
         },
-        ...NAV_GROUPS.slice(-1),
       ]
     : NAV_GROUPS;
 
