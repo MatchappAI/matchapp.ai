@@ -41,7 +41,7 @@ export function pursuePrompt(opp: DemoOpportunity): string {
     case "quick":
       return `Pursue ${opp.brand} as a quick-earnings opportunity (${opp.effort ?? "fast"}). Deliverables: ${(opp.deliverables ?? []).join(", ") || opp.dealType}. Draft a short, direct pitch with the flat rate (${opp.estPayout}), verify the contact, and show it here for approval.`;
     case "repeat_brand":
-      return `Pursue ${opp.brand} as a repeat-partner deal. If this one carries a MatchAI commission, confirm that up front. Reference our last collab, propose ${pkg}, verify the current contact, and show it here for approval.`;
+      return `Pursue ${opp.brand} as a repeat-partner deal. Reference our last collab, propose ${pkg}, verify the current contact, and show it here for approval.`;
     case "monthly_retainer":
       return `Pursue ${opp.brand} as a monthly retainer. Propose ${pkg} with recurring scope. Draft the retainer pitch, verify the contact, and show it here for approval.`;
     case "ugc_match":

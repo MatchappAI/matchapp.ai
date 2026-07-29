@@ -525,7 +525,7 @@ const EXTRA_OPPS: DemoOpportunity[] = [
     nextStep: "Pitch repeat-partner launch package",
     reasoning: [
       "A previous partner has a new product launch",
-      "MatchAI commission handled separately — repeat brand",
+      "Creator-reported external payment — repeat brand",
       "They asked their team to prioritize past collaborators",
     ],
     earnType: "repeat_brand",

@@ -142,7 +142,7 @@ export function QualifiedOpportunityScreen({
           </p>
           <p className="mt-2 text-sm text-foreground/80">
             Keep the free plan for drafting, inbox organization, and review. Creator-brand payment
-            is external, and any MatchAI commission on a selected deal is tracked separately.
+            is external and creator-reported in the product.
           </p>
           <button
             onClick={chooseFree}
@@ -204,8 +204,7 @@ export function QualifiedOpportunityScreen({
       <p className="text-xs text-muted-foreground">
         MatchAI subscriptions are separate from any creator-brand payment handled outside the
         product. Replies, conversations, proposals, and unsigned opportunities are always free.
-        Standard Stripe payment-processing fees apply separately, and any agreed MatchAI commission
-        is tracked apart from the external payment itself.
+        Standard Stripe payment-processing fees apply separately.
       </p>
     </div>
   );

@@ -23,7 +23,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -304,6 +304,7 @@ function InboxPage() {
 
   const selectedThread = threadQuery.data?.thread as Record<string, unknown> | undefined;
   const messages = (threadQuery.data?.messages ?? []) as Array<Record<string, unknown>>;
+  const draft = threadQuery.data?.draft as Record<string, unknown> | undefined;
   const latestMessage = messages[messages.length - 1];
 
   function openComposer(mode: ComposerMode) {
@@ -362,6 +363,25 @@ function InboxPage() {
           : "",
       inReplyTo: mode === "forward" ? null : messageId,
       references: mode === "forward" ? null : references,
+      attachments: [],
+    });
+  }
+
+  function openDraftComposer() {
+    if (!draft) return;
+    setComposer({
+      mode: "send",
+      draftId: String(draft.id),
+      threadId: String(draft.thread_id ?? selectedThread?.id ?? ""),
+      from: String(draft.from_address ?? accountEmail),
+      to: ((draft.to_addresses ?? []) as string[]).join(", "),
+      cc: ((draft.cc_addresses ?? []) as string[]).join(", "),
+      bcc: ((draft.bcc_addresses ?? []) as string[]).join(", "),
+      replyTo: ((draft.reply_to_addresses ?? []) as string[]).join(", "),
+      subject: String(draft.subject ?? ""),
+      body: String(draft.text_body ?? ""),
+      inReplyTo: (draft.in_reply_to as string | null) ?? null,
+      references: (draft.references_header as string | null) ?? null,
       attachments: [],
     });
   }
@@ -618,6 +638,12 @@ function InboxPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  {selectedThread.folder === "drafts" && draft && (
+                    <Button variant="outline" onClick={openDraftComposer}>
+                      <PenLine className="mr-2 h-4 w-4" />
+                      Edit draft
+                    </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
@@ -665,63 +691,92 @@ function InboxPage() {
               </header>
 
               <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-3 sm:p-5">
-                {messages.map((message) => {
-                  const outbound = message.direction === "outbound";
-                  const attachments = (threadQuery.data?.attachments ?? []).filter(
-                    (attachment) => attachment.message_id === message.id,
-                  );
-                  return (
-                    <article
-                      key={String(message.id)}
-                      className="rounded-2xl border border-border bg-card p-4 shadow-sm"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-semibold">
-                            {String(message.from_address || "Unknown sender")}
-                          </p>
-                          <p className="mt-0.5 break-words text-xs text-muted-foreground">
-                            To: {((message.to_addresses ?? []) as string[]).join(", ") || "—"}
-                          </p>
-                          {((message.cc_addresses ?? []) as string[]).length > 0 && (
-                            <p className="break-words text-xs text-muted-foreground">
-                              CC: {((message.cc_addresses ?? []) as string[]).join(", ")}
-                            </p>
-                          )}
-                          {outbound && ((message.bcc_addresses ?? []) as string[]).length > 0 && (
-                            <p className="break-words text-xs text-muted-foreground">
-                              BCC: {((message.bcc_addresses ?? []) as string[]).join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {displayDate(messageTime(message))}
-                        </span>
-                      </div>
-                      <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
-                        {String(message.text_body || "No plain-text body available.")}
-                      </div>
-                      {attachments.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {attachments.map((attachment) => (
-                            <span
-                              key={attachment.id}
-                              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
-                            >
-                              <Paperclip className="h-3 w-3" />
-                              {attachment.filename}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {message.sync_status === "failed" && (
-                        <p className="mt-3 text-xs text-destructive">
-                          Synchronization failed: {String(message.sync_error ?? "Retry sync")}
+                {selectedThread.folder === "drafts" && draft && messages.length === 0 ? (
+                  <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-semibold">
+                          {String(draft.from_address || "Draft")}
                         </p>
-                      )}
-                    </article>
-                  );
-                })}
+                        <p className="mt-0.5 break-words text-xs text-muted-foreground">
+                          To: {((draft.to_addresses ?? []) as string[]).join(", ") || "—"}
+                        </p>
+                        {((draft.cc_addresses ?? []) as string[]).length > 0 && (
+                          <p className="break-words text-xs text-muted-foreground">
+                            CC: {((draft.cc_addresses ?? []) as string[]).join(", ")}
+                          </p>
+                        )}
+                        {((draft.bcc_addresses ?? []) as string[]).length > 0 && (
+                          <p className="break-words text-xs text-muted-foreground">
+                            BCC: {((draft.bcc_addresses ?? []) as string[]).join(", ")}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Draft</span>
+                    </div>
+                    <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                      {String(draft.text_body || "No draft body available.")}
+                    </div>
+                  </article>
+                ) : (
+                  messages.map((message) => {
+                    const outbound = message.direction === "outbound";
+                    const attachments = (threadQuery.data?.attachments ?? []).filter(
+                      (attachment) => attachment.message_id === message.id,
+                    );
+                    return (
+                      <article
+                        key={String(message.id)}
+                        className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="break-words text-sm font-semibold">
+                              {String(message.from_address || "Unknown sender")}
+                            </p>
+                            <p className="mt-0.5 break-words text-xs text-muted-foreground">
+                              To: {((message.to_addresses ?? []) as string[]).join(", ") || "—"}
+                            </p>
+                            {((message.cc_addresses ?? []) as string[]).length > 0 && (
+                              <p className="break-words text-xs text-muted-foreground">
+                                CC: {((message.cc_addresses ?? []) as string[]).join(", ")}
+                              </p>
+                            )}
+                            {outbound && ((message.bcc_addresses ?? []) as string[]).length > 0 && (
+                              <p className="break-words text-xs text-muted-foreground">
+                                BCC: {((message.bcc_addresses ?? []) as string[]).join(", ")}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {displayDate(messageTime(message))}
+                          </span>
+                        </div>
+                        <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                          {String(message.text_body || "No plain-text body available.")}
+                        </div>
+                        {attachments.length > 0 && (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {attachments.map((attachment) => (
+                              <span
+                                key={attachment.id}
+                                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
+                              >
+                                <Paperclip className="h-3 w-3" />
+                                {attachment.filename}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {message.sync_status === "failed" && (
+                          <p className="mt-3 text-xs text-destructive">
+                            Synchronization failed: {String(message.sync_error ?? "Retry sync")}
+                          </p>
+                        )}
+                      </article>
+                    );
+                  })
+                )}
               </div>
 
               <footer className="flex flex-wrap gap-2 border-t border-border p-3 sm:px-5">
@@ -804,7 +859,23 @@ function Composer({
   busy: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const toRef = useRef<HTMLInputElement>(null);
   const [showCopies, setShowCopies] = useState(Boolean(state.cc || state.bcc || state.replyTo));
+
+  useEffect(() => {
+    toRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   function patch(values: Partial<ComposerState>) {
     setState((current) => (current ? { ...current, ...values } : current));
@@ -859,6 +930,7 @@ function Composer({
           <LabeledInput label="From" value={state.from} readOnly />
           <LabeledInput
             label="To"
+            inputRef={toRef}
             value={state.to}
             onChange={(value) => patch({ to: value })}
             placeholder="brand@example.com"
@@ -978,6 +1050,7 @@ function LabeledInput({
   placeholder,
   readOnly,
   trailing,
+  inputRef,
 }: {
   label: string;
   value: string;
@@ -985,6 +1058,7 @@ function LabeledInput({
   placeholder?: string;
   readOnly?: boolean;
   trailing?: React.ReactNode;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <label className="block">
@@ -993,6 +1067,7 @@ function LabeledInput({
         {trailing}
       </span>
       <Input
+        ref={inputRef}
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
@@ -1017,6 +1092,7 @@ function ConfirmationDialog({
   onConfirm: () => void;
 }) {
   const snapshot = confirmation.snapshot;
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const fields =
     confirmation.kind === "email"
       ? [
@@ -1045,6 +1121,21 @@ function ConfirmationDialog({
           ["Associated contact", snapshot.associatedContactId],
           ["Associated deal", snapshot.associatedDealId],
         ];
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
   return (
     <div
       role="alertdialog"
@@ -1092,7 +1183,7 @@ function ConfirmationDialog({
           })}
         </dl>
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={busy}>
+          <Button ref={cancelRef} variant="outline" onClick={onCancel} disabled={busy}>
             Cancel
           </Button>
           <Button

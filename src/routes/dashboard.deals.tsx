@@ -385,8 +385,7 @@ function DealDetailPanel({
           <p className="text-xs leading-relaxed text-muted-foreground">
             The brand pays you outside MatchAI. Any due or paid status in this pipeline is reported
             by you for organization only; MatchAI does not hold funds, provide escrow, or process a
-            payment. If a selected deal includes a MatchAI commission, that is handled as a separate
-            agreement and tracked outside the payment flow.
+            payment. Those statuses are creator-reported and handled externally.
           </p>
           <p className="rounded-xl bg-foreground/[0.04] p-3 text-xs text-muted-foreground">
             Move this card to “Payment due” or “Paid externally” when the real-world status changes.

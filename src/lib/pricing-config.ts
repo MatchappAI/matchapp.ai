@@ -4,7 +4,6 @@
  * Model:
  *  - MatchAI subscriptions cover the product.
  *  - Creator-brand payments happen outside MatchAI.
- *  - MatchAI may charge a commission on selected deals, but it does not custody the money.
  *  - Stripe is used only for user-to-MatchAI subscription payments.
  */
 import type { PlanSlug } from "./plans";
@@ -172,8 +171,9 @@ export function computeBreakEvenSuggestion(args: {
 /** Marketing copy — kept here so UI and legal stay in sync. */
 export const MONETIZATION_COPY = {
   headline: "Free until you want to upgrade MatchAI.",
-  sub: "MatchAI finds relevant brands, sends personalized pitches, and follows up automatically. MatchAI subscriptions cover the product, while creator-brand payment stays external. Selected deals can include a separate MatchAI commission, agreed up front.",
-  compareLine: "Creator-brand payment stays external; commission is separate where used.",
+  sub: "MatchAI finds relevant brands, sends personalized pitches, and follows up automatically. MatchAI subscriptions cover the product, while creator-brand payment stays external.",
+  compareLine:
+    "Creator-brand payment stays external; MatchAI does not process creator-brand payments.",
 
   agreementVersion: "2026-07-27.v1",
 } as const;
@@ -188,7 +188,7 @@ export const FAIR_DEAL_GUARANTEE = {
     },
     {
       label: "External payment stays external",
-      body: "Creator-brand payment is handled outside MatchAI and never through a wallet or payout flow. Where used, MatchAI commission is a separate agreement, not a money-moving feature.",
+      body: "Creator-brand payment is handled outside MatchAI and never through a wallet or payout flow.",
     },
     {
       label: "Internal inbox stays honest",

@@ -211,9 +211,8 @@ export function Pricing() {
 
       <p className="mt-8 text-xs text-muted-foreground">
         MatchAI subscriptions are billed separately from any creator-brand payment handled outside
-        the product. Stripe payment-processing fees (~2.9% + $0.30) are billed by Stripe. If a
-        selected deal includes a separate MatchAI commission, that is agreed up front and tracked
-        outside the payment flow. Cancel anytime.
+        the product. Stripe payment-processing fees (~2.9% + $0.30) are billed by Stripe. Cancel
+        anytime.
       </p>
     </section>
   );

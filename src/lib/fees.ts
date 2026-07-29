@@ -17,10 +17,9 @@ export const FEE_COPY = {
   stripeDisclosure:
     "Stripe payment-processing fees (~2.9% + $0.30 on US cards) apply to subscription payments and go to Stripe — not MatchAI.",
   successFeeDisclosure:
-    "Creator-brand payment is handled outside MatchAI and is never processed as an active wallet, escrow, or payout flow. MatchAI may charge a separate commission on selected deals if agreed up front.",
+    "Creator-brand payment is handled outside MatchAI and is never processed as an active wallet, escrow, or payout flow.",
   subscriptionDisclosure: "MatchAI plans are billed monthly. Cancel anytime.",
-  brandsNeverCharged:
-    "Selected deals may include a MatchAI commission; payment still stays external.",
+  brandsNeverCharged: "Creator-brand payment stays external and is creator-reported in MatchAI.",
 } as const;
 
 /** Stripe processing estimate (US card): 2.9% + $0.30 — passed through, NOT MatchAI revenue. */

@@ -99,8 +99,9 @@ test("mobile menu and public CTA remain usable", async ({ page }) => {
   await menuToggle.click();
   await page.waitForTimeout(200);
   const mobileDrawer = page.locator("div.fixed.inset-0.z-30.md\\:hidden");
-  await expect(mobileDrawer.getByRole("link", { name: /Sign in/i })).toBeVisible();
-  await mobileDrawer.getByRole("link", { name: /Sign in/i }).click({ force: true });
+  const mobileSignIn = mobileDrawer.getByRole("link", { name: /Sign in/i });
+  await expect(mobileSignIn).toBeVisible();
+  await mobileSignIn.click({ force: true });
   await expect(page).toHaveURL(/\/auth(\?.*)?$/);
   await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
 
@@ -119,7 +120,8 @@ test("auth page renders the form and mode toggles work", async ({ page }) => {
 
   const loginToggle = page.getByRole("button", { name: /Log in/i });
   await loginToggle.click();
-  await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Forgot password/i })).toBeVisible();
+  await expect(page.getByPlaceholder("Full name")).toHaveCount(0);
   await expect(page.getByPlaceholder("Email address")).toBeVisible();
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 

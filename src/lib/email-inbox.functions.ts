@@ -73,7 +73,14 @@ export const getInboxThread = createServerFn({ method: "POST" })
         .select("id,message_id,draft_id,filename,mime_type,size_bytes,provider_attachment_id")
         .eq("user_id", context.userId),
     ]);
-    return { thread, messages: messages ?? [], attachments: attachments ?? [] };
+    const { data: draft } = await db
+      .from("email_drafts")
+      .select("*")
+      .eq("thread_id", thread.id)
+      .eq("user_id", context.userId)
+      .order("updated_at", { ascending: false })
+      .maybeSingle();
+    return { thread, messages: messages ?? [], attachments: attachments ?? [], draft };
   });
 
 const DraftSchema = z
@@ -130,6 +137,45 @@ export const saveInboxDraft = createServerFn({ method: "POST" })
       : db.from("email_drafts").insert(values);
     const { data: draft, error: draftError } = await operation.select("*").single();
     if (draftError || !draft) throw new Error("Could not save draft");
+
+    const threadValues = {
+      subject: draft.subject,
+      snippet: draft.text_body.slice(0, 240),
+      folder: "drafts",
+      is_unread: false,
+      message_count: 0,
+      last_message_at: draft.updated_at ?? draft.created_at ?? new Date().toISOString(),
+      sync_status: "pending",
+      sync_error: null,
+      user_id: context.userId,
+    };
+
+    if (draft.thread_id) {
+      const { error: threadUpdateError } = await db
+        .from("email_threads")
+        .update(threadValues)
+        .eq("id", draft.thread_id)
+        .eq("user_id", context.userId);
+      if (threadUpdateError) throw new Error("Could not update draft thread");
+    } else {
+      const { data: thread, error: threadInsertError } = await db
+        .from("email_threads")
+        .insert({
+          ...threadValues,
+          provider_thread_id: `draft:${draft.id}`,
+        })
+        .select("id")
+        .single();
+      if (threadInsertError || !thread) throw new Error("Could not create draft thread");
+
+      const { error: draftThreadError } = await db
+        .from("email_drafts")
+        .update({ thread_id: thread.id })
+        .eq("id", draft.id)
+        .eq("user_id", context.userId);
+      if (draftThreadError) throw new Error("Could not link draft to thread");
+      draft.thread_id = thread.id;
+    }
 
     await db.from("email_attachments").delete().eq("draft_id", draft.id);
     if (data.attachments.length > 0) {
@@ -296,11 +342,11 @@ export const executeEmailAction = createServerFn({ method: "POST" })
       if (!sent.ok) throw new Error(sent.error);
 
       const now = new Date().toISOString();
-      const { data: storedThread, error: threadError } = await db
-        .from("email_threads")
-        .upsert(
-          {
-            user_id: context.userId,
+      let storedThreadId: string;
+      if (draft.thread_id) {
+        const { error: threadError } = await db
+          .from("email_threads")
+          .update({
             provider_thread_id: sent.providerThreadId,
             subject: draft.subject,
             snippet: draft.text_body.slice(0, 240),
@@ -311,18 +357,42 @@ export const executeEmailAction = createServerFn({ method: "POST" })
             last_synced_at: now,
             sync_status: "synced",
             sync_error: null,
-          },
-          { onConflict: "user_id,provider_thread_id" },
-        )
-        .select("id")
-        .single();
-      if (threadError || !storedThread) {
-        throw new Error("Provider sent the message, but local synchronization failed");
+          })
+          .eq("id", draft.thread_id)
+          .eq("user_id", context.userId);
+        if (threadError)
+          throw new Error("Provider sent the message, but local synchronization failed");
+        storedThreadId = draft.thread_id;
+      } else {
+        const { data: storedThread, error: threadError } = await db
+          .from("email_threads")
+          .upsert(
+            {
+              user_id: context.userId,
+              provider_thread_id: sent.providerThreadId,
+              subject: draft.subject,
+              snippet: draft.text_body.slice(0, 240),
+              folder: "sent",
+              is_unread: false,
+              message_count: 1,
+              last_message_at: now,
+              last_synced_at: now,
+              sync_status: "synced",
+              sync_error: null,
+            },
+            { onConflict: "user_id,provider_thread_id" },
+          )
+          .select("id")
+          .single();
+        if (threadError || !storedThread) {
+          throw new Error("Provider sent the message, but local synchronization failed");
+        }
+        storedThreadId = storedThread.id;
       }
       await db.from("email_messages").upsert(
         {
           user_id: context.userId,
-          thread_id: storedThread.id,
+          thread_id: storedThreadId,
           provider_message_id: sent.providerMessageId,
           direction: "outbound",
           from_address: draft.from_address,
