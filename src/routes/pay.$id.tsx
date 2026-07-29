@@ -36,7 +36,8 @@ function ExternalPaymentNotice() {
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Contact the creator directly for their preferred invoice or payment method. MatchAI does
-            not provide escrow, hold funds, release payments, or charge either party a success fee.
+            not provide escrow, hold funds, or release payments. If a selected deal includes a
+            MatchAI commission, that is agreed separately and tracked outside the payment flow.
           </p>
           <Button asChild variant="outline" className="mt-6 rounded-xl">
             <Link to="/">

@@ -13,7 +13,7 @@ const features = [
   },
   {
     title: "One internal MatchAI Inbox",
-    body: "Keep each pitch, reply, draft, attachment, and negotiation in a single thread without connecting a personal mailbox. Provider-backed sending and synchronization remain unavailable until configured.",
+    body: "Keep each pitch, reply, draft, attachment, and negotiation in a single thread without connecting a personal mailbox. Provider-backed sending and synchronization remain unavailable until an external transport is selected.",
   },
   {
     title: "Negotiation and deal tracking",

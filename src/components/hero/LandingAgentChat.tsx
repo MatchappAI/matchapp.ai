@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const OPENING_TEXT =
-  "Hey, I'm your brand deals agent. I can find brands, draft outreach, follow up, help you price deals, and track payments. Want me to show you what I'd do for your creator profile?";
+  "Hey, I'm your brand deals agent. I can find brands, draft outreach, follow up, help you price deals, and keep your creator inbox organized. Want me to show you what I'd do for your creator profile?";
 
 const OPENING_SUGGESTIONS = [
   "Find brands for me",
@@ -83,9 +83,7 @@ export function LandingAgentChat() {
   const lastAssistantText = lastAssistant ? messageText(lastAssistant) : "";
   const parsedLast = parseSuggestions(lastAssistantText);
   const showOpeningSuggestions = messages.length <= 1;
-  const activeSuggestions = showOpeningSuggestions
-    ? OPENING_SUGGESTIONS
-    : parsedLast.suggestions;
+  const activeSuggestions = showOpeningSuggestions ? OPENING_SUGGESTIONS : parsedLast.suggestions;
 
   return (
     <motion.div
@@ -114,10 +112,7 @@ export function LandingAgentChat() {
         </div>
 
         {/* Messages */}
-        <div
-          ref={scrollerRef}
-          className="max-h-[420px] overflow-y-auto px-4 py-4 space-y-3"
-        >
+        <div ref={scrollerRef} className="max-h-[420px] overflow-y-auto px-4 py-4 space-y-3">
           {messages.map((m) => {
             const raw = messageText(m);
             if (!raw && m.role === "assistant" && !isLoading) return null;
@@ -129,13 +124,7 @@ export function LandingAgentChat() {
                 : parseSuggestions(raw).clean
               : raw;
             return (
-              <div
-                key={m.id}
-                className={cn(
-                  "flex",
-                  isAssistant ? "justify-start" : "justify-end",
-                )}
-              >
+              <div key={m.id} className={cn("flex", isAssistant ? "justify-start" : "justify-end")}>
                 <div
                   className={cn(
                     "max-w-[88%] whitespace-pre-wrap break-words text-[14px] leading-relaxed",

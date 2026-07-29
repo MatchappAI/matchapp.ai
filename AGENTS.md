@@ -7,7 +7,7 @@
 - Brand-to-creator payments are external. Any payment status stored in MatchAI must be labeled creator-reported and externally handled.
 - Do not delete legacy financial migrations blindly. Disable active product behavior and secure dormant tables after checking dependencies.
 - No lead-generation, scraping, enrichment, contact-database, or email-verification provider is selected.
-- The product must work with manual brand/contact entry and CSV import. Provider adapters must remain optional and return an honest “provider not configured” state.
+- The product must work with creator-side and MatchAI-side manual brand/contact entry and CSV import, including validation preview, duplicate detection, editing, search, filtering, and source/provenance. Provider adapters must remain optional and return an honest “provider not configured” state.
 - Creators communicate through a full internal MatchAI email identity and Inbox.
 - No creator-email delivery/synchronization API provider has been selected. Keep transport behind an adapter and show “provider not configured” until one is selected.
 - Resend is only for MatchAI transactional/product email.
@@ -39,6 +39,10 @@ When the user says `/frontend`, deliver a production-ready end-to-end frontend p
 - AI acceptance requires real context loading and generation, editable structured output, exact confirmation, exactly-once execution, cancellation with no effect, and honest provider failures.
 - Add durable automated browser coverage that asserts outcomes, persistence, and exactly-once behavior.
 - `/frontend` is complete only after every interaction is accounted for, no critical behavior is mocked or missing, build/type-check/targeted lint/E2E pass, and the final browser pass is clean.
+- Reconcile every integration referenced by code, docs, screenshots, environment examples, deployment wiring, or handoff material. Each must be verified working or intentionally disabled with a documented safe fallback.
+- Verify a fresh clone and fresh deployment. Required callback, webhook, cron, and live-host URLs must target the current production host.
+- Deploy the verified branch to production, prove the live URL serves the latest commit, and repeat the critical desktop/mobile browser pass on the live site.
+- Do not declare `/frontend` complete until local checks, automated E2E, production deployment, live smoke tests, cache/staleness checks, and live end-to-end verification all pass.
 
 ## Working rules
 

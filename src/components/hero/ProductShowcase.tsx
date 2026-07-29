@@ -1,19 +1,15 @@
 import { motion } from "framer-motion";
-import {
-  Send,
-  Check,
-  Pencil,
-  CornerDownLeft,
-  ShieldCheck,
-  Clock,
-  Wallet,
-} from "lucide-react";
+import { Send, Check, Pencil, CornerDownLeft, ShieldCheck, Clock, Wallet } from "lucide-react";
 import { SectionEyebrow } from "./SectionEyebrow";
 import { Reveal } from "./Reveal";
 import { MatchAILogo } from "@/components/brand/MatchAILogo";
 
-const tags = ["Beauty & skincare", "Prestige retailer", "Beauty Insider creators", "Reels + Tutorials"];
-
+const tags = [
+  "Beauty & skincare",
+  "Prestige retailer",
+  "Beauty Insider creators",
+  "Reels + Tutorials",
+];
 
 function AgentAvatar() {
   return (
@@ -109,7 +105,9 @@ export function ProductShowcase() {
           </span>
         </h2>
         <p className="mt-5 text-[15px] leading-[1.7] text-muted-foreground">
-          Your agent finds the brand, sends the pitch from our verified domain, handles replies in one thread per brand, negotiates the rate, tracks payment through Stripe, and pays out to your bank. You just tap Approve.
+          Your agent finds the brand, sends the pitch from our verified domain, handles replies in
+          one thread per brand, negotiates the rate, tracks payment through Stripe, and pays out to
+          your bank. You just tap Approve.
         </p>
       </Reveal>
 
@@ -122,8 +120,6 @@ export function ProductShowcase() {
       </Reveal>
 
       <div className="relative mx-auto mt-12 max-w-3xl">
-
-
         {/* Browser frame */}
         <motion.div
           initial={{ opacity: 0, y: 40, rotateX: 8 }}
@@ -157,7 +153,11 @@ export function ProductShowcase() {
           <div className="space-y-3.5 p-5 sm:p-7">
             {/* 1. Overnight scan summary */}
             <AgentBubble delay={0.05}>
-              Morning ☀️ Overnight I scanned <span className="font-semibold text-foreground">2,000 brands</span>, shortlisted <span className="font-semibold text-foreground">12</span> at 90%+ fit, and drafted <span className="font-semibold text-foreground">6 pitches</span>. Here's the one I'd send first —
+              Morning ☀️ Overnight I scanned{" "}
+              <span className="font-semibold text-foreground">2,000 brands</span>, shortlisted{" "}
+              <span className="font-semibold text-foreground">12</span> at 90%+ fit, and drafted{" "}
+              <span className="font-semibold text-foreground">6 pitches</span>. Here's the one I'd
+              send first —
             </AgentBubble>
 
             {/* 2. Brand match card */}
@@ -173,9 +173,7 @@ export function ProductShowcase() {
                       </span>
                     </div>
                     <div>
-                      <div className="text-[13.5px] font-semibold text-foreground">
-                        Sephora
-                      </div>
+                      <div className="text-[13.5px] font-semibold text-foreground">Sephora</div>
                       <div className="text-[11px] text-muted-foreground">
                         Prestige beauty retailer · Holiday Beauty drop
                       </div>
@@ -248,8 +246,10 @@ export function ProductShowcase() {
                   Subject: obsessed with the Holiday Beauty Insider edit
                 </p>
                 <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted-foreground">
-                  Hey Sephora team — the new Rare Beauty + Rhode set is everywhere on my FYP this week. I shoot clean-girl makeup tutorials for Gen Z
-                  <span className="text-foreground/80"> (15K on IG, 40% US)</span> and would love to put a Reel together for the holiday push…
+                  Hey Sephora team — the new Rare Beauty + Rhode set is everywhere on my FYP this
+                  week. I shoot clean-girl makeup tutorials for Gen Z
+                  <span className="text-foreground/80"> (15K on IG, 40% US)</span> and would love to
+                  put a Reel together for the holiday push…
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <button className="flex items-center gap-1 rounded-lg bg-primary hover:bg-primary/90 transition-colors px-2.5 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_oklch(0_0_0/0.22)]">
@@ -272,11 +272,13 @@ export function ProductShowcase() {
             <AgentBubble delay={0.55} bare>
               <div className="rounded-2xl rounded-tl-sm border border-foreground/[0.07] bg-foreground/[0.03] p-3.5">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground/80">
-                  <Clock className="h-3 w-3" />
-                  4 days later · auto follow-up worked
+                  <Clock className="h-3 w-3" />4 days later · auto follow-up worked
                 </div>
                 <p className="mt-2 text-[12px] leading-relaxed text-foreground">
-                  Sephora replied. They countered <span className="font-semibold">$500</span>. I pushed back to <span className="font-semibold">$750</span> citing your reach + 5% ER. They came back at <span className="font-semibold text-emerald-300">$700 + product</span>.
+                  Sephora replied. They countered <span className="font-semibold">$500</span>. I
+                  pushed back to <span className="font-semibold">$750</span> citing your reach + 5%
+                  ER. They came back at{" "}
+                  <span className="font-semibold text-emerald-300">$700 + product</span>.
                 </p>
                 <div className="mt-3 grid grid-cols-3 gap-1.5">
                   <StatPill label="Their open" value="$500" />
@@ -294,7 +296,7 @@ export function ProductShowcase() {
               </div>
             </AgentBubble>
 
-            {/* 6. Deal closed + payout tracking */}
+            {/* 6. Deal closed + external payment tracking */}
             <AgentBubble delay={0.7} bare>
               <div className="rounded-2xl rounded-tl-sm border border-emerald-400/20 bg-gradient-to-br from-emerald-500/[0.08] via-emerald-500/[0.02] to-transparent p-3.5">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-300/90">
@@ -304,11 +306,11 @@ export function ProductShowcase() {
                 <div className="mt-2.5 grid grid-cols-3 gap-1.5">
                   <StatPill label="Deal value" value="$700" tone="emerald" />
                   <StatPill label="Delivery" value="Oct 14" />
-                  <StatPill label="Payout ETA" value="2 days" />
+                  <StatPill label="External status" value="Creator-reported" />
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
                   <Wallet className="h-3 w-3 text-emerald-300" />
-                  Payout status tracked through to your bank after the Reel goes live.
+                  Creator-brand payment is tracked externally and recorded here for context.
                 </div>
               </div>
             </AgentBubble>
@@ -337,7 +339,8 @@ export function ProductShowcase() {
       </Reveal>
 
       <p className="mx-auto mt-4 max-w-2xl text-center text-[12px] text-muted-foreground">
-        You approve the moves. Your agent does the rest — match, pitch, follow-up, negotiate, protect payment, payout.
+        You approve the moves. Your agent does the rest — match, pitch, follow-up, negotiate, and
+        track external payment status.
       </p>
     </section>
   );

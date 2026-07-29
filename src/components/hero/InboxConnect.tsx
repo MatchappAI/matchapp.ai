@@ -57,8 +57,8 @@ export function InboxConnect() {
         </div>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
           Draft and organize creator outreach from an internal MatchAI email identity.
-          Provider-backed sending and reply synchronization activate only after an email API is
-          selected and configured.
+          Provider-backed sending and reply synchronization stay in an honest not-configured state
+          until an email API is selected and configured.
         </p>
       </Reveal>
 
@@ -162,7 +162,7 @@ export function InboxConnect() {
               <div className="text-sm font-semibold text-foreground">Inbound brand threads</div>
             </div>
             <span className="rounded-full bg-foreground/[0.04] px-2.5 py-1 text-[10.5px] font-medium text-muted-foreground ring-1 ring-foreground/10">
-              Limited on Free · Unlimited on paid
+              Manual + CSV now · provider later
             </span>
           </div>
 

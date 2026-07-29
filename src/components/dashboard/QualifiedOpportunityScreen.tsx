@@ -1,7 +1,7 @@
 /**
  * Qualified Opportunity screen — shown after a qualifying paid reply
- * arrives. Presents Stay Free vs paid subscription paths and locks the
- * creator's monetization choice.
+ * arrives. Presents subscription choices and keeps creator-brand payment
+ * handling external to MatchAI.
  */
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { lockMonetizationChoice } from "@/lib/qualification.functions";
 import { createCheckoutSession } from "@/lib/payments.functions";
-import { computeFeeBreakdown, MONETIZATION_COPY, FAIR_DEAL_GUARANTEE, SUCCESS_FEE_CAP_USD } from "@/lib/pricing-config";
+import { FAIR_DEAL_GUARANTEE } from "@/lib/pricing-config";
 
 type Props = {
   brandName?: string | null;
@@ -22,28 +22,27 @@ type Props = {
 };
 
 export function QualifiedOpportunityScreen({
-  brandName, replyBody, estimatedMin, estimatedMax, confidence, reason, onDecided,
+  brandName,
+  replyBody,
+  estimatedMin,
+  estimatedMax,
+  confidence,
+  reason,
+  onDecided,
 }: Props) {
   const lock = useServerFn(lockMonetizationChoice);
   const checkout = useServerFn(createCheckoutSession);
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
 
-  const midGross = estimatedMin && estimatedMax ? (estimatedMin + estimatedMax) / 2 : 500;
-
-  const stayFree = computeFeeBreakdown({
-    gross: midGross, choice: "stay_free_success_fee", dealSource: "matchai_sourced",
-  });
-  const paid = computeFeeBreakdown({
-    gross: midGross, choice: "starter_subscription", dealSource: "matchai_sourced",
-  });
-
   const chooseFree = async () => {
     setLoading("free");
     try {
-      await lock({ data: { choice: "stay_free_success_fee" } });
+      await lock({ data: { choice: "starter_subscription" } });
       onDecided?.();
-    } finally { setLoading(null); }
+    } finally {
+      setLoading(null);
+    }
   };
 
   const choosePaid = async (plan: "starter" | "growth" | "pro") => {
@@ -52,7 +51,8 @@ export function QualifiedOpportunityScreen({
       const { url } = await checkout({ data: { plan, origin: window.location.origin } });
       window.location.href = url;
     } catch (e) {
-      console.error(e); setLoading(null);
+      console.error(e);
+      setLoading(null);
       toast.error("Could not start checkout. Please try again.");
     }
   };
@@ -61,39 +61,67 @@ export function QualifiedOpportunityScreen({
     plan: "starter" | "growth" | "pro";
     label: string;
     price: string;
-    fee: string;
     blurb: string;
     featured?: boolean;
   }> = [
-    { plan: "starter", label: "Starter", price: "$49/mo", fee: "10% success fee", blurb: "For creators beginning to close paid deals." },
-    { plan: "growth", label: "Growth", price: "$99/mo", fee: "5% success fee", blurb: "More opportunities and stronger support.", featured: true },
-    { plan: "pro", label: "Pro", price: "$199/mo", fee: "0% MatchAI success fee", blurb: "Maximum outreach, no MatchAI success fee." },
+    {
+      plan: "starter",
+      label: "Starter",
+      price: "$49/mo",
+      blurb: "For creators beginning to close paid deals.",
+    },
+    {
+      plan: "growth",
+      label: "Growth",
+      price: "$99/mo",
+      blurb: "More opportunities and stronger support.",
+      featured: true,
+    },
+    { plan: "pro", label: "Pro", price: "$199/mo", blurb: "Maximum outreach and support." },
   ];
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-purple-700">Qualified opportunity</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-purple-700">
+          Qualified opportunity
+        </p>
         <h2 className="mt-2 text-2xl font-bold text-foreground">You landed a paid opportunity.</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Choose how you want to pay for this MatchAI-sourced deal.
-          {brandName && <> {" "}<span className="font-medium text-foreground">{brandName}</span> is interested in a paid collaboration.</>}
+          Choose a MatchAI subscription. Creator-brand payment happens outside MatchAI.
+          {brandName && (
+            <>
+              {" "}
+              <span className="font-medium text-foreground">{brandName}</span> is interested in a
+              paid collaboration.
+            </>
+          )}
           {typeof confidence === "number" && (
-            <> Confidence: <span className="font-medium text-foreground">{Math.round(confidence * 100)}%</span>.</>
+            <>
+              {" "}
+              Confidence:{" "}
+              <span className="font-medium text-foreground">{Math.round(confidence * 100)}%</span>.
+            </>
           )}
         </p>
       </div>
 
       {replyBody && (
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reply</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Reply
+          </p>
           <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{replyBody}</p>
-          {reason && <p className="mt-3 text-xs text-muted-foreground">Why it qualified: {reason}</p>}
+          {reason && (
+            <p className="mt-3 text-xs text-muted-foreground">Why it qualified: {reason}</p>
+          )}
         </div>
       )}
 
       <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Estimated deal potential</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Estimated deal potential
+        </p>
         <p className="mt-1 text-lg font-semibold text-foreground">
           {estimatedMin && estimatedMax
             ? `$${estimatedMin.toLocaleString()}–$${estimatedMax.toLocaleString()}`
@@ -105,36 +133,33 @@ export function QualifiedOpportunityScreen({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Stay Free */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Stay on Free</p>
-          <p className="mt-1 text-3xl font-bold text-foreground">$0<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-          <p className="mt-2 text-sm text-foreground/80">
-            Pay a 20% success fee on this deal — only if it completes and pays.
-            {stayFree.feeCapped && <> Capped at ${SUCCESS_FEE_CAP_USD}.</>}
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Stay on Free
           </p>
-          <dl className="mt-4 space-y-1.5 text-[13px]">
-            <div className="flex justify-between"><dt className="text-muted-foreground">Gross</dt><dd className="font-medium">${stayFree.gross.toFixed(2)}</dd></div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">MatchAI fee{stayFree.feeCapped ? " (capped)" : " (20%)"}</dt>
-              <dd className="font-medium">−${stayFree.successFeeAmount.toFixed(2)}</dd>
-            </div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Payment processing</dt><dd className="font-medium">−${stayFree.paymentProcessingFee.toFixed(2)}</dd></div>
-            <div className="flex justify-between border-t border-border pt-1.5"><dt className="font-semibold">Your net</dt><dd className="font-semibold text-foreground">${stayFree.creatorNet.toFixed(2)}</dd></div>
-          </dl>
+          <p className="mt-1 text-3xl font-bold text-foreground">
+            $0<span className="text-sm font-normal text-muted-foreground">/mo</span>
+          </p>
+          <p className="mt-2 text-sm text-foreground/80">
+            Keep the free plan for drafting, inbox organization, and review. Creator-brand payment
+            is external, and any MatchAI commission on a selected deal is tracked separately.
+          </p>
           <button
             onClick={chooseFree}
             disabled={loading === "free"}
             className="mt-5 w-full rounded-xl border border-border bg-card-inner px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-60"
           >
-            {loading === "free" ? "Saving…" : "Pay 20% on this deal"}
+            {loading === "free" ? "Saving…" : "Keep Free"}
           </button>
         </div>
 
-        {/* Paid — 3 options */}
         <div className="rounded-2xl border border-purple-300/60 bg-purple-50/40 p-5 ring-1 ring-purple-300/50">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-800">Upgrade — lower or zero success fee</p>
-          <p className="mt-1 text-sm text-foreground/80">Monthly subscription. Fee rate locks on this deal at upgrade.</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-800">
+            Upgrade MatchAI
+          </p>
+          <p className="mt-1 text-sm text-foreground/80">
+            Monthly subscription. No wallet, no escrow, no creator payout processing.
+          </p>
           <div className="mt-4 space-y-2">
             {paidOptions.map((opt) => (
               <button
@@ -151,9 +176,10 @@ export function QualifiedOpportunityScreen({
                   <span className="text-sm font-semibold">
                     {opt.label} <span className="opacity-70">— {opt.price}</span>
                   </span>
-                  <span className="text-xs font-medium opacity-90">{opt.fee}</span>
                 </div>
-                <p className={`mt-0.5 text-[12px] ${opt.featured ? "opacity-90" : "text-muted-foreground"}`}>
+                <p
+                  className={`mt-0.5 text-[12px] ${opt.featured ? "opacity-90" : "text-muted-foreground"}`}
+                >
                   {loading === opt.plan ? "Opening checkout…" : opt.blurb}
                 </p>
               </button>
@@ -163,19 +189,23 @@ export function QualifiedOpportunityScreen({
       </div>
 
       <div className="rounded-2xl border border-foreground/[0.08] bg-foreground/[0.02] p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/70">{FAIR_DEAL_GUARANTEE.title}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/70">
+          {FAIR_DEAL_GUARANTEE.title}
+        </p>
         <ul className="mt-2 grid gap-1.5 sm:grid-cols-2 text-[12.5px] text-foreground/85">
           {FAIR_DEAL_GUARANTEE.items.map((it) => (
-            <li key={it.label}>· <span className="font-medium text-foreground">{it.label}.</span> {it.body}</li>
+            <li key={it.label}>
+              · <span className="font-medium text-foreground">{it.label}.</span> {it.body}
+            </li>
           ))}
         </ul>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Your choice locks the fee rate for this deal at acceptance — upgrading later won't change
-        the economics of already-accepted deals, and downgrading later won't either. Success fees apply
-        only to completed and paid MatchAI-sourced deals. Replies, conversations, proposals, and unsigned
-        opportunities are always free. Standard Stripe payment-processing fees apply separately.
+        MatchAI subscriptions are separate from any creator-brand payment handled outside the
+        product. Replies, conversations, proposals, and unsigned opportunities are always free.
+        Standard Stripe payment-processing fees apply separately, and any agreed MatchAI commission
+        is tracked apart from the external payment itself.
       </p>
     </div>
   );

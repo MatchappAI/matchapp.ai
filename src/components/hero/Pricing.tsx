@@ -17,7 +17,6 @@ type Plan = {
   slug: PlanSlug;
   price: string;
   priceNote: string;
-  feeLine: string;
   pitches: string;
   matches: string;
   tagline: string;
@@ -32,10 +31,9 @@ const plans: Plan[] = [
     slug: "free",
     price: "$0",
     priceNote: "/ mo",
-    feeLine: "20% success fee on paid MatchAI-sourced deals",
     pitches: "100 personalized pitches / mo",
     matches: "Limited inbound threads (free)",
-    tagline: "Start with no upfront cost. Upgrade only once a paid deal lands.",
+    tagline: "Start with no upfront cost. Upgrade when you want more inbox capacity and support.",
     features: [
       "AI brand matching + personalized outreach",
       "Automated follow-ups",
@@ -50,7 +48,6 @@ const plans: Plan[] = [
     slug: "starter",
     price: "$49",
     priceNote: "/ mo",
-    feeLine: "10% success fee",
     pitches: "100 personalized pitches / mo",
     matches: "Unlimited inbound + outbound",
     tagline: "For creators closing their first paid deals.",
@@ -67,7 +64,6 @@ const plans: Plan[] = [
     slug: "growth",
     price: "$99",
     priceNote: "/ mo",
-    feeLine: "5% success fee",
     pitches: "250 personalized pitches / mo",
     matches: "Unlimited inbound + priority matching",
     tagline: "For active creators scaling volume and support.",
@@ -85,7 +81,6 @@ const plans: Plan[] = [
     slug: "pro",
     price: "$199",
     priceNote: "/ mo",
-    feeLine: "0% success fee",
     pitches: "500 personalized pitches / mo",
     matches: "Unlimited inbound + highest-priority matching",
     tagline: "For high-volume creators who keep 100% of every deal.",
@@ -98,7 +93,6 @@ const plans: Plan[] = [
     cta: "Choose Pro",
   },
 ];
-
 
 export function Pricing() {
   const signedIn = useIsSignedIn();
@@ -127,7 +121,10 @@ export function Pricing() {
   };
 
   return (
-    <section id="pricing" className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24 scroll-mt-24">
+    <section
+      id="pricing"
+      className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 lg:py-24 scroll-mt-24"
+    >
       <Reveal className="max-w-2xl">
         <SectionEyebrow>PRICING</SectionEyebrow>
         <h2 className="mt-6 text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -158,7 +155,6 @@ export function Pricing() {
               <span className="text-5xl font-bold tracking-tight text-foreground">{p.price}</span>
               <span className="text-sm text-muted-foreground">{p.priceNote}</span>
             </div>
-            <p className="mt-3 text-[12.5px] font-medium text-foreground/85">{p.feeLine}</p>
             <p className="mt-4 text-sm text-muted-foreground">{p.tagline}</p>
 
             <div className="mt-5 space-y-1.5 text-[13px] text-foreground/90">
@@ -194,11 +190,18 @@ export function Pricing() {
 
       {/* Fair Deal Guarantee */}
       <div className="mt-12 rounded-3xl border border-foreground/[0.08] bg-foreground/[0.02] p-6 sm:p-8">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/70">The Fair Deal Guarantee</p>
-        <h3 className="mt-2 text-xl font-bold text-foreground sm:text-2xl">Four promises we make on every deal.</h3>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/70">
+          The Fair Deal Guarantee
+        </p>
+        <h3 className="mt-2 text-xl font-bold text-foreground sm:text-2xl">
+          Four promises we make on every subscription.
+        </h3>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {FAIR_DEAL_GUARANTEE.items.map((it) => (
-            <div key={it.label} className="rounded-2xl border border-foreground/[0.06] bg-background/60 p-4">
+            <div
+              key={it.label}
+              className="rounded-2xl border border-foreground/[0.06] bg-background/60 p-4"
+            >
               <p className="text-sm font-semibold text-foreground">{it.label}</p>
               <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{it.body}</p>
             </div>
@@ -207,7 +210,10 @@ export function Pricing() {
       </div>
 
       <p className="mt-8 text-xs text-muted-foreground">
-        Success fees apply only to completed, paid deals sourced through MatchAI. Stripe payment-processing fees (~2.9% + $0.30) are billed by Stripe. Cancel anytime.
+        MatchAI subscriptions are billed separately from any creator-brand payment handled outside
+        the product. Stripe payment-processing fees (~2.9% + $0.30) are billed by Stripe. If a
+        selected deal includes a MatchAI commission, that commission is agreed up front and is
+        tracked separately from the external payment. Cancel anytime.
       </p>
     </section>
   );

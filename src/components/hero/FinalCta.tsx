@@ -10,10 +10,11 @@ export function FinalCta() {
           <div className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-[oklch(0.7_0.02_260/0.06)] blur-3xl" />
           <div className="relative max-w-2xl">
             <h2 className="text-3xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Land the deal first. Decide how to pay later.
+              Land the deal first. Keep payment outside MatchAI.
             </h2>
             <p className="mt-5 text-[15.5px] leading-[1.7] text-muted-foreground">
-              Start free. No credit card. No email account to connect. Pay MatchAI only when a deal we sourced closes — capped at $99 per deal, 0% on every repeat deal with the same brand.
+              Start free. No credit card. Internal creator email is included. MatchAI subscriptions
+              cover the product, while creator-brand payment stays external.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link

@@ -9,7 +9,11 @@ export const Route = createFileRoute("/api/chat/landing")({
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("AI not configured", { status: 500 });
 
-        const body = (await request.json()) as { messages: UIMessage[]; pathname?: string; pageContext?: string };
+        const body = (await request.json()) as {
+          messages: UIMessage[];
+          pathname?: string;
+          pageContext?: string;
+        };
         const { messages, pathname, pageContext } = body;
 
         const pageLine = pageContext
@@ -32,7 +36,7 @@ WHAT MATCHAI DOES (in plain language):
 - Interprets brand replies the creator logs and recommends a response
 - Recommends fair rates based on audience, deliverables, usage rights, exclusivity, brand size
 - Flags bad deals: perpetual usage, broad exclusivity, underpriced offers, vague scope, bad payment terms
-- Tracks deals and payments internally
+- Tracks deals and creator-reported external payment status internally
 - Default mode: everything is prepared internally. You copy, mark sent, or connect an integration later. Nothing goes out externally unless you turn that on.
 
 WHO IT'S FOR:

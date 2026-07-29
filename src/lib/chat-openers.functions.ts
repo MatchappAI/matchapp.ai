@@ -54,13 +54,7 @@ export const getChatOpener = createServerFn({ method: "POST" })
     const name = profile.data?.full_name?.split(" ")[0] ?? "there";
     const pendingApprovals = approvals.count ?? 0;
     const topBrand = brands.data?.[0];
-    const escrowReady = deals.data?.filter(
-      (d) => d.escrow_status === "funded" && d.invoice_status !== "paid",
-    ).length ?? 0;
     const newInsights = insights.count ?? 0;
-
-    
-
 
     type Suggestion = { label: string; prompt: string };
     const suggestions: Suggestion[] = [];
@@ -75,76 +69,142 @@ export const getChatOpener = createServerFn({ method: "POST" })
         // watch, or click into the right pane if they want to. The intro is
         // the same regardless of state; the follow-up line is context-aware.
         const hello = `Hey ${name} — I'm MatchAI, your personal brand-deal manager.`;
-        const whatIDo = ` Here's what I do for you end-to-end: I find brands that fit your audience and rates, write personalized outreach in your voice, follow up on your behalf, negotiate, set up protected payments so you get paid, and chase invoices when they're late. You can just stay in this chat and watch me work on the right — or jump into any tab yourself. Anything you want done, just ask.`;
+        const whatIDo = ` Here's what I do for you end-to-end: I find brands that fit your audience and rates, write personalized outreach in your voice, follow up on your behalf, and keep the inbox, drafts, and confirmations organized in one place. You can just stay in this chat and watch me work on the right — or jump into any tab yourself. Anything you want done, just ask.`;
         let nextLine: string;
         if (pendingApprovals > 0) {
           nextLine = ` Right now you've got ${pendingApprovals} brand ${pendingApprovals === 1 ? "reply" : "replies"} waiting — want me to open the first and draft your response?`;
-          suggestions.push({ label: `Open ${pendingApprovals} repl${pendingApprovals === 1 ? "y" : "ies"}`, prompt: `Open my ${pendingApprovals} pending approval${pendingApprovals === 1 ? "" : "s"} one by one — draft each response in my voice so I can approve or edit.` });
+          suggestions.push({
+            label: `Open ${pendingApprovals} repl${pendingApprovals === 1 ? "y" : "ies"}`,
+            prompt: `Open my ${pendingApprovals} pending approval${pendingApprovals === 1 ? "" : "s"} one by one — draft each response in my voice so I can approve or edit.`,
+          });
         } else if (topName) {
           nextLine = ` Your strongest match right now is ${topName} at ${topBrand!.fit_score}% fit. Want me to draft a pitch you can send today?`;
         } else {
           nextLine = ` Want me to find your first 10 brand matches now so we can get things moving?`;
         }
         message = `${hello}${whatIDo}${nextLine}`;
-        suggestions.push({ label: "Just run everything", prompt: `Take the wheel — find my best-fit brands, draft outreach in my voice, queue follow-ups, and set up protected payments. Narrate each step here as you go and stop for my approval before anything sends or a payout is released.` });
-        if (topName) suggestions.push({ label: `Pitch ${topName}`, prompt: `Draft outreach to ${topName} now — short, personal, ready to send. Show the draft for my approval.` });
-        else suggestions.push({ label: "Find brand matches", prompt: `Find brand matches that fit my niche and rate floor. Add the top 10 and tell me which one to pitch first and why.` });
-        if (escrowReady) suggestions.push({ label: `Release ${escrowReady} payout${escrowReady === 1 ? "" : "s"}`, prompt: `Release the ${escrowReady} funded payout${escrowReady === 1 ? "" : "s"} ready to invoice. Show each before sending.` });
-        suggestions.push({ label: "What can you do?", prompt: `In 4 short sentences, tell me exactly what you can do for me end-to-end — finding brands, writing outreach, negotiating, protected payments, and follow-ups — with real examples from my account.` });
+        suggestions.push({
+          label: "Just run everything",
+          prompt: `Take the wheel — find my best-fit brands, draft outreach in my voice, queue follow-ups, and keep creator-brand payment tracking external. Narrate each step here as you go and stop for my approval before anything sends or a deal status changes.`,
+        });
+        if (topName)
+          suggestions.push({
+            label: `Pitch ${topName}`,
+            prompt: `Draft outreach to ${topName} now — short, personal, ready to send. Show the draft for my approval.`,
+          });
+        else
+          suggestions.push({
+            label: "Find brand matches",
+            prompt: `Find brand matches that fit my niche and rate floor. Add the top 10 and tell me which one to pitch first and why.`,
+          });
+        suggestions.push({
+          label: "What can you do?",
+          prompt: `In 4 short sentences, tell me exactly what you can do for me end-to-end — finding brands, writing outreach, organizing inbox threads, and follow-ups — with real examples from my account.`,
+        });
         break;
       }
       case page === "/dashboard/brands":
         message = topName
           ? `I'm looking at your matches. ${topName} stands out at ${topBrand!.fit_score}% — want me to draft a pitch and show it here for approval?`
           : `Nothing here yet — want me to pull your first batch of brand matches?`;
-        if (topName) suggestions.push({ label: `Pitch ${topName}`, prompt: `Draft outreach to ${topName} now and show it for approval.` });
-        if (top3.length >= 2) suggestions.push({ label: "Pitch top 3", prompt: `Draft outreach to ${top3Names} and show all three for approval.` });
-        else suggestions.push({ label: "Find more brands", prompt: `Find 10 more brand matches that fit my niche and rate floor.` });
-        suggestions.push({ label: "Why this fit?", prompt: `Walk me through the top match — audience overlap, past deals, price fit — in plain English.` });
+        if (topName)
+          suggestions.push({
+            label: `Pitch ${topName}`,
+            prompt: `Draft outreach to ${topName} now and show it for approval.`,
+          });
+        if (top3.length >= 2)
+          suggestions.push({
+            label: "Pitch top 3",
+            prompt: `Draft outreach to ${top3Names} and show all three for approval.`,
+          });
+        else
+          suggestions.push({
+            label: "Find more brands",
+            prompt: `Find 10 more brand matches that fit my niche and rate floor.`,
+          });
+        suggestions.push({
+          label: "Why this fit?",
+          prompt: `Walk me through the top match — audience overlap, past deals, price fit — in plain English.`,
+        });
         break;
       case page === "/dashboard/approvals":
-        message = pendingApprovals > 0
-          ? `You've got ${pendingApprovals} brand ${pendingApprovals === 1 ? "reply" : "replies"} to review. Want me to open the first and draft your response?`
-          : `Inbox is clear. Want me to line up new outreach so more replies land here?`;
+        message =
+          pendingApprovals > 0
+            ? `You've got ${pendingApprovals} brand ${pendingApprovals === 1 ? "reply" : "replies"} to review. Want me to open the first and draft your response?`
+            : `Inbox is clear. Want me to line up new outreach so more replies land here?`;
         if (pendingApprovals > 0) {
-          suggestions.push({ label: "Open first", prompt: `Open my first pending approval and explain what they're asking in one sentence.` });
-          suggestions.push({ label: "Draft all responses", prompt: `Draft a response to every unanswered reply in my voice so I can approve or edit each one.` });
+          suggestions.push({
+            label: "Open first",
+            prompt: `Open my first pending approval and explain what they're asking in one sentence.`,
+          });
+          suggestions.push({
+            label: "Draft all responses",
+            prompt: `Draft a response to every unanswered reply in my voice so I can approve or edit each one.`,
+          });
         } else {
-          suggestions.push({ label: "Send more outreach", prompt: `Find brand matches and draft outreach to my top 3 so I have replies coming in.` });
+          suggestions.push({
+            label: "Send more outreach",
+            prompt: `Find brand matches and draft outreach to my top 3 so I have replies coming in.`,
+          });
         }
         break;
       case page === "/dashboard/deals": {
         const active = deals.data?.length ?? 0;
         message = active
-          ? `You've got ${active} deal${active === 1 ? "" : "s"} in flight${escrowReady ? `, ${escrowReady} ready to release` : ""}. Want a status pass?`
+          ? `You've got ${active} deal${active === 1 ? "" : "s"} in flight. Want a status pass?`
           : `No open deals yet. Want me to start outreach so we can get one moving?`;
-        if (escrowReady) suggestions.push({ label: `Release ${escrowReady} payout${escrowReady === 1 ? "" : "s"}`, prompt: `Release the ${escrowReady} funded payout${escrowReady === 1 ? "" : "s"}. Show each before sending.` });
-        if (active) suggestions.push({ label: "Status of every deal", prompt: `Give me the status of every open deal — flag anything stuck or needing me.` });
-        suggestions.push({ label: "Chase overdue", prompt: `Chase any brand that's late on payment, approval, or reply.` });
+        if (active)
+          suggestions.push({
+            label: "Status of every deal",
+            prompt: `Give me the status of every open deal — flag anything stuck or needing me.`,
+          });
+        suggestions.push({
+          label: "Chase overdue",
+          prompt: `Chase any brand that's late on payment, approval, or reply.`,
+        });
         break;
       }
       case page === "/dashboard/analytics":
         message = `Looking at your numbers. Want me to break down what's working and where you're leaking deals?`;
-        suggestions.push({ label: "This week", prompt: `Plain-English summary of this week's outreach, replies, and closes.` });
-        suggestions.push({ label: "What's working?", prompt: `Which niches, subject lines, and price points are converting best?` });
-        suggestions.push({ label: "Grow my income", prompt: `Recommend 3 concrete moves to grow my income next month based on my real data.` });
+        suggestions.push({
+          label: "This week",
+          prompt: `Plain-English summary of this week's outreach, replies, and closes.`,
+        });
+        suggestions.push({
+          label: "What's working?",
+          prompt: `Which niches, subject lines, and price points are converting best?`,
+        });
+        suggestions.push({
+          label: "Grow my income",
+          prompt: `Recommend 3 concrete moves to grow my income next month based on my real data.`,
+        });
         break;
       case page === "/dashboard/campaigns":
         message = `Campaigns are the briefs I use to run outreach for you. Want me to help you set one up or edit an existing one?`;
-        suggestions.push({ label: "Create a campaign", prompt: `Walk me through creating a new campaign — ask me one question at a time.` });
+        suggestions.push({
+          label: "Create a campaign",
+          prompt: `Walk me through creating a new campaign — ask me one question at a time.`,
+        });
         break;
       case page === "/dashboard/settings":
-        message = `Anything you want me to tune — voice, rate floor, payouts, or connections?`;
-        suggestions.push({ label: "Connect payouts", prompt: `Walk me through connecting my payout account so I can get paid.` });
-        suggestions.push({ label: "Set my rate floor", prompt: `Help me set a smart minimum deal value based on my niche and platform.` });
-        suggestions.push({ label: "Tune my voice", prompt: `Help me tune the voice you use in outreach.` });
+        message = `Anything you want me to tune — voice, rate floor, inbox behavior, or connections?`;
+        suggestions.push({
+          label: "Inbox settings",
+          prompt: `Walk me through the inbox and email settings I can adjust.`,
+        });
+        suggestions.push({
+          label: "Set my rate floor",
+          prompt: `Help me set a smart minimum deal value based on my niche and platform.`,
+        });
+        suggestions.push({
+          label: "Tune my voice",
+          prompt: `Help me tune the voice you use in outreach.`,
+        });
         break;
 
       default:
         message = null;
     }
 
-
     return { message, suggestions };
   });
-

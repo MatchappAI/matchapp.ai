@@ -42,11 +42,12 @@ Framework selection and tests are pending. Critical test cases must cover:
 
 ## Verification evidence
 
-- TypeScript: passed before the internal-email transport correction; rerun pending.
-- Production build: passed before the internal-email transport correction; rerun pending.
+- TypeScript: passed at commit `0c18a36`.
+- Production build: passed at commit `0c18a36`.
 - Repository credential-pattern scan: no matching committed secret values.
-- Rendered browser pass: pending runnable independent environment and test data.
-- Targeted lint: pending after current implementation slice.
+- Targeted lint on changed TypeScript/TSX: passed at commit `0c18a36`.
+- Rendered browser pass: the browser runtime reported no available browser during
+  the latest local attempt; this gate remains open.
 
 ## External blockers
 
@@ -57,3 +58,21 @@ Framework selection and tests are pending. Critical test cases must cover:
   a test webhook endpoint.
 - No lead provider is selected by product decision. The expected product state
   is manual/CSV with an honest provider-not-configured response.
+- A production-ready database and service-role credentials are required for
+  authenticated end-to-end tests.
+- Production hosting, DNS, deploy credentials, and owner-controlled external
+  service dashboards must be available before the live-site gate can pass.
+
+## Production acceptance
+
+Completion additionally requires:
+
+- a fresh clone installation, build, migration, and deploy;
+- integration reconciliation across code, docs, environment examples,
+  screenshots, handoff inventory, OAuth callbacks, webhooks, and scheduled jobs;
+- deployment of the verified commit to the actual production domain;
+- proof that the live site serves that commit rather than a stale or cached build;
+- desktop and mobile live-browser coverage of every critical journey;
+- clean live console, network, hydration, and server logs;
+- refresh, back/forward, persistence, provider-failure, and retry checks on
+  production.

@@ -10,13 +10,13 @@ export const Route = createFileRoute("/trust")({
       {
         name: "description",
         content:
-          "How MatchAI protects creators: approvals, protected payment, read-only social access, revocable connections, and clear data controls. Maintained by the MatchAI team.",
+          "How MatchAI protects creators: approvals, honest external payment tracking, read-only social access, revocable connections, and clear data controls. Maintained by the MatchAI team.",
       },
       { property: "og:title", content: "Trust & controls · MatchAI" },
       {
         property: "og:description",
         content:
-          "Approvals, protected payment, read-only social access, revocable connections, and clear data controls.",
+          "Approvals, honest external payment tracking, read-only social access, revocable connections, and clear data controls.",
       },
     ],
   }),
@@ -40,11 +40,11 @@ const sections: Section[] = [
     ],
   },
   {
-    title: "Payments & protected payment",
-    body: "Deals you close in MatchAI move through a secure payment-holding flow so you don't ship work for an invoice that might not get paid.",
+    title: "Payments & external status tracking",
+    body: "Deals you close in MatchAI are tracked as creator-reported external payments. MatchAI does not hold funds or process payouts.",
     points: [
-      "Funds are held when a deal is accepted, released on delivery.",
-      "Payouts go to your connected payout method.",
+      "Creator-brand payment happens outside MatchAI.",
+      "You can record due / paid externally status on the deal for organization.",
       "Disputes are logged with the original deal context, not lost in DMs.",
     ],
   },
@@ -98,9 +98,9 @@ function TrustPage() {
             How MatchAI protects creators.
           </h1>
           <p className="mt-5 max-w-2xl text-[15.5px] leading-[1.7] text-muted-foreground">
-            This page is maintained by the MatchAI team to answer the questions creators ask
-            before connecting their accounts. It is app-owned content, not an independent
-            audit or certification.
+            This page is maintained by the MatchAI team to answer the questions creators ask before
+            connecting their accounts. It is app-owned content, not an independent audit or
+            certification.
           </p>
         </header>
 
@@ -115,7 +115,10 @@ function TrustPage() {
               <ul className="mt-4 space-y-2 text-[14px] text-foreground/90">
                 {s.points.map((p) => (
                   <li key={p} className="flex gap-2.5">
-                    <span aria-hidden className="mt-2 inline-block h-1 w-1 shrink-0 rounded-full bg-primary/80" />
+                    <span
+                      aria-hidden
+                      className="mt-2 inline-block h-1 w-1 shrink-0 rounded-full bg-primary/80"
+                    />
                     <span className="leading-snug">{p}</span>
                   </li>
                 ))}
@@ -124,11 +127,13 @@ function TrustPage() {
           ))}
 
           <section className="rounded-2xl border border-border/60 bg-card/40 p-6 sm:p-7 backdrop-blur">
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">Questions or a security report</h2>
+            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
+              Questions or a security report
+            </h2>
             <p className="mt-3 text-[14.5px] leading-[1.7] text-muted-foreground">
-              For security disclosures, privacy questions, or a copy of our subprocessor list, contact
-              the MatchAI team from your account or via the contact link in the footer. We'll respond
-              within a reasonable window.
+              For security disclosures, privacy questions, or a copy of our subprocessor list,
+              contact the MatchAI team from your account or via the contact link in the footer.
+              We'll respond within a reasonable window.
             </p>
           </section>
 

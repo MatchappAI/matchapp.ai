@@ -72,7 +72,6 @@ export type DemoOpportunity = {
   };
 };
 
-
 export const DEMO_OPPORTUNITIES: DemoOpportunity[] = [
   {
     id: "demo-1",
@@ -243,7 +242,6 @@ export const DEMO_OPPORTUNITIES: DemoOpportunity[] = [
     ],
   },
 ];
-
 
 // Content-to-Opportunity matching layer — attaches each demo opportunity
 // to a specific piece of the creator's existing content, plus source /
@@ -527,7 +525,7 @@ const EXTRA_OPPS: DemoOpportunity[] = [
     nextStep: "Pitch repeat-partner launch package",
     reasoning: [
       "A previous partner has a new product launch",
-      "0% success fee — repeat brand",
+      "MatchAI commission handled separately — repeat brand",
       "They asked their team to prioritize past collaborators",
     ],
     earnType: "repeat_brand",
@@ -551,12 +549,10 @@ const EXTRA_OPPS: DemoOpportunity[] = [
 
 DEMO_OPPORTUNITIES.push(...EXTRA_OPPS);
 
-
 // Guardrails
 export function isDemoId(id: string | null | undefined) {
   return !!id && id.startsWith("demo-");
 }
-
 
 export function blockRealActionOnDemo(action: "send" | "fund" | "sign"): string | null {
   return `This is demo data. Real ${action === "send" ? "outreach" : action === "fund" ? "payments" : "contracts"} are disabled until brand discovery is connected.`;

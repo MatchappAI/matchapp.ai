@@ -26,6 +26,38 @@ export const Route = createFileRoute("/dashboard/deals/$id")({
 });
 
 type Tab = "terms" | "negotiate" | "deliverables";
+type DealRecord = {
+  id: string;
+  brand_name: string;
+  deal_value?: number | string | null;
+  timeline_days?: number | string | null;
+  usage_rights?: string | null;
+  exclusivity?: string | null;
+  deliverables?: string | null;
+  payment_terms?: string | null;
+  revision_limit?: number | string | null;
+  package_name?: string | null;
+  contract_status: string;
+  escrow_status: string;
+  invoice_status: string;
+};
+type NegotiationMessage = {
+  id: string;
+  sender: "creator" | "brand" | string;
+  ai_recommendation?: boolean | null;
+  message_text: string;
+};
+type DeliverableStatus = "approved" | "revision_requested" | "posted";
+type DeliverableRecord = {
+  id: string;
+  deliverable_type: string;
+  post_date?: string | null;
+  status: DeliverableStatus;
+  file_url?: string | null;
+  caption_draft?: string | null;
+  notes?: string | null;
+  revision_notes?: string | null;
+};
 
 function DealDetailPage() {
   const { id } = Route.useParams();
@@ -45,9 +77,7 @@ function DealDetailPage() {
   }
   if (!data?.deal) {
     return (
-      <div className="mx-auto max-w-5xl text-center text-muted-foreground">
-        Deal not found.
-      </div>
+      <div className="mx-auto max-w-5xl text-center text-muted-foreground">Deal not found.</div>
     );
   }
   const d = data.deal;
@@ -63,9 +93,7 @@ function DealDetailPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">
-            {d.status}
-          </p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{d.status}</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">{d.brand_name}</h1>
         </div>
         <div className="text-right">
@@ -101,7 +129,7 @@ function DealDetailPage() {
   );
 }
 
-function TermsPanel({ deal }: { deal: Record<string, any> }) {
+function TermsPanel({ deal }: { deal: DealRecord }) {
   const qc = useQueryClient();
   const update = useServerFn(updateDealTerms);
   const [form, setForm] = useState({
@@ -136,7 +164,6 @@ function TermsPanel({ deal }: { deal: Record<string, any> }) {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save terms"),
   });
-
 
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
@@ -197,7 +224,11 @@ function TermsPanel({ deal }: { deal: Record<string, any> }) {
             />
           </Field>
         </div>
-        <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full rounded-xl">
+        <Button
+          onClick={() => save.mutate()}
+          disabled={save.isPending}
+          className="w-full rounded-xl"
+        >
           {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save terms
         </Button>
@@ -208,11 +239,14 @@ function TermsPanel({ deal }: { deal: Record<string, any> }) {
           Summary
         </h3>
         <SummaryRow k="Brand" v={deal.brand_name} />
-        <SummaryRow k="Value" v={form.deal_value ? `$${Number(form.deal_value).toLocaleString()}` : "—"} />
+        <SummaryRow
+          k="Value"
+          v={form.deal_value ? `$${Number(form.deal_value).toLocaleString()}` : "—"}
+        />
         <SummaryRow k="Timeline" v={form.timeline_days ? `${form.timeline_days} days` : "—"} />
         <SummaryRow k="Package" v={form.package_name || "—"} />
         <SummaryRow k="Contract" v={deal.contract_status} />
-        <SummaryRow k="Protected payment" v={deal.escrow_status} />
+        <SummaryRow k="External payment status" v={deal.escrow_status} />
         <SummaryRow k="Invoice" v={deal.invoice_status} />
         <div className="border-t border-foreground/[0.06] pt-3">
           <FlagProblemButton dealId={deal.id} />
@@ -303,7 +337,14 @@ function NegotiatePanel({ dealId }: { dealId: string }) {
 
   const addMut = useMutation({
     mutationFn: (p: { ai_recommendation?: boolean }) =>
-      add({ data: { deal_id: dealId, sender, message_text: text, ai_recommendation: p.ai_recommendation } }),
+      add({
+        data: {
+          deal_id: dealId,
+          sender,
+          message_text: text,
+          ai_recommendation: p.ai_recommendation,
+        },
+      }),
     onSuccess: () => {
       setText("");
       qc.invalidateQueries({ queryKey: ["negotiation", dealId] });
@@ -322,7 +363,6 @@ function NegotiatePanel({ dealId }: { dealId: string }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not generate counter"),
   });
 
-
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <div className="rounded-3xl border border-foreground/[0.06] bg-foreground/[0.03] p-6">
@@ -333,22 +373,25 @@ function NegotiatePanel({ dealId }: { dealId: string }) {
               No messages yet. Start the thread or generate a counter.
             </p>
           )}
-          {(data?.messages ?? []).map((m: any) => (
-            <div
-              key={m.id}
-              className={cn(
-                "max-w-[80%] rounded-2xl p-3 text-sm",
-                m.sender === "creator"
-                  ? "ml-auto bg-primary/15 text-foreground"
-                  : "bg-foreground/[0.04] text-foreground",
-              )}
-            >
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {m.sender} {m.ai_recommendation && "· AI"}
-              </p>
-              <p className="whitespace-pre-wrap">{m.message_text}</p>
-            </div>
-          ))}
+          {(data?.messages ?? []).map((message) => {
+            const m = message as NegotiationMessage;
+            return (
+              <div
+                key={m.id}
+                className={cn(
+                  "max-w-[80%] rounded-2xl p-3 text-sm",
+                  m.sender === "creator"
+                    ? "ml-auto bg-primary/15 text-foreground"
+                    : "bg-foreground/[0.04] text-foreground",
+                )}
+              >
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {m.sender} {m.ai_recommendation && "· AI"}
+                </p>
+                <p className="whitespace-pre-wrap">{m.message_text}</p>
+              </div>
+            );
+          })}
         </div>
         <div className="space-y-2 border-t border-foreground/[0.06] pt-4">
           <div className="flex gap-1 rounded-lg bg-foreground/[0.04] p-1 w-fit">
@@ -422,10 +465,17 @@ function DeliverablesPanel({ dealId }: { dealId: string }) {
   });
 
   const addMut = useMutation({
-    mutationFn: () => create({ data: { deal_id: dealId, ...form, file_url: form.file_url || undefined } }),
+    mutationFn: () =>
+      create({ data: { deal_id: dealId, ...form, file_url: form.file_url || undefined } }),
     onSuccess: () => {
       toast.success("Deliverable added");
-      setForm({ deliverable_type: "Instagram Reel", file_url: "", caption_draft: "", post_date: "", notes: "" });
+      setForm({
+        deliverable_type: "Instagram Reel",
+        file_url: "",
+        caption_draft: "",
+        post_date: "",
+        notes: "",
+      });
       setShowForm(false);
       qc.invalidateQueries({ queryKey: ["deliverables", dealId] });
     },
@@ -433,15 +483,14 @@ function DeliverablesPanel({ dealId }: { dealId: string }) {
   });
 
   const updMut = useMutation({
-    mutationFn: (p: { id: string; status: string; revision_notes?: string }) =>
-      upd({ data: { id: p.id, status: p.status as any, revision_notes: p.revision_notes } }),
+    mutationFn: (p: { id: string; status: DeliverableStatus; revision_notes?: string }) =>
+      upd({ data: { id: p.id, status: p.status, revision_notes: p.revision_notes } }),
     onSuccess: () => {
       toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["deliverables", dealId] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update deliverable"),
   });
-
 
   return (
     <div className="space-y-4">
@@ -489,7 +538,11 @@ function DeliverablesPanel({ dealId }: { dealId: string }) {
               />
             </Field>
           </div>
-          <Button onClick={() => addMut.mutate()} disabled={addMut.isPending} className="rounded-xl">
+          <Button
+            onClick={() => addMut.mutate()}
+            disabled={addMut.isPending}
+            className="rounded-xl"
+          >
             {addMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit
           </Button>
@@ -502,47 +555,53 @@ function DeliverablesPanel({ dealId }: { dealId: string }) {
             No deliverables yet.
           </p>
         )}
-        {(data?.deliverables ?? []).map((dl: any) => (
-          <div key={dl.id} className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.03] p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold">{dl.deliverable_type}</p>
-                <p className="text-xs text-muted-foreground">
-                  {dl.post_date ?? "No post date"} ·{" "}
-                  <span className="capitalize">{dl.status.replace(/_/g, " ")}</span>
+        {(data?.deliverables ?? []).map((deliverable) => {
+          const dl = deliverable as DeliverableRecord;
+          return (
+            <div
+              key={dl.id}
+              className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.03] p-4"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{dl.deliverable_type}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {dl.post_date ?? "No post date"} ·{" "}
+                    <span className="capitalize">{dl.status.replace(/_/g, " ")}</span>
+                  </p>
+                  {dl.file_url && (
+                    <a
+                      href={dl.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {dl.file_url}
+                    </a>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(["approved", "revision_requested", "posted"] as const).map((s) => (
+                    <Button
+                      key={s}
+                      size="sm"
+                      variant={dl.status === s ? "default" : "outline"}
+                      onClick={() => updMut.mutate({ id: dl.id, status: s })}
+                      className="rounded-lg capitalize"
+                    >
+                      {s.replace(/_/g, " ")}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {dl.caption_draft && (
+                <p className="mt-3 whitespace-pre-wrap rounded-xl bg-foreground/[0.03] p-3 text-sm text-muted-foreground">
+                  {dl.caption_draft}
                 </p>
-                {dl.file_url && (
-                  <a
-                    href={dl.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    {dl.file_url}
-                  </a>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {["approved", "revision_requested", "posted"].map((s) => (
-                  <Button
-                    key={s}
-                    size="sm"
-                    variant={dl.status === s ? "default" : "outline"}
-                    onClick={() => updMut.mutate({ id: dl.id, status: s })}
-                    className="rounded-lg capitalize"
-                  >
-                    {s.replace(/_/g, " ")}
-                  </Button>
-                ))}
-              </div>
+              )}
             </div>
-            {dl.caption_draft && (
-              <p className="mt-3 whitespace-pre-wrap rounded-xl bg-foreground/[0.03] p-3 text-sm text-muted-foreground">
-                {dl.caption_draft}
-              </p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -11,7 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { loadAgentMessages, importLandingChat, openOutreachDraftInChat } from "@/lib/agent-chat.functions";
+import {
+  loadAgentMessages,
+  importLandingChat,
+  openOutreachDraftInChat,
+} from "@/lib/agent-chat.functions";
 import { getChatOpener } from "@/lib/chat-openers.functions";
 import { getTopActions } from "@/lib/top-actions.functions";
 import { getAutonomySettings, setAutonomySettings } from "@/lib/autonomy.functions";
@@ -36,9 +40,21 @@ const SESSION_TTL_MS = 30 * 60 * 1000;
 
 const AUTONOMY_LEVELS = [
   { key: "manual", label: "Manual", tooltip: "I only answer & suggest. You do everything." },
-  { key: "suggest", label: "Suggest", tooltip: "I recommend the next move and prep options. You approve each step." },
-  { key: "draft", label: "Draft", tooltip: "I draft, queue, and set everything up. You tap Send / Release." },
-  { key: "auto", label: "Autopilot", tooltip: "I run the whole flow and only ask on money, contracts, or unclear judgment calls." },
+  {
+    key: "suggest",
+    label: "Suggest",
+    tooltip: "I recommend the next move and prep options. You approve each step.",
+  },
+  {
+    key: "draft",
+    label: "Draft",
+    tooltip: "I draft, queue, and set everything up. You tap Send / Release.",
+  },
+  {
+    key: "auto",
+    label: "Autopilot",
+    tooltip: "I run the whole flow and only ask on money, contracts, or unclear judgment calls.",
+  },
 ] as const;
 
 const AUTONOMY_STATUS = [
@@ -55,7 +71,9 @@ const AUTONOMY_STATUS = [
 export function DashboardChatPanel() {
   const [input, setInput] = useState("");
   const [openerShown, setOpenerShown] = useState(false);
-  const [openerSuggestions, setOpenerSuggestions] = useState<Array<{ label: string; prompt: string }>>([]);
+  const [openerSuggestions, setOpenerSuggestions] = useState<
+    Array<{ label: string; prompt: string }>
+  >([]);
   const [instantRows, setInstantRows] = useState<StoredMessage[]>([]);
   // Autonomy: 0 Manual · 1 Suggest · 2 Draft · 3 Autopilot
   const [autonomy, setAutonomy] = useState<number>(() => {
@@ -78,11 +96,15 @@ export function DashboardChatPanel() {
         if (typeof r?.autonomy_level === "number") {
           setAutonomy(Math.max(0, Math.min(3, r.autonomy_level)));
         }
-      } catch { /* keep local value */ }
+      } catch {
+        /* keep local value */
+      }
     })();
   }, [getAutonomyFn]);
   const setAutonomyFnRef = useRef(setAutonomyFn);
-  useEffect(() => { setAutonomyFnRef.current = setAutonomyFn; }, [setAutonomyFn]);
+  useEffect(() => {
+    setAutonomyFnRef.current = setAutonomyFn;
+  }, [setAutonomyFn]);
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("matchai:autonomy", String(autonomy));
@@ -91,10 +113,11 @@ export function DashboardChatPanel() {
       // Best-effort persist to profile; ignore failures.
       setAutonomyFnRef.current({ data: { autonomy_level: autonomy } }).catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autonomy]);
   const autonomyRef = useRef(autonomy);
-  useEffect(() => { autonomyRef.current = autonomy; }, [autonomy]);
+  useEffect(() => {
+    autonomyRef.current = autonomy;
+  }, [autonomy]);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -122,11 +145,16 @@ export function DashboardChatPanel() {
         bridgedRef.current = true;
         return;
       }
-      const parsed = JSON.parse(raw) as { messages?: Array<{ role: string; parts?: Array<{ type: string; text?: string }> }> };
+      const parsed = JSON.parse(raw) as {
+        messages?: Array<{ role: string; parts?: Array<{ type: string; text?: string }> }>;
+      };
       const msgs = (parsed.messages ?? [])
         .map((m) => ({
           role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
-          text: (m.parts ?? []).map((p) => (p.type === "text" ? p.text ?? "" : "")).join("").trim(),
+          text: (m.parts ?? [])
+            .map((p) => (p.type === "text" ? (p.text ?? "") : ""))
+            .join("")
+            .trim(),
         }))
         .filter((m) => m.text.length > 0);
       bridgedRef.current = true;
@@ -182,7 +210,6 @@ export function DashboardChatPanel() {
     }));
   }, [combinedStored]);
 
-
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -215,8 +242,7 @@ export function DashboardChatPanel() {
           parts: [
             {
               type: "text",
-              text:
-                "Sorry — I hit a snag reaching the model. Tap send again or ask another way and I'll pick right back up.",
+              text: "Sorry — I hit a snag reaching the model. Tap send again or ask another way and I'll pick right back up.",
             },
           ],
         },
@@ -263,7 +289,10 @@ export function DashboardChatPanel() {
     if (status === "submitted" || status === "streaming") return;
     const last = initialUIMessages[initialUIMessages.length - 1];
     if (last?.role !== "user") return;
-    const text = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
+    const text = last.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join("")
+      .trim();
     if (!text) return;
     resumedRef.current = true;
     void sendMessage({ text });
@@ -317,11 +346,6 @@ export function DashboardChatPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openerShown, pathname, opener, setMessages]);
 
-
-
-
-
-
   useEffect(() => {
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -337,8 +361,9 @@ export function DashboardChatPanel() {
         if (p.type !== "tool-navigateView") continue;
         const key = `${m.id}:${(p as { toolCallId?: string }).toolCallId ?? ""}`;
         if (navigatedRef.current.has(key)) continue;
-        const output = (p as { output?: { navigate?: string; view?: string; highlightId?: string | null } })
-          .output;
+        const output = (
+          p as { output?: { navigate?: string; view?: string; highlightId?: string | null } }
+        ).output;
         if (!output?.navigate) continue;
         navigatedRef.current.add(key);
         if (output.navigate !== pathname) {
@@ -379,7 +404,12 @@ export function DashboardChatPanel() {
                 // Chain: cursor then moves to press the Review button so the
                 // creator literally sees MatchAI click it open.
                 setTimeout(
-                  () => emitAgentHighlight("approvals", `${output.approvalId}:review`, "Clicking Review…"),
+                  () =>
+                    emitAgentHighlight(
+                      "approvals",
+                      `${output.approvalId}:review`,
+                      "Clicking Review…",
+                    ),
                   1400,
                 );
               }
@@ -388,13 +418,19 @@ export function DashboardChatPanel() {
               if (output.approvalId) {
                 emitAgentHighlight("approvals", String(output.approvalId), "Drafting your reply…");
                 setTimeout(
-                  () => emitAgentHighlight("approvals", `${output.approvalId}:review`, "Opening the reply…"),
+                  () =>
+                    emitAgentHighlight(
+                      "approvals",
+                      `${output.approvalId}:review`,
+                      "Opening the reply…",
+                    ),
                   1400,
                 );
               }
               break;
             case "tool-requestBrandPayment":
-              if (output.dealId) emitAgentHighlight("deals", String(output.dealId), "Creating payment link…");
+              if (output.dealId)
+                emitAgentHighlight("deals", String(output.dealId), "Creating payment link…");
               break;
             case "tool-showBrandList":
               if (Array.isArray(output.items) && output.items[0]?.id) {
@@ -413,7 +449,7 @@ export function DashboardChatPanel() {
               break;
 
             case "tool-showEarnings":
-              emitAgentHighlight("wallet", "balance", "Checking your earnings…");
+              emitAgentHighlight("wallet", "balance", "Checking external payment status…");
               break;
             case "tool-suggestAttachments": {
               const names: string[] = Array.isArray(output.names) ? output.names : [];
@@ -438,14 +474,12 @@ export function DashboardChatPanel() {
               }
               break;
             }
-
           }
         }, 320);
         return () => clearTimeout(t);
       }
     }
   }, [messages]);
-
 
   useEffect(() => {
     const refresh = () => {
@@ -455,10 +489,18 @@ export function DashboardChatPanel() {
     const channel = supabase
       .channel("agent_messages_panel")
       .on("postgres_changes", { event: "*", schema: "public", table: "agent_messages" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "approvals" }, () => refetchTopActions())
-      .on("postgres_changes", { event: "*", schema: "public", table: "outreach_emails" }, () => refetchTopActions())
-      .on("postgres_changes", { event: "*", schema: "public", table: "deals" }, () => refetchTopActions())
-      .on("postgres_changes", { event: "*", schema: "public", table: "brand_matches" }, () => refetchTopActions())
+      .on("postgres_changes", { event: "*", schema: "public", table: "approvals" }, () =>
+        refetchTopActions(),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "outreach_emails" }, () =>
+        refetchTopActions(),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "deals" }, () =>
+        refetchTopActions(),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "brand_matches" }, () =>
+        refetchTopActions(),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -466,7 +508,7 @@ export function DashboardChatPanel() {
   }, [refetchHistory, refetchTopActions]);
 
   // Refetch the rail after each assistant turn too, so it reflects
-  // anything the agent just did (draft sent, escrow released, etc.).
+  // anything the agent just did (draft sent, status updated, etc.).
   useEffect(() => {
     if (status === "ready" && messages.length > 0) {
       refetchTopActions();
@@ -517,7 +559,9 @@ export function DashboardChatPanel() {
             void refetchHistory();
           })
           .catch(() => {
-            void handleSend(`Open my pitch draft to ${brand} right here in chat so I can review, edit, and send it without leaving.${idHint}`);
+            void handleSend(
+              `Open my pitch draft to ${brand} right here in chat so I can review, edit, and send it without leaving.${idHint}`,
+            );
           });
         return;
       }
@@ -569,9 +613,18 @@ export function DashboardChatPanel() {
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="break-words text-[13px] font-semibold text-foreground">Your MatchAI agent</div>
+            <div className="break-words text-[13px] font-semibold text-foreground">
+              Your MatchAI agent
+            </div>
             <div className="flex min-w-0 items-start gap-1.5 text-[10.5px] text-muted-foreground">
-              <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", autonomy >= 2 ? "bg-primary shadow-[0_0_8px_theme(colors.primary.DEFAULT)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.8)]")} />
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                  autonomy >= 2
+                    ? "bg-primary shadow-[0_0_8px_theme(colors.primary.DEFAULT)]"
+                    : "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.8)]",
+                )}
+              />
               <span className="min-w-0 break-words">{AUTONOMY_STATUS[autonomy]}</span>
             </div>
           </div>
@@ -606,13 +659,9 @@ export function DashboardChatPanel() {
         </div>
       </header>
 
-
-
       <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.map((m) => {
-          const text = m.parts
-            .map((p) => (p.type === "text" ? p.text : ""))
-            .join("");
+          const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
           const dbRow = storedById.get(m.id);
           const isUser = m.role === "user";
           const toolParts = m.parts.filter(
@@ -628,10 +677,7 @@ export function DashboardChatPanel() {
             .filter((c) => c.output)
             .map((c) => ({ type: c.type, output: c.output }));
           return (
-            <div
-              key={m.id}
-              className={cn("flex", isUser ? "justify-end" : "items-start gap-2")}
-            >
+            <div key={m.id} className={cn("flex", isUser ? "justify-end" : "items-start gap-2")}>
               {!isUser && (
                 <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-transparent">
                   <MatchAILogo variant="mark" size="sm" className="h-4 w-4" ariaLabel="MatchAI" />
@@ -657,16 +703,17 @@ export function DashboardChatPanel() {
                     ))}
                   </div>
                 )}
-                {!isUser && toolCards.map((c, i) => (
-                  <InlineToolCard
-                    key={`${m.id}-${i}`}
-                    type={c.type}
-                    output={c.output}
-                    messageId={dbRow?.id}
-                    onQuickPrompt={(p) => void sendMessage({ text: p })}
-                    onNavigate={(to) => navigate({ to })}
-                  />
-                ))}
+                {!isUser &&
+                  toolCards.map((c, i) => (
+                    <InlineToolCard
+                      key={`${m.id}-${i}`}
+                      type={c.type}
+                      output={c.output}
+                      messageId={dbRow?.id}
+                      onQuickPrompt={(p) => void sendMessage({ text: p })}
+                      onNavigate={(to) => navigate({ to })}
+                    />
+                  ))}
                 {dbRow?.requires_approval && (
                   <ApprovalCard
                     messageId={dbRow.id}
@@ -692,36 +739,36 @@ export function DashboardChatPanel() {
 
       {/* Top 5 Next Actions rail — always 5, stage-aware, max 3 per kind.
           Updates live as approvals/outreach/deals/brand_matches change. */}
-      {!isLoading && (() => {
-        const actions = topData?.actions ?? [];
-        if (!actions.length) return null;
-        return (
-          <div className="border-t border-foreground/[0.04] bg-gradient-to-b from-primary/[0.03] to-transparent px-4 pb-3 pt-3">
-            <div className="mb-2 flex flex-wrap items-start justify-between gap-1.5">
-              <span className="min-w-0 break-words text-[11px] font-semibold tracking-wide text-foreground/80">
-                ✨ Here's what I'd tackle next
-              </span>
-              <span className="break-words text-[10.5px] italic text-muted-foreground/80">tap one — I'll take it from here</span>
+      {!isLoading &&
+        (() => {
+          const actions = topData?.actions ?? [];
+          if (!actions.length) return null;
+          return (
+            <div className="border-t border-foreground/[0.04] bg-gradient-to-b from-primary/[0.03] to-transparent px-4 pb-3 pt-3">
+              <div className="mb-2 flex flex-wrap items-start justify-between gap-1.5">
+                <span className="min-w-0 break-words text-[11px] font-semibold tracking-wide text-foreground/80">
+                  ✨ Here's what I'd tackle next
+                </span>
+                <span className="break-words text-[10.5px] italic text-muted-foreground/80">
+                  tap one — I'll take it from here
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {actions.map((a, i) => (
+                  <button
+                    key={`${a.kind}-${i}-${a.label}`}
+                    type="button"
+                    onClick={() => void handleSend(a.prompt)}
+                    title={a.prompt}
+                    className="rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-medium text-foreground/90 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card"
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {actions.map((a, i) => (
-                <button
-                  key={`${a.kind}-${i}-${a.label}`}
-                  type="button"
-                  onClick={() => void handleSend(a.prompt)}
-                  title={a.prompt}
-                  className="rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-medium text-foreground/90 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card"
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-        );
-      })()}
-
-
+          );
+        })()}
 
       <form
         onSubmit={(e) => {
@@ -765,7 +812,7 @@ function AgentThinking({ pathname }: { pathname: string }) {
     return () => clearInterval(t);
   }, [states.length]);
   return (
-      <div className="flex items-start gap-2">
+    <div className="flex items-start gap-2">
       <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-transparent">
         <MatchAILogo variant="mark" size="sm" className="h-4 w-4" ariaLabel="MatchAI" />
       </div>
@@ -805,7 +852,7 @@ function thinkingStatesFor(pathname: string): string[] {
   }
   if (pathname.startsWith("/dashboard/deals")) {
     return [
-      "Pulling deal + payout status…",
+      "Pulling deal + external payment status…",
       "Checking deliverables and terms…",
       "Preparing the next best action…",
     ];
@@ -820,11 +867,5 @@ function thinkingStatesFor(pathname: string): string[] {
   if (pathname.startsWith("/dashboard/settings")) {
     return ["Reading your account…", "Checking connections…"];
   }
-  return [
-    "Reading your workspace…",
-    "Thinking through your ask…",
-    "Preparing the answer…",
-  ];
+  return ["Reading your workspace…", "Thinking through your ask…", "Preparing the answer…"];
 }
-
-

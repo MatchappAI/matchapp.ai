@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -6,13 +7,7 @@ import { cn } from "@/lib/utils";
  * inside the assistant bubble so the creator literally watches the agent
  * work (open the Brands tab, look at Nike, draft the pitch, etc.).
  */
-export function AgentActivityStep({
-  label,
-  done,
-}: {
-  label: string;
-  done: boolean;
-}) {
+export function AgentActivityStep({ label, done }: { label: string; done: boolean }) {
   return (
     <div
       className={cn(
@@ -31,11 +26,7 @@ export function AgentActivityStep({
 }
 
 /** Human-friendly one-liner for each tool call. */
-export function labelForToolCall(
-  type: string,
-  input: unknown,
-  output: unknown,
-): string {
+export function labelForToolCall(type: string, input: unknown, output: unknown): string {
   const inp = (input ?? {}) as Record<string, unknown>;
   const out = (output ?? {}) as Record<string, unknown>;
   switch (type) {
@@ -74,11 +65,11 @@ export function labelForToolCall(
     case "showEmailThread":
       return `Pulling the ${inp.brandName ?? "brand"} email thread`;
     case "requestBrandPayment":
-      return `Creating a protected payment link`;
+      return `Creating an external payment record`;
     case "proposeReleasePayment":
-      return `Preparing payment release for approval`;
+      return `Preparing payment status update for approval`;
     case "proposeRequestEscrow":
-      return `Preparing payment request for approval`;
+      return `Preparing payment status request for approval`;
     case "proposeMarkDelivered":
       return `Preparing delivery confirmation for approval`;
     case "proposeRememberPreference":

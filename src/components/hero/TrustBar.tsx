@@ -10,17 +10,34 @@ const items = [
     label: "You approve every send",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-        <path d="M5 10.5l3.2 3.2L15 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M5 10.5l3.2 3.2L15 7"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         <circle cx="10" cy="10" r="8.25" stroke="currentColor" strokeWidth="1.2" opacity="0.55" />
       </svg>
     ),
   },
   {
-    label: "Protected payouts",
+    label: "External payments only",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-        <path d="M10 2.5l6.5 2.5v4.2c0 4.1-2.7 7.6-6.5 8.3-3.8-.7-6.5-4.2-6.5-8.3V5L10 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-        <path d="M7.5 10.4l1.8 1.8 3.4-3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M10 2.5l6.5 2.5v4.2c0 4.1-2.7 7.6-6.5 8.3-3.8-.7-6.5-4.2-6.5-8.3V5L10 2.5z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M7.5 10.4l1.8 1.8 3.4-3.6"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -28,8 +45,21 @@ const items = [
     label: "Verified sender domain",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-        <rect x="4.5" y="8.5" width="11" height="8" rx="1.8" stroke="currentColor" strokeWidth="1.4" />
-        <path d="M7 8.5V6a3 3 0 016 0v2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        <rect
+          x="4.5"
+          y="8.5"
+          width="11"
+          height="8"
+          rx="1.8"
+          stroke="currentColor"
+          strokeWidth="1.4"
+        />
+        <path
+          d="M7 8.5V6a3 3 0 016 0v2.5"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
         <circle cx="10" cy="12.5" r="1.1" fill="currentColor" />
       </svg>
     ),
@@ -38,8 +68,19 @@ const items = [
     label: "Revoke access anytime",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-        <path d="M3.6 10.5a6.4 6.4 0 1010.9-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M14.5 3.2v3h-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M3.6 10.5a6.4 6.4 0 1010.9-4.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14.5 3.2v3h-3"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -47,8 +88,18 @@ const items = [
     label: "Your data, your control",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-        <path d="M10 2.5l6.5 2.5v4.2c0 4.1-2.7 7.6-6.5 8.3-3.8-.7-6.5-4.2-6.5-8.3V5L10 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-        <path d="M10 7.5v3M10 13v.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path
+          d="M10 2.5l6.5 2.5v4.2c0 4.1-2.7 7.6-6.5 8.3-3.8-.7-6.5-4.2-6.5-8.3V5L10 2.5z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10 7.5v3M10 13v.01"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
       </svg>
     ),
   },

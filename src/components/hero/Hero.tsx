@@ -18,7 +18,6 @@ export function Hero() {
     <div ref={ref} className="relative overflow-hidden">
       {/* Hero background kept intentionally neutral — ambient blobs live in deeper sections only */}
 
-
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <Navbar />
 
@@ -42,7 +41,10 @@ export function Hero() {
               transition={{ duration: 0.8, delay: 0.25 }}
               className="mt-6 max-w-md text-[15.5px] leading-[1.7] text-muted-foreground/90"
             >
-              For UGC creators and micro-influencers who want more paid work. Your AI manager finds the right brands, writes the pitch in your voice, negotiates the rate, and tracks payment through to your bank. You just tap <span className="font-semibold text-foreground">Approve</span>.
+              For UGC creators and micro-influencers who want more paid work. Your AI manager finds
+              the right brands, writes the pitch in your voice, and keeps your creator inbox,
+              drafts, and approvals in one place. You just tap{" "}
+              <span className="font-semibold text-foreground">Approve</span>.
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 12 }}
@@ -50,7 +52,8 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.28 }}
               className="mt-3 max-w-md text-[13.5px] leading-[1.6] text-foreground/75"
             >
-              You already make the content. MatchAI finds paid opportunities that fit it and helps you pursue them.
+              You already make the content. MatchAI finds paid opportunities that fit it and helps
+              you pursue them.
             </motion.p>
 
             <motion.div
@@ -59,13 +62,22 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.32 }}
               className="mt-4 flex flex-wrap gap-1.5 text-[11px] font-medium text-muted-foreground"
             >
-              {["Skincare UGC", "Beauty launches", "Sponsored fashion", "Paid social creative", "Affiliate + flat-fee", "Content retainers"].map((t) => (
-                <span key={t} className="rounded-full border border-border/70 bg-card/40 px-2.5 py-1">
+              {[
+                "Skincare UGC",
+                "Beauty launches",
+                "Sponsored fashion",
+                "Paid social creative",
+                "Affiliate + flat-fee",
+                "Content retainers",
+              ].map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full border border-border/70 bg-card/40 px-2.5 py-1"
+                >
                   {t}
                 </span>
               ))}
             </motion.div>
-
 
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -112,7 +124,8 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.42 }}
               className="mt-5 max-w-md text-[14px] font-semibold leading-snug text-foreground"
             >
-              Start free. On the Free plan, we only get paid when you do.
+              Start free. MatchAI subscriptions keep the product running while creator-brand payment
+              stays outside MatchAI.
             </motion.p>
 
             <motion.p
@@ -125,9 +138,9 @@ export function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
               </span>
-              Free to start · No credit card · No email account to connect · Pay only when a MatchAI-sourced deal closes
+              Free to start · No credit card · Internal creator email included · External provider
+              stays off until selected
             </motion.p>
-
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -144,11 +157,21 @@ export function Hero() {
               transition={{ duration: 0.9, delay: 0.55 }}
               className="mt-8 grid grid-cols-1 gap-2.5 sm:grid-cols-3"
             >
-              <StatCard tone="violet" value="2 min" label="From sign-up to your first ranked brand matches." />
-              <StatCard tone="sky" value="One inbox" label="Every brand thread, pitch, reply, and payout in one place." />
-              <StatCard tone="emerald" value="0% repeat" label="Every follow-on deal with the same brand is fee-free." />
-
-
+              <StatCard
+                tone="violet"
+                value="2 min"
+                label="From sign-up to your first ranked brand matches."
+              />
+              <StatCard
+                tone="sky"
+                value="One inbox"
+                label="Every brand thread, pitch, reply, and draft in one place."
+              />
+              <StatCard
+                tone="emerald"
+                value="Manual + CSV"
+                label="Add brands and contacts by hand or import them in bulk."
+              />
             </motion.div>
           </motion.div>
 
@@ -173,13 +196,15 @@ export function Hero() {
           </p>
           <div className="flex flex-wrap gap-2 text-[10.5px] font-semibold tracking-wider text-muted-foreground">
             {["REAL BRANDS ONLY", "YOU APPROVE EVERY SEND", "PROTECTED PAYMENTS"].map((t) => (
-              <span key={t} className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/40 px-3 py-1.5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:text-foreground">
+              <span
+                key={t}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/40 px-3 py-1.5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:text-foreground"
+              >
                 <span className="h-1 w-1 rounded-full bg-primary/70" />
                 {t}
               </span>
             ))}
           </div>
-
         </footer>
       </div>
     </div>

@@ -42,8 +42,20 @@ export function AgentCursor({
         setTimeout(() => {
           const containerRect = container.getBoundingClientRect();
           const rect = el.getBoundingClientRect();
-          const x = Math.max(24, Math.min(containerRect.width - 180, rect.left - containerRect.left + Math.min(rect.width * 0.35, 120)));
-          const y = Math.max(48, Math.min(containerRect.height - 48, rect.top - containerRect.top + Math.min(rect.height * 0.4, 44)));
+          const x = Math.max(
+            24,
+            Math.min(
+              containerRect.width - 180,
+              rect.left - containerRect.left + Math.min(rect.width * 0.35, 120),
+            ),
+          );
+          const y = Math.max(
+            48,
+            Math.min(
+              containerRect.height - 48,
+              rect.top - containerRect.top + Math.min(rect.height * 0.4, 44),
+            ),
+          );
           setPrevPos((cur) => cur ?? { x: x - 180, y: y + 80 });
           setLabel(d.label || labelFor(d.view));
           setVisible(true);
@@ -83,10 +95,7 @@ export function AgentCursor({
       : null;
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-40 overflow-hidden"
-    >
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-40 overflow-hidden">
       {/* Soft glow trail */}
       {trail && trail.len > 24 && (
         <div
@@ -141,12 +150,7 @@ export function AgentCursor({
           {/* Ambient halo */}
           <span className="absolute -inset-2 rounded-full bg-primary/25 blur-md" />
           <div className="relative grid h-7 w-7 place-items-center rounded-full bg-background ring-2 ring-primary/70 shadow-[0_10px_28px_-8px_hsl(var(--primary)/0.65)]">
-            <img
-              src={matchaiMark}
-              alt=""
-              className="h-4 w-4 select-none"
-              draggable={false}
-            />
+            <img src={matchaiMark} alt="" className="h-4 w-4 select-none" draggable={false} />
           </div>
         </div>
       </div>
@@ -175,7 +179,7 @@ function labelFor(view: string): string {
     deals: "Checking the deal…",
     approvals: "Reviewing to approve…",
     campaigns: "Pulling up the campaign…",
-    wallet: "Opening your wallet…",
+    wallet: "Opening external payment tracking…",
     outreach: "Prepping this pitch…",
   };
   return map[view] || "MatchAI is on it…";

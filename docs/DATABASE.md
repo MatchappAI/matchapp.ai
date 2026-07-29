@@ -53,31 +53,31 @@ supabase storage cp --recursive \
 - Role checks go through `public.has_role(auth.uid(), 'admin'::app_role)`
   (SECURITY DEFINER, `search_path = public`, execute revoked from
   `public` and `authenticated`).
-- Financial tables (`wallet_ledger`, `escrow_holds`, `payout_attempts`,
-  `deals.state`) are read-only to `authenticated` for their own rows;
-  writes are performed only by verified server routes using the
-  service-role client (`supabase.server.ts`).
+- Legacy financial tables (`wallet_ledger`, `escrow_holds`, `payout_attempts`,
+  related deal fields) remain in the schema for historical compatibility;
+  the current product scope treats creator-brand payment as external and
+  should not present wallet, escrow, payout, or Connect flows as active.
 
 ## Key tables
 
-| Table | Purpose |
-|---|---|
-| `profiles` | Creator profile, links to `auth.users` |
-| `user_roles` | `(user_id, app_role)` — never store roles on `profiles` |
-| `brand_matches` | Ranked brand opportunities per user |
-| `brand_contacts` | Contact discovery per brand |
-| `outreach_campaigns`, `outreach_messages` | Cold outreach; unique index enforces one active campaign per (user, brand) |
-| `inbox_threads`, `inbox_messages` | Unified brand inbox |
-| `negotiations` | Structured negotiation events |
-| `deals`, `deal_milestones` | Deal lifecycle |
-| `escrow_holds` | Stripe-held funds |
-| `wallet_ledger` | Immutable double-entry ledger |
-| `payout_attempts` | Stripe Connect transfer retries |
-| `analytics_events`, `error_events` | Observability |
-| `agent_audit_log` | Every agent tool call |
-| `suppression_list` | CAN-SPAM unsubscribes |
-| `plans`, `subscriptions`, `usage_counters` | Billing |
-| `creator_setup`, `brand_kits`, `portfolio_items` | Onboarding artifacts |
+| Table                                            | Purpose                                                                    |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| `profiles`                                       | Creator profile, links to `auth.users`                                     |
+| `user_roles`                                     | `(user_id, app_role)` — never store roles on `profiles`                    |
+| `brand_matches`                                  | Ranked brand opportunities per user                                        |
+| `brand_contacts`                                 | Contact discovery per brand                                                |
+| `outreach_campaigns`, `outreach_messages`        | Cold outreach; unique index enforces one active campaign per (user, brand) |
+| `inbox_threads`, `inbox_messages`                | Unified brand inbox                                                        |
+| `negotiations`                                   | Structured negotiation events                                              |
+| `deals`, `deal_milestones`                       | Deal lifecycle                                                             |
+| `escrow_holds`                                   | Legacy protected-payment records                                           |
+| `wallet_ledger`                                  | Legacy payment ledger                                                      |
+| `payout_attempts`                                | Legacy payout attempt records                                              |
+| `analytics_events`, `error_events`               | Observability                                                              |
+| `agent_audit_log`                                | Every agent tool call                                                      |
+| `suppression_list`                               | CAN-SPAM unsubscribes                                                      |
+| `plans`, `subscriptions`, `usage_counters`       | Billing                                                                    |
+| `creator_setup`, `brand_kits`, `portfolio_items` | Onboarding artifacts                                                       |
 
 ## Cron / scheduled work
 
@@ -86,7 +86,7 @@ Currently invoked by Lovable via HTTP. Routes:
 - `/api/public/hooks/daily-digest` — nightly digest email
 - `/api/public/hooks/poll-replies` — pull Gmail replies
 - `/api/public/hooks/process-follow-ups` — send scheduled follow-ups
-- `/api/public/hooks/auto-release-escrow` — release escrow after auto-release timer
+- `/api/public/hooks/auto-release-escrow` — legacy protected-payment route; keep disabled in production scope
 - `/api/public/hooks/resend-inbound` — Resend inbound webhook (uses `@lovable.dev/webhooks-js` HMAC)
 - `/api/public/hooks/health` — liveness
 

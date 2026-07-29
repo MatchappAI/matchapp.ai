@@ -24,7 +24,7 @@ Domain: `www.matchapp.ai`
 - **Styling:** Tailwind CSS v4, custom theme tokens in `src/styles.css`
 - **Backend:** Supabase (Postgres + Auth + Storage + RLS)
 - **AI:** OpenAI-compatible SDK, currently `google/gemini-2.5-flash` via gateway
-- **Payments:** Stripe subscriptions + Stripe Connect payouts
+- **Payments:** Stripe subscriptions only; some selected deals may also include a separate MatchAI commission agreement, but MatchAI does not custody creator-brand payments
 - **Email:** Gmail API for outbound, Resend for transactional / inbound webhooks
 - **MCP:** `@lovable.dev/mcp-js` (replace on exit — see LOVABLE_EXIT_CHECKLIST)
 
@@ -61,8 +61,8 @@ Domain: `www.matchapp.ai`
 ### Primary navigation (consolidated)
 - **Inbox** — unified brand conversation threads
 - **Deals** — opportunity discovery, fastest-to-cash ranking, ways to earn, first-deal journey
-- **Wallet** — balance, payouts, transfers
-- **Settings** — socials, payouts, billing, creator setup, rate helper
+- **Payments** — external payment tracking, commission tracking, billing
+- **Settings** — socials, billing, creator setup, rate helper, integrations
 
 ### Hidden but routable
 - `/dashboard/brands`
@@ -76,7 +76,7 @@ Domain: `www.matchapp.ai`
 3. Chat → user or agent drafts personalized pitch.
 4. Inbox → brand replies flow back; agent suggests next action.
 5. Negotiation → deal terms, red-flag detection, counter-offers.
-6. Wallet → payment tracking, Stripe Connect transfer.
+6. Payments → creator-reported external payment tracking and optional commission tracking on selected deals.
 
 ---
 
@@ -102,9 +102,9 @@ Domain: `www.matchapp.ai`
 
 - Creators use MatchAI free until they receive a qualified paid brand reply.
 - Then choose:
-  - **Stay Free:** $0 + 20% success fee, capped at $99/deal.
-  - **Paid plans:** $49 / $99 / $199 with 0% success fee.
-- Repeat deals with the same brand are 0% fee regardless of plan.
+-  - **Free:** $0 subscription; selected deals may include a separate MatchAI commission if agreed up front.
+  - **Paid plans:** $49 / $99 / $199 subscriptions.
+- Repeat deals with the same brand can still be commission-free when that is agreed up front.
 - No caps on outbound sequences, follow-ups, or agent tool-loop steps.
 - Free tier has a 3-thread inbound cap before plan selection.
 - Fee math source of truth: `src/lib/fees.ts`. Never hardcode fee values
@@ -132,14 +132,14 @@ Domain: `www.matchapp.ai`
 | `src/routes/dashboard.tsx` | Dashboard shell (50/50 chat + live stage) |
 | `src/routes/dashboard.inbox.tsx` | Unified inbox |
 | `src/routes/dashboard.deals.tsx` | Consolidated deals/earnings tab |
-| `src/routes/dashboard.wallet.tsx` | Wallet & payouts |
+| `src/routes/dashboard.wallet.tsx` | Legacy payment-status route; keep as compatibility surface only |
 | `src/routes/dashboard.settings.tsx` | Settings |
 | `src/components/chat/DashboardChatPanel.tsx` | Main chat UI |
 | `src/components/chat/LandingChatWidget.tsx` | Landing chat guide |
 | `src/lib/agent-chat.functions.ts` | Chat history + message injection helpers |
 | `src/lib/agent-voice.server.ts` | Agent personality / system prompt |
 | `src/lib/demo-mode.ts` | Demo opportunities + fastest-to-cash scoring |
-| `src/lib/fees.ts` | Source of truth for success-fee math |
+| `src/lib/fees.ts` | Source of truth for subscription / commission copy |
 | `src/lib/qualification.functions.ts` | Qualified-reply classifier (paywall trigger) |
 | `src/lib/wallet.functions.ts` | Wallet balance + Stripe transfers |
 | `src/lib/rate-helper.ts` | Rate-card suggestions from creator profile |
@@ -184,7 +184,7 @@ Domain: `www.matchapp.ai`
 ## 11. Security posture
 
 - All financial tables (`deals`, `brand_matches`, `negotiations`, `wallet_ledger`,
-  `payout_attempts`) have explicit RLS.
+  `payout_attempts`) have explicit RLS; the wallet/payout tables are legacy compatibility surfaces only.
 - `SECURITY DEFINER` functions have `EXECUTE` revoked from `anon` and
   `authenticated`; only invoked via server-side helpers.
 - Every `SECURITY DEFINER` function pins `search_path = public`.
