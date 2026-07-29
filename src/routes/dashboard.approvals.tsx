@@ -23,12 +23,10 @@ import { cn } from "@/lib/utils";
 import { AttachmentPicker, type Attachment } from "@/components/email/AttachmentPicker";
 import { openEmailInChat } from "@/lib/open-email-in-chat";
 
-
 export const Route = createFileRoute("/dashboard/approvals")({
   head: () => ({ meta: [{ title: "Replies — MatchAI" }] }),
   component: ApprovalsPage,
 });
-
 
 type Approval = {
   id: string;
@@ -48,7 +46,6 @@ function ApprovalsPage() {
   const reject = useServerFn(rejectApproval);
   const [tab, setTab] = useState<"pending" | "all">("pending");
 
-
   const { data, isLoading } = useQuery({
     queryKey: ["approvals"],
     queryFn: () => list({ data: {} as never }),
@@ -65,14 +62,11 @@ function ApprovalsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not reject"),
   });
 
-
-
   // Replies page shows only brand replies. Draft-outreach approvals live on Brand Matches.
   const all: Approval[] = (data?.approvals ?? []).filter(
     (a: Approval) => a.approval_type === "reply_received",
   );
   const items = tab === "pending" ? all.filter((a) => a.status === "pending") : all;
-
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -80,7 +74,10 @@ function ApprovalsPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Replies</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Brand replies to your outreach. Drafts you haven't sent yet live on{" "}
-          <a href="/dashboard/brands" className="text-foreground underline underline-offset-4 hover:text-primary">
+          <a
+            href="/dashboard/brands"
+            className="text-foreground underline underline-offset-4 hover:text-primary"
+          >
             Brand Matches
           </a>
           .
@@ -118,7 +115,6 @@ function ApprovalsPage() {
           description="When a brand replies to your outreach, I'll surface it here with my read on their intent and a suggested response you can edit."
           cta={{ label: "Go to Brand Matches", to: "/dashboard/brands" }}
         />
-
       ) : (
         <div className="space-y-6">
           {tab === "pending" && (
@@ -221,7 +217,6 @@ function ApprovalsPage() {
                           {locked ? "Open in chat" : "Review in chat"}
                         </Button>
                       </div>
-
                     </li>
                   );
                 })}
@@ -230,20 +225,20 @@ function ApprovalsPage() {
           ))}
         </div>
       )}
-
     </div>
-
   );
 }
 
-
-
 function ApprovalDetail({ approval, onDone }: { approval: Approval; onDone: () => void }) {
   if (approval.approval_type === "outreach_draft" && approval.related_id) {
-    return <OutreachReview approvalId={approval.id} outreachId={approval.related_id} onDone={onDone} />;
+    return (
+      <OutreachReview approvalId={approval.id} outreachId={approval.related_id} onDone={onDone} />
+    );
   }
   if (approval.approval_type === "reply_received" && approval.related_id) {
-    return <ReplyReview approvalId={approval.id} outreachId={approval.related_id} onDone={onDone} />;
+    return (
+      <ReplyReview approvalId={approval.id} outreachId={approval.related_id} onDone={onDone} />
+    );
   }
   return (
     <div className="space-y-4">
@@ -281,7 +276,6 @@ function ReplyReview({
   const [copied, setCopied] = useState(false);
   const [editable, setEditable] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-
 
   const { data, isLoading } = useQuery({
     queryKey: ["reply-review", outreachId],
@@ -400,7 +394,8 @@ function ReplyReview({
       )}
 
       <p className="text-[11px] text-muted-foreground">
-        I'll log this as handled. Send your reply from your own inbox — MatchAI keeps everything internal.
+        I'll log this as handled. Send your reply from your own inbox — MatchAI keeps everything
+        internal.
       </p>
     </div>
   );
@@ -410,7 +405,11 @@ function LockedReplyCard({
   brand,
   intent,
 }: {
-  brand: { name?: string; estimated_deal_min?: number | null; estimated_deal_max?: number | null } | null;
+  brand: {
+    name?: string;
+    estimated_deal_min?: number | null;
+    estimated_deal_max?: number | null;
+  } | null;
   intent: string;
 }) {
   const min = brand?.estimated_deal_min ?? 0;
@@ -429,8 +428,8 @@ function LockedReplyCard({
       </div>
       <p className="text-sm text-muted-foreground">
         A real reply landed with an estimated value of{" "}
-        <span className="font-semibold text-foreground">{range}</span>. Upgrade to
-        read the full reply and unlock the AI-drafted response tuned to your voice.
+        <span className="font-semibold text-foreground">{range}</span>. Upgrade to read the full
+        reply and unlock the AI-drafted response tuned to your voice.
       </p>
       <a
         href="/dashboard/settings?tab=billing"
@@ -441,7 +440,6 @@ function LockedReplyCard({
     </div>
   );
 }
-
 
 export function OutreachReview({
   approvalId,
@@ -463,13 +461,11 @@ export function OutreachReview({
     queryFn: () => get({ data: { outreach_id: outreachId } }),
   });
 
-
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [toEmail, setToEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-
 
   useEffect(() => {
     if (data?.outreach) {
@@ -480,11 +476,11 @@ export function OutreachReview({
     }
   }, [data]);
 
-  const brandMatchId = (data?.outreach as { brand_match_id?: string | null } | null)?.brand_match_id ?? null;
+  const brandMatchId =
+    (data?.outreach as { brand_match_id?: string | null } | null)?.brand_match_id ?? null;
   const findContactMut = useMutation({
-    mutationFn: () =>
-      findContact({ data: { brand_match_id: brandMatchId as string } }),
-    onSuccess: (res: any) => {
+    mutationFn: () => findContact({ data: { brand_match_id: brandMatchId as string } }),
+    onSuccess: (res) => {
       if (res?.ok && res.contact?.email) {
         setToEmail(res.contact.email);
         toast.success(
@@ -494,7 +490,10 @@ export function OutreachReview({
         );
         qc.invalidateQueries({ queryKey: ["outreach-detail", outreachId] });
       } else {
-        toast.error("No contact found via Hunter.io. Try again or enter one manually.");
+        toast.error(
+          res?.error ??
+            "No contact provider is configured. Enter the contact manually or import a CSV.",
+        );
       }
     },
     onError: (e) => toast.error(String(e)),
@@ -542,7 +541,7 @@ export function OutreachReview({
         },
       }),
 
-    onSuccess: (res: any) => {
+    onSuccess: (res) => {
       if (res?.ok) {
         toast.success(`Sent to ${toEmail}. Follow-ups scheduled.`);
         onDone();
@@ -553,18 +552,13 @@ export function OutreachReview({
     onError: (e) => toast.error(String(e)),
   });
 
-
-
-
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data?.outreach) return <p className="text-sm text-muted-foreground">Not found.</p>;
 
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">
-          Outreach to
-        </p>
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">Outreach to</p>
         <h2 className="mt-1 text-2xl font-semibold">{data.brand?.brand_name ?? "Brand"}</h2>
       </div>
 
@@ -572,7 +566,9 @@ export function OutreachReview({
         <div className="flex items-start gap-2">
           <Mail className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
           <div className="text-xs text-emerald-100/80">
-            MatchAI sends from <span className="font-medium">outreach@notify.www.matchapp.ai</span>. Replies route back through the app — I'll surface them in Approvals and schedule follow-ups automatically.
+            Approved outreach sends from your internal MatchAI email identity once a creator-email
+            provider is configured. Replies route back through the app — I'll surface them in
+            Approvals and schedule follow-ups automatically.
           </div>
         </div>
       </div>
@@ -594,7 +590,7 @@ export function OutreachReview({
               className="rounded-lg shrink-0"
               onClick={() => findContactMut.mutate()}
               disabled={!brandMatchId || findContactMut.isPending}
-              title="Find a C-suite contact via Hunter.io"
+              title="Find a contact using the configured provider"
             >
               {findContactMut.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -612,7 +608,6 @@ export function OutreachReview({
             </p>
           )}
         </Field>
-
 
         <Field label="Subject">
           <Input
@@ -639,7 +634,6 @@ export function OutreachReview({
           />
         </Field>
       </div>
-
 
       <div className="flex items-center gap-2">
         <Button
@@ -683,7 +677,6 @@ export function OutreachReview({
     </div>
   );
 }
-
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

@@ -3,10 +3,26 @@ import { SectionEyebrow } from "./SectionEyebrow";
 import { Reveal, StaggerGroup, itemVariants } from "./Reveal";
 
 const steps = [
-  { n: "01", title: "Set up your profile in 2 minutes", body: "Platform, niche, audience, city, rates. Upload a moodboard, portfolio, or press kit — or let AI generate one." },
-  { n: "02", title: "See best-fit brand matches", body: "Ranked by fit, sponsorship likelihood, and fastest-to-cash — with the reasoning behind every match." },
-  { n: "03", title: "Approve pitches in your voice", body: "Personalized per brand. You approve, tweak, or skip. MatchAI sends from its verified domain — no Gmail to connect." },
-  { n: "04", title: "Reply → negotiate → get paid", body: "Every brand thread lives in one inbox. Your agent handles follow-ups, counters lowballs, then payouts land in your linked bank." },
+  {
+    n: "01",
+    title: "Set up your profile in 2 minutes",
+    body: "Platform, niche, audience, city, rates. Upload a moodboard, portfolio, or press kit — or let AI generate one.",
+  },
+  {
+    n: "02",
+    title: "See best-fit brand matches",
+    body: "Ranked by fit, sponsorship likelihood, and fastest-to-cash — with the reasoning behind every match.",
+  },
+  {
+    n: "03",
+    title: "Approve pitches in your voice",
+    body: "Personalized per brand. You approve, tweak, or skip. Approved sending uses your internal MatchAI email once the email API provider is configured.",
+  },
+  {
+    n: "04",
+    title: "Reply → negotiate → track",
+    body: "Every brand thread lives in one Inbox. Your agent helps with follow-ups and counters; you report payment status after the brand pays you externally.",
+  },
 ];
 
 export function HowItWorks() {

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -13,24 +13,32 @@ import {
   Mail,
   Eye,
   EyeOff,
+  Plus,
+  Upload,
+  Search,
+  Building2,
+  FileSpreadsheet,
 } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import {
-  generateBrandMatches,
   listBrandMatches,
   draftOutreachForBrand,
   setBrandMatchStatus,
   listApprovals,
 } from "@/lib/matchai.functions";
+import {
+  createManualBrand,
+  importBrandRows,
+  previewBrandImport,
+} from "@/lib/brand-library.functions";
 import { cn } from "@/lib/utils";
 import { useAgentHighlight } from "@/lib/agent-highlight";
 import { PersonalizationSignals as PersonalizationSignalsInline } from "@/components/hero/PersonalizationSignals";
 import { openEmailInChat } from "@/lib/open-email-in-chat";
 
 import { SetupProgressStrip } from "@/components/dashboard/SetupProgressStrip";
-
-
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/dashboard/brands")({
   head: () => ({ meta: [{ title: "Brand Matches — MatchAI" }] }),
@@ -89,6 +97,7 @@ type Brand = {
   best_outreach_channel: string | null;
   contact_path: string | null;
   what_to_avoid: string | null;
+  data_source: string | null;
 };
 
 type MarketFilter = "all" | "local" | "international";
@@ -124,21 +133,18 @@ function formatDeal(min: number | null, max: number | null) {
 }
 
 function BrandsPage() {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const highlightedId = useAgentHighlight("brands");
 
-
   const list = useServerFn(listBrandMatches);
-  const generate = useServerFn(generateBrandMatches);
   const draft = useServerFn(draftOutreachForBrand);
   const setStatus = useServerFn(setBrandMatchStatus);
   const listApprovalsFn = useServerFn(listApprovals);
   const [open, setOpen] = useState<Brand | null>(null);
   const [marketFilter, setMarketFilter] = useState<MarketFilter>("all");
   const [showAll, setShowAll] = useState(false);
-  const [missingFields, setMissingFields] = useState<string[] | null>(null);
-
+  const [search, setSearch] = useState("");
+  const [libraryDialog, setLibraryDialog] = useState<"manual" | "csv" | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["brand-matches"],
@@ -149,13 +155,15 @@ function BrandsPage() {
     queryKey: ["approvals"],
     queryFn: () => listApprovalsFn({ data: {} as never }),
   });
-  const pendingDraftsRaw = ((approvalsData?.approvals ?? []) as Array<{
-    id: string;
-    approval_type: string;
-    status: string;
-    brand_name: string | null;
-    related_id: string | null;
-  }>).filter((a) => a.approval_type === "outreach_draft" && a.status === "pending");
+  const pendingDraftsRaw = (
+    (approvalsData?.approvals ?? []) as Array<{
+      id: string;
+      approval_type: string;
+      status: string;
+      brand_name: string | null;
+      related_id: string | null;
+    }>
+  ).filter((a) => a.approval_type === "outreach_draft" && a.status === "pending");
   // One row per brand — the most recent draft supersedes older ones so the
   // "Drafts waiting" list can't stack up 9 pitches for the same company.
   const pendingDrafts = (() => {
@@ -169,26 +177,6 @@ function BrandsPage() {
     }
     return out;
   })();
-
-  
-
-  const generateMut = useMutation({
-    mutationFn: () => generate({ data: {} as never }),
-    onSuccess: (r) => {
-      if (r.ok) {
-        toast.success(`Generated ${r.count} new matches`);
-        setMissingFields(null);
-        qc.invalidateQueries({ queryKey: ["brand-matches"] });
-        qc.invalidateQueries({ queryKey: ["home-stats"] });
-      } else if ("missing" in r && r.missing) {
-        setMissingFields(r.missing);
-        toast.error("Add a few profile details first");
-      } else {
-        toast.error(r.error);
-      }
-    },
-    onError: (e) => toast.error(String(e)),
-  });
 
   const draftMut = useMutation({
     mutationFn: (brand_match_id: string) => draft({ data: { brand_match_id } }),
@@ -210,7 +198,6 @@ function BrandsPage() {
     },
     onError: (e) => toast.error(String(e)),
   });
-
 
   const statusMut = useMutation({
     mutationFn: (v: { id: string; status: "saved" | "rejected" }) => setStatus({ data: v }),
@@ -234,17 +221,25 @@ function BrandsPage() {
     return allBrands.filter((b) => {
       if (b.status === "rejected") return false;
       if (marketFilter !== "all" && b.market_type !== marketFilter) return false;
+      if (
+        search &&
+        !`${b.brand_name} ${b.brand_industry ?? ""}`.toLowerCase().includes(search.toLowerCase())
+      ) {
+        return false;
+      }
       const score = b.fit_score ?? b.fit_quality_score ?? 0;
       const label = b.match_label ?? labelFor(score);
       if (!showAll && (label === "Low Priority" || label === "Do Not Recommend")) return false;
       return true;
     });
-  }, [allBrands, marketFilter, showAll]);
+  }, [allBrands, marketFilter, search, showAll]);
 
   const counts = {
     all: allBrands.filter((b) => b.status !== "rejected").length,
     local: allBrands.filter((b) => b.status !== "rejected" && b.market_type === "local").length,
-    international: allBrands.filter((b) => b.status !== "rejected" && b.market_type === "international").length,
+    international: allBrands.filter(
+      (b) => b.status !== "rejected" && b.market_type === "international",
+    ).length,
   };
 
   const hiddenCount = useMemo(() => {
@@ -265,33 +260,32 @@ function BrandsPage() {
           creators who want to browse and score. */}
       <SetupProgressStrip />
 
-
-
-
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 max-[520px]:grid-cols-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 max-[680px]:grid-cols-1">
         <div className="min-w-0">
-          <h1 className="break-words text-3xl font-semibold tracking-tight">Brand Matches</h1>
+          <h1 className="break-words text-3xl font-semibold tracking-tight">Brands</h1>
           <p className="mt-1 break-words text-sm text-muted-foreground">
-            Personalized, scored, and ranked for your audience.
+            Add brands and contacts yourself or import a CSV. No lead provider is configured.
           </p>
         </div>
-        <Button
-          onClick={() => generateMut.mutate()}
-          disabled={generateMut.isPending}
-          className="rounded-xl"
-        >
-          {generateMut.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Matching…
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              AI Match
-            </>
-          )}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setLibraryDialog("csv")} className="rounded-xl">
+            <Upload className="mr-2 h-4 w-4" /> Import CSV
+          </Button>
+          <Button onClick={() => setLibraryDialog("manual")} className="rounded-xl">
+            <Plus className="mr-2 h-4 w-4" /> Add brand
+          </Button>
+        </div>
+      </div>
+
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search brands or industries"
+          aria-label="Search brands"
+          className="rounded-xl pl-9"
+        />
       </div>
 
       <details className="group rounded-2xl border border-border/60 bg-card/40 backdrop-blur transition-colors hover:border-primary/30">
@@ -299,9 +293,13 @@ function BrandsPage() {
           <span className="flex min-w-0 flex-wrap items-center gap-2 text-foreground">
             <Sparkles className="h-3.5 w-3.5 shrink-0 text-[hsl(217_100%_72%)]" />
             <span className="break-words font-medium">What goes into each match & email</span>
-            <span className="break-words text-[11px] text-muted-foreground">Full transparency — 38 signals</span>
+            <span className="break-words text-[11px] text-muted-foreground">
+              Full transparency — 38 signals
+            </span>
           </span>
-          <span className="text-[11px] text-muted-foreground transition-transform group-open:rotate-180">▾</span>
+          <span className="text-[11px] text-muted-foreground transition-transform group-open:rotate-180">
+            ▾
+          </span>
         </summary>
         <div className="border-t border-border/50 px-2 pb-3 pt-1">
           <PersonalizationSignalsInline />
@@ -337,7 +335,6 @@ function BrandsPage() {
                     <p className="break-words text-sm font-medium text-foreground">
                       {d.brand_name ?? "Brand"}
                     </p>
-
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Draft ready — nothing sends until you approve.
@@ -362,7 +359,6 @@ function BrandsPage() {
           </ul>
         </section>
       )}
-
 
       {allBrands.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
@@ -410,23 +406,22 @@ function BrandsPage() {
             <div key={i} className="skeleton h-56 rounded-3xl" />
           ))}
         </div>
-      ) : missingFields ? (
-        <EmptyState
-          icon={<Sparkles className="h-10 w-10" />}
-          title="A little more about you, please"
-          description="To find better matches, add your niche, city, platform, follower count, engagement rate, and audience details."
-          cta={{ label: "Open profile", onClick: () => navigate({ to: "/dashboard/settings" }) }}
-        />
       ) : visibleBrands.length === 0 ? (
         <EmptyState
-          icon={<Sparkles className="h-10 w-10" />}
-          title="No matches yet"
-          description="Run AI Match and I'll find brands worth pitching for your niche and rates."
+          icon={<Building2 className="h-10 w-10" />}
+          title={search ? "No brands match that search" : "No brands yet"}
+          description={
+            search
+              ? "Try a different name or industry."
+              : "Add a brand and contact manually, or import your existing list from CSV."
+          }
           cta={{
-            label: generateMut.isPending ? "Matching…" : "Run AI Match",
-            onClick: () => generateMut.mutate(),
-            disabled: generateMut.isPending,
+            label: search ? "Clear search" : "Add brand",
+            onClick: () => (search ? setSearch("") : setLibraryDialog("manual")),
           }}
+          secondaryCta={
+            search ? undefined : { label: "Import CSV", onClick: () => setLibraryDialog("csv") }
+          }
         />
       ) : (
         <motion.div
@@ -463,8 +458,369 @@ function BrandsPage() {
         )}
       </AnimatePresence>
 
-      {/* Draft review lives entirely inside the chat panel now. */}
+      {libraryDialog && (
+        <BrandLibraryDialog
+          mode={libraryDialog}
+          onModeChange={setLibraryDialog}
+          onClose={() => setLibraryDialog(null)}
+          onDone={() => {
+            setLibraryDialog(null);
+            qc.invalidateQueries({ queryKey: ["brand-matches"] });
+          }}
+        />
+      )}
 
+      {/* Draft review lives entirely inside the chat panel now. */}
+    </div>
+  );
+}
+
+type CsvRow = {
+  rowNumber: number;
+  brandName: string;
+  industry: string;
+  website?: string;
+  contactName: string;
+  contactTitle: string;
+  contactEmail?: string;
+  notes: string;
+  source: "csv_import";
+};
+
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const next = text[index + 1];
+    if (character === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function csvRows(text: string): CsvRow[] {
+  const parsed = parseCsv(text);
+  if (parsed.length < 2) return [];
+  const aliases: Record<string, keyof Omit<CsvRow, "rowNumber" | "source">> = {
+    brand: "brandName",
+    brand_name: "brandName",
+    name: "brandName",
+    industry: "industry",
+    category: "industry",
+    website: "website",
+    url: "website",
+    contact: "contactName",
+    contact_name: "contactName",
+    contact_title: "contactTitle",
+    title: "contactTitle",
+    email: "contactEmail",
+    contact_email: "contactEmail",
+    notes: "notes",
+  };
+  const headers = parsed[0].map(
+    (header) => aliases[header.trim().toLowerCase().replace(/\s+/g, "_")],
+  );
+  return parsed.slice(1).map((values, index) => {
+    const row: CsvRow = {
+      rowNumber: index + 2,
+      brandName: "",
+      industry: "",
+      website: "",
+      contactName: "",
+      contactTitle: "",
+      contactEmail: "",
+      notes: "",
+      source: "csv_import",
+    };
+    headers.forEach((header, column) => {
+      if (header) row[header] = values[column] ?? "";
+    });
+    return row;
+  });
+}
+
+function BrandLibraryDialog({
+  mode,
+  onModeChange,
+  onClose,
+  onDone,
+}: {
+  mode: "manual" | "csv";
+  onModeChange: (mode: "manual" | "csv") => void;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const createBrand = useServerFn(createManualBrand);
+  const previewImport = useServerFn(previewBrandImport);
+  const importRows = useServerFn(importBrandRows);
+  const [form, setForm] = useState({
+    brandName: "",
+    industry: "",
+    website: "",
+    contactName: "",
+    contactTitle: "",
+    contactEmail: "",
+    notes: "",
+  });
+  const [rows, setRows] = useState<CsvRow[]>([]);
+  const [preview, setPreview] = useState<Awaited<ReturnType<typeof previewImport>> | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: () => createBrand({ data: { ...form, source: "manual" } }),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Brand saved");
+      onDone();
+    },
+    onError: (error) => toast.error(String(error).replace("Error: ", "")),
+  });
+  const previewMutation = useMutation({
+    mutationFn: (inputRows: CsvRow[]) => previewImport({ data: { rows: inputRows } }),
+    onSuccess: setPreview,
+    onError: (error) => toast.error(String(error).replace("Error: ", "")),
+  });
+  const importMutation = useMutation({
+    mutationFn: () => importRows({ data: { rows } }),
+    onSuccess: (result) => {
+      if (result.failures.length > 0) {
+        toast.error(`Imported ${result.imported}; ${result.failures.length} rows failed`);
+      } else {
+        toast.success(`Imported ${result.imported} brand${result.imported === 1 ? "" : "s"}`);
+      }
+      onDone();
+    },
+    onError: (error) => toast.error(String(error).replace("Error: ", "")),
+  });
+
+  async function loadCsv(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 2_000_000) {
+      toast.error("CSV must be smaller than 2 MB");
+      return;
+    }
+    const parsedRows = csvRows(await file.text());
+    if (parsedRows.length === 0) {
+      toast.error("CSV needs a header row and at least one brand");
+      return;
+    }
+    setRows(parsedRows);
+    setPreview(null);
+    previewMutation.mutate(parsedRows);
+  }
+
+  function field(key: keyof typeof form, label: string, placeholder?: string, type = "text") {
+    return (
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
+        <Input
+          type={type}
+          value={form[key]}
+          onChange={(event) =>
+            setForm((current) => ({
+              ...current,
+              [key]: event.target.value,
+            }))
+          }
+          placeholder={placeholder}
+          className="rounded-xl"
+        />
+      </label>
+    );
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="brand-library-title"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+    >
+      <div className="max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl border border-border bg-card p-5 shadow-2xl sm:rounded-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="brand-library-title" className="text-lg font-semibold">
+              Build your brand list
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Manual and CSV data always retain their source. No enrichment provider is configured.
+            </p>
+          </div>
+          <Button size="icon" variant="ghost" aria-label="Close" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="mt-4 flex gap-2" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "manual"}
+            onClick={() => onModeChange("manual")}
+            className={cn(
+              "rounded-xl px-3 py-2 text-sm",
+              mode === "manual"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground",
+            )}
+          >
+            <Plus className="mr-1.5 inline h-4 w-4" /> Manual
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "csv"}
+            onClick={() => onModeChange("csv")}
+            className={cn(
+              "rounded-xl px-3 py-2 text-sm",
+              mode === "csv"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground",
+            )}
+          >
+            <FileSpreadsheet className="mr-1.5 inline h-4 w-4" /> CSV
+          </button>
+        </div>
+
+        {mode === "manual" ? (
+          <form
+            className="mt-5 space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              createMutation.mutate();
+            }}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {field("brandName", "Brand name *", "Acme Beauty")}
+              {field("industry", "Industry", "Skincare")}
+              {field("website", "Website", "https://example.com", "url")}
+              {field("contactEmail", "Contact email", "partner@example.com", "email")}
+              {field("contactName", "Contact name", "Alex Smith")}
+              {field("contactTitle", "Contact title", "Creator Partnerships")}
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Notes</span>
+              <textarea
+                value={form.notes}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    notes: event.target.value,
+                  }))
+                }
+                rows={3}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!form.brandName.trim() || createMutation.isPending}>
+                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save brand
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-5 space-y-4">
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border p-8 text-center hover:bg-muted/50">
+              <Upload className="h-7 w-7 text-muted-foreground" />
+              <span className="mt-2 text-sm font-medium">Choose a CSV file</span>
+              <span className="mt-1 text-xs text-muted-foreground">
+                Columns: brand, industry, website, contact_name, contact_title, email, notes
+              </span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                onChange={(event) => void loadCsv(event.target.files?.[0])}
+              />
+            </label>
+
+            {previewMutation.isPending && (
+              <p className="flex items-center text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Validating CSV…
+              </p>
+            )}
+            {preview && (
+              <>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-emerald-600">
+                    {preview.validCount} ready
+                  </span>
+                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-amber-600">
+                    {preview.invalidCount} skipped
+                  </span>
+                </div>
+                <div className="max-h-72 overflow-auto rounded-xl border border-border">
+                  <table className="w-full min-w-[36rem] text-left text-xs">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">Brand</th>
+                        <th className="px-3 py-2">Contact</th>
+                        <th className="px-3 py-2">Result</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.rows.map((row) => (
+                        <tr key={row.rowNumber} className="border-t border-border">
+                          <td className="px-3 py-2">{row.rowNumber}</td>
+                          <td className="px-3 py-2">{row.brandName || "—"}</td>
+                          <td className="px-3 py-2">{row.contactEmail || "—"}</td>
+                          <td
+                            className={cn(
+                              "px-3 py-2",
+                              row.valid ? "text-emerald-600" : "text-amber-600",
+                            )}
+                          >
+                            {row.valid ? "Ready" : row.errors.join("; ")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => importMutation.mutate()}
+                    disabled={preview.validCount === 0 || importMutation.isPending}
+                  >
+                    {importMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Import {preview.validCount} valid rows
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -517,7 +873,8 @@ function BrandCard({
       whileHover={reduce ? undefined : { y: -3, transition: { duration: 0.18 } }}
       className={cn(
         "group relative flex flex-col rounded-3xl border border-foreground/[0.06] bg-foreground/[0.03] p-5 text-left backdrop-blur-xl transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]",
-        highlighted && "border-primary/60 shadow-[0_0_0_3px_hsl(var(--primary)/0.25)] animate-pulse",
+        highlighted &&
+          "border-primary/60 shadow-[0_0_0_3px_hsl(var(--primary)/0.25)] animate-pulse",
       )}
     >
       <button type="button" onClick={onOpen} className="text-left">
@@ -558,7 +915,9 @@ function BrandCard({
             {label}
           </span>
           {dealRange && (
-            <span className="break-words text-xs font-medium text-muted-foreground">{dealRange}</span>
+            <span className="break-words text-xs font-medium text-muted-foreground">
+              {dealRange}
+            </span>
           )}
         </div>
 
@@ -576,9 +935,7 @@ function BrandCard({
 
         {/* Best pitch angle (one line) */}
         {angle && (
-          <p className="mt-3 break-words text-xs italic text-muted-foreground/80">
-            Angle: {angle}
-          </p>
+          <p className="mt-3 break-words text-xs italic text-muted-foreground/80">Angle: {angle}</p>
         )}
       </button>
 
@@ -760,7 +1117,11 @@ function BrandDetail({
         disabled={isPitching || brand.status === "pitched"}
         className="w-full rounded-xl"
       >
-        {isPitching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+        {isPitching ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Mail className="mr-2 h-4 w-4" />
+        )}
         {brand.status === "pitched" ? "Already pitched" : "Generate Pitch"}
       </Button>
     </div>
@@ -780,9 +1141,7 @@ function Section({
     <div
       className={cn(
         "rounded-2xl p-4",
-        tone === "warn"
-          ? "border border-amber-500/25 bg-amber-500/[0.05]"
-          : "bg-foreground/[0.03]",
+        tone === "warn" ? "border border-amber-500/25 bg-amber-500/[0.05]" : "bg-foreground/[0.03]",
       )}
     >
       <p

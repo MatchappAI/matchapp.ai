@@ -257,12 +257,9 @@ function SettingsPage() {
       } else {
         toast.error(res.error ?? "Could not update profile");
       }
-    } catch (e: any) {
-      toast.error(
-        e?.message?.includes("email")
-          ? "Please enter a valid email address"
-          : (e?.message ?? "Could not update profile"),
-      );
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Could not update profile";
+      toast.error(message.includes("email") ? "Please enter a valid email address" : message);
     } finally {
       setSavingProfile(false);
     }
@@ -326,8 +323,8 @@ function SettingsPage() {
       toast.success("Avatar updated");
       qc.invalidateQueries({ queryKey: ["settings-data"] });
       qc.invalidateQueries({ queryKey: ["dashboard-user"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not upload avatar");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not upload avatar");
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -692,15 +689,16 @@ function SettingsPage() {
       {/* 10. Email sending — info only */}
       <Section
         icon={Mail}
-        title="Gmail & Inbox"
-        description="Connect Gmail to synchronize creator outreach with the MatchAI Inbox."
+        title="Creator email & Inbox"
+        description="Your internal MatchAI email identity for creator outreach and communication."
       >
         <div className="space-y-3">
           <div className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] p-4">
-            <p className="text-sm font-medium text-foreground">Creator-controlled sending</p>
+            <p className="text-sm font-medium text-foreground">Internal MatchAI email</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Outreach sends from the creator&apos;s connected Gmail account. MatchAI product and
-              transactional email remains separate and never impersonates creator outreach.
+              Your drafts, recipients, threads, and confirmations live in MatchAI. The external
+              delivery API provider has not been selected, so MatchAI will not simulate sending.
+              Product and transactional email remains separate.
             </p>
           </div>
         </div>
@@ -947,8 +945,8 @@ function OnboardingAnswersSection() {
         qc.invalidateQueries({ queryKey: ["onboarding-answers"] });
         qc.invalidateQueries({ queryKey: ["settings-data"] });
       }
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not save preferences");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not save preferences");
     } finally {
       setSaving(false);
     }
@@ -1090,7 +1088,12 @@ function AddHandleForm({ existing, onAdded }: { existing: string[]; onAdded: () 
       await addHandle({
         data: {
           platform: platform as
-            "tiktok" | "instagram" | "youtube" | "linkedin" | "twitch" | "podcast",
+            | "tiktok"
+            | "instagram"
+            | "youtube"
+            | "linkedin"
+            | "twitch"
+            | "podcast",
           handle: cleanHandle,
         },
       });

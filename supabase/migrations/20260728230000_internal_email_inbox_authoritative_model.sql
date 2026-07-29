@@ -1,27 +1,31 @@
--- Authoritative Gmail Inbox model.
--- Gmail is the source of truth for creator outreach. Resend is not used here.
+-- Authoritative internal MatchAI email Inbox model.
+-- The delivery/synchronization provider is intentionally adapter-driven.
+-- Resend is not used for creator outreach.
 
-CREATE TABLE IF NOT EXISTS public.gmail_oauth_credentials (
-  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  encrypted_access_token text NOT NULL,
-  encrypted_refresh_token text,
-  expires_at timestamptz,
-  scopes text[] NOT NULL DEFAULT '{}',
-  token_version integer NOT NULL DEFAULT 1,
-  revoked_at timestamptz,
-  last_refresh_error text,
+CREATE TABLE IF NOT EXISTS public.email_identities (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  address text NOT NULL UNIQUE,
+  display_name text,
+  provider text,
+  provider_identity_id text,
+  status text NOT NULL DEFAULT 'provider_not_configured'
+    CHECK (status IN ('provider_not_configured', 'pending', 'active', 'error', 'revoked')),
+  last_error text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.gmail_oauth_credentials ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.gmail_oauth_credentials FROM anon, authenticated;
-GRANT ALL ON public.gmail_oauth_credentials TO service_role;
+ALTER TABLE public.email_identities ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.email_identities TO authenticated;
+GRANT ALL ON public.email_identities TO service_role;
+CREATE POLICY email_identities_select_own ON public.email_identities
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
 CREATE TABLE IF NOT EXISTS public.email_threads (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  gmail_thread_id text NOT NULL,
+  provider_thread_id text NOT NULL,
   subject text NOT NULL DEFAULT '',
   snippet text NOT NULL DEFAULT '',
   folder text NOT NULL DEFAULT 'inbox'
@@ -38,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.email_threads (
   sync_error text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, gmail_thread_id)
+  UNIQUE (user_id, provider_thread_id)
 );
 
 CREATE INDEX IF NOT EXISTS email_threads_user_folder_last_idx
@@ -50,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.email_messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   thread_id uuid NOT NULL REFERENCES public.email_threads(id) ON DELETE CASCADE,
-  gmail_message_id text NOT NULL,
+  provider_message_id text NOT NULL,
   direction text NOT NULL CHECK (direction IN ('inbound', 'outbound')),
   from_address text NOT NULL,
   to_addresses jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -62,14 +66,14 @@ CREATE TABLE IF NOT EXISTS public.email_messages (
   html_body text,
   sent_at timestamptz,
   received_at timestamptz,
-  gmail_label_ids text[] NOT NULL DEFAULT '{}',
+  provider_labels text[] NOT NULL DEFAULT '{}',
   in_reply_to text,
   references_header text,
   sync_status text NOT NULL DEFAULT 'synced'
     CHECK (sync_status IN ('pending', 'synced', 'failed')),
   sync_error text,
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, gmail_message_id)
+  UNIQUE (user_id, provider_message_id)
 );
 
 CREATE INDEX IF NOT EXISTS email_messages_thread_time_idx
@@ -79,7 +83,7 @@ CREATE TABLE IF NOT EXISTS public.email_drafts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   thread_id uuid REFERENCES public.email_threads(id) ON DELETE SET NULL,
-  gmail_draft_id text,
+  provider_draft_id text,
   from_address text NOT NULL,
   to_addresses jsonb NOT NULL DEFAULT '[]'::jsonb,
   cc_addresses jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -97,7 +101,7 @@ CREATE TABLE IF NOT EXISTS public.email_drafts (
   sync_error text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, gmail_draft_id)
+  UNIQUE (user_id, provider_draft_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.email_attachments (
@@ -105,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.email_attachments (
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   message_id uuid REFERENCES public.email_messages(id) ON DELETE CASCADE,
   draft_id uuid REFERENCES public.email_drafts(id) ON DELETE CASCADE,
-  gmail_attachment_id text,
+  provider_attachment_id text,
   filename text NOT NULL,
   mime_type text NOT NULL DEFAULT 'application/octet-stream',
   size_bytes bigint NOT NULL DEFAULT 0 CHECK (size_bytes >= 0),
@@ -166,8 +170,8 @@ CREATE POLICY email_action_requests_select_own ON public.email_action_requests
 -- All writes happen through authenticated server actions using service_role.
 -- This prevents clients from bypassing confirmation and idempotency.
 
-CREATE TRIGGER gmail_oauth_credentials_set_updated_at
-  BEFORE UPDATE ON public.gmail_oauth_credentials
+CREATE TRIGGER email_identities_set_updated_at
+  BEFORE UPDATE ON public.email_identities
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER email_threads_set_updated_at
   BEFORE UPDATE ON public.email_threads

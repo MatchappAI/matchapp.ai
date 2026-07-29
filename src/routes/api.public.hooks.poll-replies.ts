@@ -1,11 +1,9 @@
 /**
- * Reply polling is a no-op now that outreach sends exclusively through
- * MatchAI's verified Resend domain. Brand replies land back at
- * outreach@notify.www.matchapp.ai and are ingested via the Resend inbound
- * webhook (handled elsewhere) — there's no external mailbox to poll.
+ * Legacy cron compatibility route.
  *
- * The endpoint is kept so any existing pg_cron schedule keeps returning 200
- * instead of erroring; it does nothing on its own.
+ * Creator communication now uses the authoritative MatchAI Inbox. No
+ * delivery/synchronization provider has been selected, so this route must not
+ * fabricate a successful synchronization pass.
  */
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -27,8 +25,13 @@ export const Route = createFileRoute("/api/public/hooks/poll-replies")({
         }
 
         return new Response(
-          JSON.stringify({ ok: true, scanned: 0, detected: 0, note: "gmail-poll-disabled" }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
+          JSON.stringify({
+            ok: false,
+            scanned: 0,
+            detected: 0,
+            error: "creator-email-provider-not-configured",
+          }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
         );
       },
     },

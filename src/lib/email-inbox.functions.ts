@@ -3,286 +3,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getFreshGmailAccessToken, sendGmailFor } from "@/lib/gmail.functions";
+import { getCreatorEmailTransport } from "@/lib/creator-email-transport.server";
 
 const db = supabaseAdmin as unknown as SupabaseClient;
-const GMAIL_API = "https://gmail.googleapis.com/gmail/v1";
 const email = z.string().trim().email().max(320);
 const emailList = z.array(email).max(50).default([]);
 
-type GmailPart = {
-  mimeType?: string;
-  filename?: string;
-  headers?: Array<{ name: string; value: string }>;
-  body?: { attachmentId?: string; data?: string; size?: number };
-  parts?: GmailPart[];
-};
-
-type GmailMessage = {
-  id: string;
-  threadId: string;
-  labelIds?: string[];
-  snippet?: string;
-  internalDate?: string;
-  payload?: GmailPart;
-};
-
-function decodeBase64Url(value?: string): string {
-  if (!value) return "";
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-function header(part: GmailPart | undefined, name: string): string {
-  return part?.headers?.find((item) => item.name.toLowerCase() === name.toLowerCase())?.value ?? "";
-}
-
-function addresses(value: string): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function bodyFromPart(part: GmailPart | undefined): {
-  text: string;
-  html: string;
-} {
-  if (!part) return { text: "", html: "" };
-  const children = part.parts ?? [];
-  if (children.length === 0) {
-    const decoded = decodeBase64Url(part.body?.data);
-    return {
-      text: part.mimeType === "text/plain" ? decoded : "",
-      html: part.mimeType === "text/html" ? decoded : "",
-    };
-  }
-  return children.reduce(
-    (result, child) => {
-      const nested = bodyFromPart(child);
-      return {
-        text: result.text || nested.text,
-        html: result.html || nested.html,
-      };
-    },
-    { text: "", html: "" },
-  );
-}
-
-function attachmentParts(part: GmailPart | undefined): Array<{
-  gmailAttachmentId: string | null;
-  filename: string;
-  mimeType: string;
-  sizeBytes: number;
-}> {
-  if (!part) return [];
-  const own =
-    part.filename && (part.body?.attachmentId || part.body?.data)
-      ? [
-          {
-            gmailAttachmentId: part.body.attachmentId ?? null,
-            filename: part.filename,
-            mimeType: part.mimeType ?? "application/octet-stream",
-            sizeBytes: part.body?.size ?? 0,
-          },
-        ]
-      : [];
-  return [...own, ...(part.parts ?? []).flatMap((child) => attachmentParts(child))];
-}
-
-function folderFor(labels: string[]): "inbox" | "sent" | "drafts" | "archive" | "trash" {
-  if (labels.includes("TRASH")) return "trash";
-  if (labels.includes("DRAFT")) return "drafts";
-  if (labels.includes("INBOX")) return "inbox";
-  if (labels.includes("SENT")) return "sent";
-  return "archive";
-}
-
-async function gmailFetch<T>(
-  userId: string,
-  path: string,
-  init?: RequestInit,
-): Promise<
-  | { ok: true; data: T; accountEmail: string | null }
-  | { ok: false; error: string; reconnect: boolean }
-> {
-  const token = await getFreshGmailAccessToken(userId);
-  if (!token.ok) {
-    return {
-      ok: false,
-      error: token.error,
-      reconnect: token.error.toLowerCase().includes("reconnect"),
-    };
-  }
-  const response = await fetch(`${GMAIL_API}/users/me${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token.accessToken}`,
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error("[gmail-inbox]", path, response.status, detail);
-    return {
-      ok: false,
-      error:
-        response.status === 401
-          ? "Gmail access expired. Reconnect Gmail."
-          : "Gmail synchronization failed. Try again.",
-      reconnect: response.status === 401,
-    };
-  }
-  return {
-    ok: true,
-    data: (await response.json()) as T,
-    accountEmail: token.email,
-  };
-}
-
-async function syncOneThread(
-  userId: string,
-  gmailThreadId: string,
-  accountEmail: string | null,
-): Promise<void> {
-  const response = await gmailFetch<{ messages?: GmailMessage[] }>(
-    userId,
-    `/threads/${encodeURIComponent(gmailThreadId)}?format=full`,
-  );
-  if (!response.ok) throw new Error(response.error);
-  const messages = response.data.messages ?? [];
-  if (messages.length === 0) return;
-  const newest = messages[messages.length - 1];
-  const allLabels = [...new Set(messages.flatMap((message) => message.labelIds ?? []))];
-  const subject =
-    [...messages]
-      .reverse()
-      .map((message) => header(message.payload, "Subject"))
-      .find(Boolean) ?? "(no subject)";
-  const { data: thread, error: threadError } = await db
-    .from("email_threads")
-    .upsert(
-      {
-        user_id: userId,
-        gmail_thread_id: gmailThreadId,
-        subject,
-        snippet: newest.snippet ?? "",
-        folder: folderFor(allLabels),
-        is_unread: allLabels.includes("UNREAD"),
-        message_count: messages.length,
-        last_message_at: newest.internalDate
-          ? new Date(Number(newest.internalDate)).toISOString()
-          : new Date().toISOString(),
-        last_synced_at: new Date().toISOString(),
-        sync_status: "synced",
-        sync_error: null,
-      },
-      { onConflict: "user_id,gmail_thread_id" },
-    )
-    .select("id")
-    .single();
-  if (threadError || !thread) throw new Error("Could not store Gmail thread");
-
-  for (const message of messages) {
-    const from = header(message.payload, "From");
-    const mine = !!accountEmail && from.toLowerCase().includes(accountEmail.toLowerCase());
-    const parsedBody = bodyFromPart(message.payload);
-    const { data: storedMessage, error: messageError } = await db
-      .from("email_messages")
-      .upsert(
-        {
-          user_id: userId,
-          thread_id: thread.id,
-          gmail_message_id: message.id,
-          direction: mine ? "outbound" : "inbound",
-          from_address: from,
-          to_addresses: addresses(header(message.payload, "To")),
-          cc_addresses: addresses(header(message.payload, "Cc")),
-          // Gmail does not reveal another sender's BCC list.
-          bcc_addresses: mine ? addresses(header(message.payload, "Bcc")) : [],
-          reply_to_addresses: addresses(header(message.payload, "Reply-To")),
-          subject: header(message.payload, "Subject"),
-          text_body: parsedBody.text,
-          html_body: parsedBody.html,
-          sent_at:
-            mine && message.internalDate
-              ? new Date(Number(message.internalDate)).toISOString()
-              : null,
-          received_at:
-            !mine && message.internalDate
-              ? new Date(Number(message.internalDate)).toISOString()
-              : null,
-          gmail_label_ids: message.labelIds ?? [],
-          in_reply_to: header(message.payload, "In-Reply-To") || null,
-          references_header: header(message.payload, "References") || null,
-          sync_status: "synced",
-          sync_error: null,
-        },
-        { onConflict: "user_id,gmail_message_id" },
-      )
-      .select("id")
-      .single();
-    if (messageError || !storedMessage) {
-      throw new Error("Could not store Gmail message");
-    }
-    const attachments = attachmentParts(message.payload);
-    if (attachments.length > 0) {
-      await db.from("email_attachments").delete().eq("message_id", storedMessage.id);
-      await db.from("email_attachments").insert(
-        attachments.map((attachment) => ({
-          user_id: userId,
-          message_id: storedMessage.id,
-          gmail_attachment_id: attachment.gmailAttachmentId,
-          filename: attachment.filename,
-          mime_type: attachment.mimeType,
-          size_bytes: attachment.sizeBytes,
-        })),
-      );
-    }
-  }
-}
-
-export const syncGmailInbox = createServerFn({ method: "POST" })
+export const syncEmailInbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const list = await gmailFetch<{
-      threads?: Array<{ id: string }>;
-    }>(context.userId, "/threads?maxResults=100&q=newer_than:90d");
-    if (!list.ok) return list;
-    const threadIds = (list.data.threads ?? []).map((thread) => thread.id);
-    let synced = 0;
-    const errors: string[] = [];
-    for (const threadId of threadIds) {
-      try {
-        await syncOneThread(context.userId, threadId, list.accountEmail);
-        synced += 1;
-      } catch (error) {
-        errors.push(error instanceof Error ? error.message : "Sync failed");
-      }
-    }
-    await supabaseAdmin
-      .from("connected_accounts")
-      .update({
-        account_metadata: {
-          sync_status: errors.length ? "failed" : "synced",
-          last_synced_at: new Date().toISOString(),
-          sync_error: errors[0] ?? null,
-        },
-      })
-      .eq("user_id", context.userId)
-      .eq("service", "gmail");
-    return {
-      ok: errors.length === 0,
-      synced,
-      failed: errors.length,
-      error: errors[0] ?? null,
-      reconnect: false,
-    };
+  .handler(async () => {
+    const result = await getCreatorEmailTransport().synchronize();
+    return result.ok
+      ? { ...result, reconnect: false, error: null }
+      : { ...result, synced: 0, failed: 0, reconnect: false };
   });
 
 export const listInboxThreads = createServerFn({ method: "POST" })
@@ -301,7 +34,7 @@ export const listInboxThreads = createServerFn({ method: "POST" })
     let query = db
       .from("email_threads")
       .select(
-        "id,gmail_thread_id,subject,snippet,folder,is_unread,message_count,last_message_at,brand_match_id,contact_id,deal_id,sync_status,sync_error",
+        "id,provider_thread_id,subject,snippet,folder,is_unread,message_count,last_message_at,brand_match_id,contact_id,deal_id,sync_status,sync_error",
       )
       .eq("user_id", context.userId)
       .eq("folder", data.folder)
@@ -337,7 +70,7 @@ export const getInboxThread = createServerFn({ method: "POST" })
         .order("created_at", { ascending: true }),
       db
         .from("email_attachments")
-        .select("id,message_id,draft_id,filename,mime_type,size_bytes,gmail_attachment_id")
+        .select("id,message_id,draft_id,filename,mime_type,size_bytes,provider_attachment_id")
         .eq("user_id", context.userId),
     ]);
     return { thread, messages: messages ?? [], attachments: attachments ?? [] };
@@ -532,19 +265,18 @@ export const executeEmailAction = createServerFn({ method: "POST" })
           .eq("user_id", context.userId),
       ]);
       if (!draft) throw new Error("Draft not found");
-      let gmailThreadId: string | undefined;
+      let providerThreadId: string | undefined;
       if (draft.thread_id) {
         const { data: thread } = await db
           .from("email_threads")
-          .select("gmail_thread_id")
+          .select("provider_thread_id")
           .eq("id", draft.thread_id)
           .eq("user_id", context.userId)
           .maybeSingle();
-        gmailThreadId = thread?.gmail_thread_id;
+        providerThreadId = thread?.provider_thread_id;
       }
-      const sent = await sendGmailFor({
-        userId: context.userId,
-        fromOverride: draft.from_address,
+      const sent = await getCreatorEmailTransport().send({
+        from: draft.from_address,
         to: draft.to_addresses as string[],
         cc: draft.cc_addresses as string[],
         bcc: draft.bcc_addresses as string[],
@@ -553,7 +285,8 @@ export const executeEmailAction = createServerFn({ method: "POST" })
         body: draft.text_body,
         inReplyTo: draft.in_reply_to ?? undefined,
         references: draft.references_header ?? undefined,
-        threadId: gmailThreadId,
+        providerThreadId,
+        idempotencyKey: claimed.idempotency_key,
         attachments: (attachments ?? []).map((attachment) => ({
           filename: attachment.filename,
           mimeType: attachment.mime_type,
@@ -562,10 +295,55 @@ export const executeEmailAction = createServerFn({ method: "POST" })
       });
       if (!sent.ok) throw new Error(sent.error);
 
-      await syncOneThread(context.userId, sent.threadId, draft.from_address);
+      const now = new Date().toISOString();
+      const { data: storedThread, error: threadError } = await db
+        .from("email_threads")
+        .upsert(
+          {
+            user_id: context.userId,
+            provider_thread_id: sent.providerThreadId,
+            subject: draft.subject,
+            snippet: draft.text_body.slice(0, 240),
+            folder: "sent",
+            is_unread: false,
+            message_count: 1,
+            last_message_at: now,
+            last_synced_at: now,
+            sync_status: "synced",
+            sync_error: null,
+          },
+          { onConflict: "user_id,provider_thread_id" },
+        )
+        .select("id")
+        .single();
+      if (threadError || !storedThread) {
+        throw new Error("Provider sent the message, but local synchronization failed");
+      }
+      await db.from("email_messages").upsert(
+        {
+          user_id: context.userId,
+          thread_id: storedThread.id,
+          provider_message_id: sent.providerMessageId,
+          direction: "outbound",
+          from_address: draft.from_address,
+          to_addresses: draft.to_addresses,
+          cc_addresses: draft.cc_addresses,
+          bcc_addresses: draft.bcc_addresses,
+          reply_to_addresses: draft.reply_to_addresses,
+          subject: draft.subject,
+          text_body: draft.text_body,
+          sent_at: now,
+          provider_labels: ["sent"],
+          in_reply_to: draft.in_reply_to,
+          references_header: draft.references_header,
+          sync_status: "synced",
+          sync_error: null,
+        },
+        { onConflict: "user_id,provider_message_id" },
+      );
       const result = {
-        gmailMessageId: sent.messageId,
-        gmailThreadId: sent.threadId,
+        providerMessageId: sent.providerMessageId,
+        providerThreadId: sent.providerThreadId,
       };
       await Promise.all([
         db
@@ -583,14 +361,14 @@ export const executeEmailAction = createServerFn({ method: "POST" })
           .eq("id", claimed.id),
         db.from("agent_audit_log").insert({
           user_id: context.userId,
-          action: `gmail_${claimed.action}`,
+          action: `email_${claimed.action}`,
           target_type: "email_thread",
-          target_id: sent.threadId,
+          target_id: sent.providerThreadId,
           metadata: {
             idempotency_key: claimed.idempotency_key,
             request_id: claimed.id,
             confirmation_snapshot: claimed.confirmation_snapshot,
-            gmail_message_id: sent.messageId,
+            provider_message_id: sent.providerMessageId,
           },
         }),
       ]);
@@ -623,7 +401,7 @@ export const proposeThreadAction = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: thread } = await db
       .from("email_threads")
-      .select("id,subject,gmail_thread_id,brand_match_id,contact_id,deal_id")
+      .select("id,subject,provider_thread_id,brand_match_id,contact_id,deal_id")
       .eq("id", data.threadId)
       .eq("user_id", context.userId)
       .maybeSingle();
@@ -680,25 +458,12 @@ export const executeThreadAction = createServerFn({ method: "POST" })
     }
     const { data: thread } = await db
       .from("email_threads")
-      .select("gmail_thread_id")
+      .select("provider_thread_id")
       .eq("id", request.thread_id)
       .eq("user_id", context.userId)
       .single();
     if (!thread) throw new Error("Thread not found");
-    const trash = request.action === "trash";
-    const response = await gmailFetch(
-      context.userId,
-      `/threads/${encodeURIComponent(thread.gmail_thread_id)}/modify`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          addLabelIds: trash ? ["TRASH"] : [],
-          removeLabelIds: trash ? ["INBOX"] : ["INBOX"],
-        }),
-      },
-    );
-    if (!response.ok) throw new Error(response.error);
-    const folder = trash ? "trash" : "archive";
+    const folder = request.action === "trash" ? "trash" : "archive";
     await Promise.all([
       db
         .from("email_threads")
@@ -714,9 +479,9 @@ export const executeThreadAction = createServerFn({ method: "POST" })
         .eq("id", request.id),
       db.from("agent_audit_log").insert({
         user_id: context.userId,
-        action: `gmail_${request.action}`,
+        action: `email_${request.action}`,
         target_type: "email_thread",
-        target_id: thread.gmail_thread_id,
+        target_id: thread.provider_thread_id,
         metadata: {
           idempotency_key: request.idempotency_key,
           request_id: request.id,
@@ -734,23 +499,11 @@ export const markThreadReadState = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: thread } = await db
       .from("email_threads")
-      .select("gmail_thread_id")
+      .select("provider_thread_id")
       .eq("id", data.threadId)
       .eq("user_id", context.userId)
       .maybeSingle();
     if (!thread) throw new Error("Thread not found");
-    const response = await gmailFetch(
-      context.userId,
-      `/threads/${encodeURIComponent(thread.gmail_thread_id)}/modify`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          addLabelIds: data.unread ? ["UNREAD"] : [],
-          removeLabelIds: data.unread ? [] : ["UNREAD"],
-        }),
-      },
-    );
-    if (!response.ok) throw new Error(response.error);
     await db
       .from("email_threads")
       .update({ is_unread: data.unread })
@@ -758,9 +511,9 @@ export const markThreadReadState = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     await db.from("agent_audit_log").insert({
       user_id: context.userId,
-      action: data.unread ? "gmail_mark_unread" : "gmail_mark_read",
+      action: data.unread ? "email_mark_unread" : "email_mark_read",
       target_type: "email_thread",
-      target_id: thread.gmail_thread_id,
+      target_id: thread.provider_thread_id,
       metadata: {},
     });
     return { ok: true };

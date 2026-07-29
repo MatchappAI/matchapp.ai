@@ -73,7 +73,10 @@ Market: ${args.market_type ?? "unknown"}`;
     const gateway = createLovableAiGatewayProvider(lovableKey);
     const model = gateway("google/gemini-2.5-flash");
     const { text } = await generateText({ model, system, prompt });
-    const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    const cleaned = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
     const parsed = DiscoverySchema.parse(JSON.parse(cleaned));
     return parsed;
   } catch (e) {
@@ -101,6 +104,7 @@ async function discoverViaHunter(args: {
   brand_name: string;
   domain_hint?: string | null;
 }): Promise<z.infer<typeof DiscoverySchema> | null> {
+  if (process.env.LEAD_PROVIDER !== "hunter") return null;
   const key = process.env.HUNTER_API_KEY;
   if (!key) return null;
   try {
@@ -122,7 +126,11 @@ async function discoverViaHunter(args: {
       else params.set("company", args.brand_name);
       const res = await fetch(`https://api.hunter.io/v2/domain-search?${params.toString()}`);
       if (!res.ok) {
-        console.error("[hunter] domain-search failed", res.status, await res.text().catch(() => ""));
+        console.error(
+          "[hunter] domain-search failed",
+          res.status,
+          await res.text().catch(() => ""),
+        );
         return null;
       }
       return (await res.json()) as HunterResp;
@@ -130,14 +138,16 @@ async function discoverViaHunter(args: {
 
     // 1) Ask Hunter explicitly for executives first.
     const execResp = await fetchHunter({ seniority: "executive" });
-    const fallbackResp = (execResp?.data?.emails?.length ?? 0) > 0 ? execResp : await fetchHunter({});
+    const fallbackResp =
+      (execResp?.data?.emails?.length ?? 0) > 0 ? execResp : await fetchHunter({});
     const j = fallbackResp;
     const domain = j?.data?.domain ?? args.domain_hint ?? null;
     const emails = j?.data?.emails ?? [];
     if (!domain || emails.length === 0) return null;
 
     // C-suite / founder titles — highest priority per user spec.
-    const C_SUITE = /\b(ceo|cfo|coo|cmo|cto|cpo|cro|cso|chief\s+\w+\s+officer|founder|co[-\s]?founder|owner|president|vp|vice\s+president|head\s+of)\b/i;
+    const C_SUITE =
+      /\b(ceo|cfo|coo|cmo|cto|cpo|cro|cso|chief\s+\w+\s+officer|founder|co[-\s]?founder|owner|president|vp|vice\s+president|head\s+of)\b/i;
     const PARTNER_ROLE = /partnership|influencer|creator|brand|pr\b|press|marketing|communication/i;
 
     const score = (e: HunterEmail) => {
@@ -155,11 +165,12 @@ async function discoverViaHunter(args: {
     const top = ranked[0];
     const alts = ranked.slice(1, 3).map((e) => e.value);
     const isCSuite = C_SUITE.test(`${top.position ?? ""} ${top.seniority ?? ""}`);
-    const conf = isCSuite || (top.confidence ?? 0) >= 80
-      ? "high"
-      : (top.confidence ?? 0) >= 50
-        ? "medium"
-        : "low";
+    const conf =
+      isCSuite || (top.confidence ?? 0) >= 80
+        ? "high"
+        : (top.confidence ?? 0) >= 50
+          ? "medium"
+          : "low";
     const name = [top.first_name, top.last_name].filter(Boolean).join(" ").trim() || null;
     return {
       domain,
@@ -187,6 +198,12 @@ export async function backgroundDiscoverContacts(
     market_type: string | null;
   }>,
 ) {
+  if (process.env.LEAD_PROVIDER !== "hunter") {
+    return {
+      ok: false as const,
+      code: "provider_not_configured" as const,
+    };
+  }
   // Sequential to stay in rate budget. Capped to 10.
   for (const bm of brandMatches.slice(0, 10)) {
     try {
@@ -233,9 +250,7 @@ export async function backgroundDiscoverContacts(
 
 export const listBrandContacts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ brand_match_id: z.string().uuid() }).parse(i),
-  )
+  .inputValidator((i: unknown) => z.object({ brand_match_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: rows } = await supabase
@@ -249,11 +264,16 @@ export const listBrandContacts = createServerFn({ method: "POST" })
 /** Manual re-run for a single brand match (used by approval card "Find contact"). */
 export const findContactForBrand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ brand_match_id: z.string().uuid() }).parse(i),
-  )
+  .inputValidator((i: unknown) => z.object({ brand_match_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    if (process.env.LEAD_PROVIDER !== "hunter") {
+      return {
+        ok: false as const,
+        code: "provider_not_configured" as const,
+        error: "No contact provider is configured. Enter the contact manually or import a CSV.",
+      };
+    }
     const { data: bm } = await supabaseAdmin
       .from("brand_matches")
       .select("id,brand_name,brand_industry,market_type,user_id")

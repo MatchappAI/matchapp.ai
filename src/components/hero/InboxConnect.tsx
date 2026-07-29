@@ -5,10 +5,9 @@ import { Reveal, StaggerGroup, itemVariants } from "./Reveal";
 import { MatchAILogo } from "@/components/brand/MatchAILogo";
 
 /**
- * Honest inbox story: MatchAI sends from its own verified domain and routes brand
- * replies straight back into the workspace. Every send waits for creator approval.
+ * The MatchAI Inbox is authoritative. Provider-backed sending and synchronization
+ * remain visibly unavailable until the product selects and configures an API.
  */
-
 
 const triageRows = [
   {
@@ -57,13 +56,11 @@ export function InboxConnect() {
           </h2>
         </div>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          MatchAI sends every pitch from our verified domain and routes brand replies
-          straight back into your workspace. No provider to connect, no SMTP setup —
-          one thread per deal, drafts and payout tracked together.
+          Draft and organize creator outreach from an internal MatchAI email identity.
+          Provider-backed sending and reply synchronization activate only after an email API is
+          selected and configured.
         </p>
-
       </Reveal>
-
 
       <div className="mt-12 grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
         {/* Left: what's actually wired up */}
@@ -77,13 +74,15 @@ export function InboxConnect() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-[13px] font-semibold text-foreground">MatchAI workspace inbox</div>
+                <div className="text-[13px] font-semibold text-foreground">
+                  MatchAI workspace inbox
+                </div>
                 <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300 ring-1 ring-emerald-500/20">
                   Active
                 </span>
               </div>
               <div className="truncate text-[11.5px] text-muted-foreground">
-                One thread per deal · drafts, counters, and payment status in one place
+                One thread per deal · drafts, counters, and creator-reported status
               </div>
             </div>
           </motion.div>
@@ -94,14 +93,17 @@ export function InboxConnect() {
                 <Inbox className="h-4.5 w-4.5 text-primary" strokeWidth={2} />
               </div>
               <div>
-                <div className="text-sm font-semibold text-foreground">Sends from our verified domain</div>
-                <div className="text-[11.5px] text-muted-foreground">outreach@notify.www.matchapp.ai · shown as "You via MatchAI"</div>
+                <div className="text-sm font-semibold text-foreground">
+                  Internal MatchAI email identity
+                </div>
+                <div className="text-[11.5px] text-muted-foreground">
+                  Delivery API selection is still pending
+                </div>
               </div>
             </div>
             <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-medium text-emerald-300 ring-1 ring-emerald-500/20">
-              No setup
+              Not configured
             </span>
-
           </div>
 
           <motion.div
@@ -112,13 +114,15 @@ export function InboxConnect() {
               <Inbox className="h-5 w-5 text-primary" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-semibold text-foreground">Replies stay on-platform</div>
+              <div className="text-[13px] font-semibold text-foreground">
+                One authoritative Inbox
+              </div>
               <div className="truncate text-[11.5px] text-muted-foreground">
-                Brand replies route back into your MatchAI workspace — never to a personal inbox
+                Threads, recipients, drafts, and attachments share the same MatchAI model
               </div>
             </div>
             <span className="rounded-md border border-foreground/10 bg-foreground/[0.03] px-2 py-1 text-[10.5px] font-medium text-muted-foreground">
-              Auto-routed
+              Ready
             </span>
           </motion.div>
 
@@ -140,13 +144,12 @@ export function InboxConnect() {
             </span>
           </motion.div>
 
-
           <div className="mt-6 flex items-center gap-2.5 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-4 text-[12px] leading-relaxed text-muted-foreground">
             <ArrowRight className="h-4 w-4 shrink-0 text-primary" strokeWidth={2} />
             <div>
-              <span className="text-foreground font-medium">Reply → Deal → Payout.</span>{" "}
-              When a brand replies, the thread becomes a deal — terms, counter offers, and
-              protected payout all tracked in your MatchAI workspace.
+              <span className="text-foreground font-medium">Reply → Deal → External payment.</span>{" "}
+              When a brand replies, the thread can be associated with a deal. MatchAI tracks
+              creator-reported status; the brand pays the creator outside MatchAI.
             </div>
           </div>
         </StaggerGroup>
@@ -178,12 +181,18 @@ export function InboxConnect() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="truncate text-[12px] font-semibold text-foreground">{r.sender}</div>
+                    <div className="truncate text-[12px] font-semibold text-foreground">
+                      {r.sender}
+                    </div>
                     <div className="text-[10.5px] text-muted-foreground">{r.channel}</div>
                   </div>
-                  <div className="mt-0.5 truncate text-[11.5px] text-muted-foreground">{r.preview}</div>
+                  <div className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
+                    {r.preview}
+                  </div>
                   <div className="mt-2 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-medium text-foreground ring-1 ring-foreground/10">
-                    <span className={`inline-block h-1.5 w-1.5 rounded-full bg-gradient-to-r ${r.tone}`} />
+                    <span
+                      className={`inline-block h-1.5 w-1.5 rounded-full bg-gradient-to-r ${r.tone}`}
+                    />
                     {r.tag}
                   </div>
                 </div>

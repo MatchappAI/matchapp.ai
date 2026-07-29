@@ -8,8 +8,11 @@
  *   2. Skip if the user has not approved the sequence yet (`approved=false`)
  *      AND we don't have a generated body — we never silently send blanks.
  *   3. Generate subject/body via the AI gateway if missing.
- *   4. Send through MatchAI's verified Resend domain (outreach@notify.www.matchapp.ai).
+ *   4. Send through the selected creator-email transport.
  *   5. Mark the row sent and persist subject/body for the inbox view.
+ *
+ * No creator-email provider is selected today. Resend remains reserved for
+ * MatchAI transactional/product email.
  *
  * Auth: this endpoint lives under /api/public/* which bypasses the
  * Lovable published-site auth gate, but the handler still requires the
@@ -37,20 +40,28 @@ export const Route = createFileRoute("/api/public/hooks/process-follow-ups")({
           return new Response("Unauthorized", { status: 401 });
         }
 
+        const { getCreatorEmailTransport } = await import("@/lib/creator-email-transport.server");
+        if (!getCreatorEmailTransport().configured) {
+          return Response.json(
+            {
+              ok: false,
+              code: "provider_not_configured",
+              message: "Creator email follow-ups are paused until a delivery provider is selected.",
+            },
+            { status: 503 },
+          );
+        }
+
         const { sendOutreach } = await import("@/lib/outreach-sender.server");
         const { generateText } = await import("ai");
-        const { createLovableAiGatewayProvider } = await import(
-          "@/lib/ai-gateway.server"
-        );
+        const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
 
         const nowIso = new Date().toISOString();
 
         // Pull a small batch — keep each cron tick bounded.
         const { data: due, error } = await supabaseAdmin
           .from("follow_up_sequences")
-          .select(
-            "id, user_id, outreach_id, sequence_number, subject, body, scheduled_at",
-          )
+          .select("id, user_id, outreach_id, sequence_number, subject, body, scheduled_at")
           .eq("sent", false)
           .eq("cancelled", false)
           .eq("approved", true)
@@ -138,7 +149,6 @@ export const Route = createFileRoute("/api/public/hooks/process-follow-ups")({
               };
               const genericStrategy = `Ongoing warm follow-up #${row.sequence_number} — the thread has gone quiet for a while. Assume the contact is busy, not uninterested. Open differently than any earlier email, share one genuinely new angle (a recent post, a launch, a seasonal moment, a small idea), keep it under 80 words, and leave the door wide open. Never guilt-trip, never say "just bumping this," never imply this is the last time you'll reach out.`;
 
-
               const prompt = `Write follow-up #${row.sequence_number} to a brand contact who hasn't replied.
 
 Original subject: ${outreach.subject ?? "(unknown)"}
@@ -153,7 +163,6 @@ Strategy: ${sequenceContext[row.sequence_number] ?? genericStrategy}
 Return ONLY a JSON object like:
 {"subject":"...","body":"..."}
 Subject should reference the original thread (e.g. "Re:" or "Following up on …"). Body should be plain text, no markdown, no signature placeholders.`;
-
 
               const ai = await generateText({ model, prompt });
               const text = ai.text.trim();

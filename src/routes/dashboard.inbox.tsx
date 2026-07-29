@@ -36,9 +36,9 @@ import {
   proposeEmailAction,
   proposeThreadAction,
   saveInboxDraft,
-  syncGmailInbox,
-} from "@/lib/gmail-inbox.functions";
-import { getConnectedAccounts, startGmailConnect } from "@/lib/gmail.functions";
+  syncEmailInbox,
+} from "@/lib/email-inbox.functions";
+import { getCreatorEmailIdentity } from "@/lib/creator-email-identity.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/inbox")({
@@ -129,9 +129,8 @@ function messageTime(message: Record<string, unknown>): string | null {
 
 function InboxPage() {
   const queryClient = useQueryClient();
-  const fetchAccounts = useServerFn(getConnectedAccounts);
-  const beginConnect = useServerFn(startGmailConnect);
-  const syncInbox = useServerFn(syncGmailInbox);
+  const fetchIdentity = useServerFn(getCreatorEmailIdentity);
+  const syncInbox = useServerFn(syncEmailInbox);
   const listThreads = useServerFn(listInboxThreads);
   const fetchThread = useServerFn(getInboxThread);
   const saveDraft = useServerFn(saveInboxDraft);
@@ -149,48 +148,37 @@ function InboxPage() {
   const [composer, setComposer] = useState<ComposerState | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
 
-  const accountsQuery = useQuery({
-    queryKey: ["connected-accounts"],
-    queryFn: () => fetchAccounts(),
+  const identityQuery = useQuery({
+    queryKey: ["creator-email-identity"],
+    queryFn: () => fetchIdentity(),
   });
-  const gmailAccount = accountsQuery.data?.accounts.find(
-    (account) => account.service === "gmail" && account.connected,
-  );
-  const connected = Boolean(gmailAccount);
-  const accountEmail = gmailAccount?.account_email ?? "";
+  const identity = identityQuery.data?.identity;
+  const providerConfigured = identityQuery.data?.transport.configured ?? false;
+  const accountEmail = identity?.address ?? "";
 
   const threadsQuery = useQuery({
-    queryKey: ["gmail-threads", folder, search, unreadOnly, sort],
+    queryKey: ["email-threads", folder, search, unreadOnly, sort],
     queryFn: () =>
       listThreads({
         data: { folder, query: search, unreadOnly, sort },
       }),
-    enabled: connected,
+    enabled: Boolean(identity),
   });
   const threads = threadsQuery.data?.threads ?? [];
 
   const threadQuery = useQuery({
-    queryKey: ["gmail-thread", selectedId],
+    queryKey: ["email-thread", selectedId],
     queryFn: () => fetchThread({ data: { threadId: selectedId! } }),
     enabled: Boolean(selectedId),
-  });
-
-  const connectMutation = useMutation({
-    mutationFn: () => beginConnect({ data: { origin: window.location.origin } }),
-    onSuccess: (result) => {
-      if (result.ok) window.location.assign(result.authorizationUrl);
-      else toast.error(result.error);
-    },
-    onError: (error) => toast.error(String(error)),
   });
 
   const syncMutation = useMutation({
     mutationFn: () => syncInbox(),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-threads"] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-thread"] });
-      if (result.ok) toast.success(`Gmail synchronized (${result.synced} threads)`);
-      else toast.error(result.error ?? "Some Gmail threads could not synchronize");
+      queryClient.invalidateQueries({ queryKey: ["email-threads"] });
+      queryClient.invalidateQueries({ queryKey: ["email-thread"] });
+      if (result.ok) toast.success(`Email synchronized (${result.synced} threads)`);
+      else toast.error(result.error ?? "Some email threads could not synchronize");
     },
     onError: (error) => toast.error(String(error)),
   });
@@ -198,8 +186,8 @@ function InboxPage() {
   const readMutation = useMutation({
     mutationFn: (input: { threadId: string; unread: boolean }) => markRead({ data: input }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-threads"] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-thread"] });
+      queryClient.invalidateQueries({ queryKey: ["email-threads"] });
+      queryClient.invalidateQueries({ queryKey: ["email-thread"] });
     },
     onError: (error) => toast.error(String(error)),
   });
@@ -285,13 +273,13 @@ function InboxPage() {
         result.replay
           ? "This approved action was already completed"
           : pending.kind === "email"
-            ? "Sent through Gmail"
-            : "Gmail thread updated",
+            ? "Sent through the configured email provider"
+            : "Email thread updated",
       );
       setConfirmation(null);
       if (pending.kind === "email") setComposer(null);
-      queryClient.invalidateQueries({ queryKey: ["gmail-threads"] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-thread"] });
+      queryClient.invalidateQueries({ queryKey: ["email-threads"] });
+      queryClient.invalidateQueries({ queryKey: ["email-thread"] });
     },
     onError: (error) => toast.error(String(error).replace("Error: ", "")),
   });
@@ -344,7 +332,7 @@ function InboxPage() {
         all.findIndex((other) => other.toLowerCase() === address.toLowerCase()) === index,
     );
     const subject = String(selectedThread.subject ?? "");
-    const messageId = String(latestMessage.gmail_message_id ?? "");
+    const messageId = String(latestMessage.provider_message_id ?? "");
     const references = [String(latestMessage.references_header ?? ""), messageId]
       .filter(Boolean)
       .join(" ");
@@ -383,29 +371,29 @@ function InboxPage() {
     if (unread) readMutation.mutate({ threadId, unread: false });
   }
 
-  if (accountsQuery.isLoading) {
-    return <CenteredStatus label="Checking Gmail connection…" />;
+  if (identityQuery.isLoading) {
+    return <CenteredStatus label="Loading your MatchAI email…" />;
   }
 
-  if (!connected) {
+  if (identityQuery.isError || !identity) {
     return (
       <div className="mx-auto max-w-2xl py-12">
         <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Mail className="h-7 w-7" />
           </span>
-          <h1 className="mt-5 text-2xl font-semibold">Connect Gmail to open your Inbox</h1>
+          <h1 className="mt-5 text-2xl font-semibold">Your MatchAI email could not initialize</h1>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
-            MatchAI uses your Gmail account for creator outreach, drafts, replies, threads,
-            attachments, and delivery state. Sending always requires your exact confirmation.
+            Retry to initialize your internal creator email identity. MatchAI will not assume or
+            activate an external provider.
           </p>
           <Button
             className="mt-6 rounded-xl"
-            onClick={() => connectMutation.mutate()}
-            disabled={connectMutation.isPending}
+            onClick={() => identityQuery.refetch()}
+            disabled={identityQuery.isFetching}
           >
-            {connectMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Connect Gmail
+            {identityQuery.isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Retry
           </Button>
           <p className="mt-4 text-xs text-muted-foreground">
             Resend is used only for MatchAI product emails, never creator outreach.
@@ -416,347 +404,362 @@ function InboxPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <aside className="hidden w-48 shrink-0 border-r border-border p-3 md:block">
-        <Button
-          className="mb-4 w-full justify-start rounded-xl"
-          onClick={() => openComposer("send")}
+    <div className="space-y-3">
+      {!providerConfigured && (
+        <div
+          role="status"
+          className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm"
         >
-          <PenLine className="mr-2 h-4 w-4" /> Compose
-        </Button>
-        <nav aria-label="Mailbox folders" className="space-y-1">
-          {FOLDERS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => {
-                setFolder(id);
-                setSelectedId(null);
-              }}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors",
-                folder === id
-                  ? "bg-primary/10 font-semibold text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <section
-        className={cn(
-          "flex min-w-0 w-full flex-col border-r border-border md:w-[22rem]",
-          selectedId && "hidden md:flex",
-        )}
-      >
-        <div className="border-b border-border p-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h1 className="text-lg font-semibold capitalize">{folder}</h1>
-              <p className="text-xs text-muted-foreground">{accountEmail}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="md:hidden"
-                aria-label="Compose"
-                onClick={() => openComposer("send")}
-              >
-                <PenLine className="h-4 w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label="Synchronize Gmail"
-                onClick={() => syncMutation.mutate()}
-                disabled={syncMutation.isPending}
-              >
-                <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
-              </Button>
-            </div>
-          </div>
-          <div className="relative mt-3">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search subject or message"
-              aria-label="Search Inbox"
-              className="rounded-xl pl-9"
-            />
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setUnreadOnly((value) => !value)}
-              className={cn(
-                "rounded-lg px-2 py-1 text-xs",
-                unreadOnly
-                  ? "bg-primary/10 font-medium text-primary"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              Unread only
-            </button>
-            <button
-              type="button"
-              onClick={() => setSort((value) => (value === "newest" ? "oldest" : "newest"))}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
-            >
-              {sort === "newest" ? (
-                <ArrowDownAZ className="h-3.5 w-3.5" />
-              ) : (
-                <ArrowUpAZ className="h-3.5 w-3.5" />
-              )}
-              {sort}
-            </button>
-          </div>
+          <p className="font-semibold">Creator email provider not configured</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Your internal MatchAI address and drafts work now. Sending and external synchronization
+            remain unavailable until an email API provider is selected.
+          </p>
         </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {threadsQuery.isLoading ? (
-            <CenteredStatus label="Loading Gmail threads…" compact />
-          ) : threadsQuery.isError ? (
-            <RetryState message="Inbox could not load." onRetry={() => threadsQuery.refetch()} />
-          ) : threads.length === 0 ? (
-            <div className="p-8 text-center">
-              <MailOpen className="mx-auto h-8 w-8 text-muted-foreground/60" />
-              <p className="mt-3 text-sm font-medium">No {folder} threads</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Synchronize Gmail or compose a new message.
-              </p>
-            </div>
-          ) : (
-            threads.map((thread) => (
+      )}
+      <div className="flex min-h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <aside className="hidden w-48 shrink-0 border-r border-border p-3 md:block">
+          <Button
+            className="mb-4 w-full justify-start rounded-xl"
+            onClick={() => openComposer("send")}
+          >
+            <PenLine className="mr-2 h-4 w-4" /> Compose
+          </Button>
+          <nav aria-label="Mailbox folders" className="space-y-1">
+            {FOLDERS.map(({ id, label, icon: Icon }) => (
               <button
-                key={thread.id}
+                key={id}
                 type="button"
-                onClick={() => selectThread(thread.id, thread.is_unread)}
+                onClick={() => {
+                  setFolder(id);
+                  setSelectedId(null);
+                }}
                 className={cn(
-                  "w-full border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted/60",
-                  selectedId === thread.id && "bg-primary/[0.06]",
+                  "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors",
+                  folder === id
+                    ? "bg-primary/10 font-semibold text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <p
-                    className={cn(
-                      "truncate text-sm",
-                      thread.is_unread ? "font-semibold" : "font-medium",
-                    )}
-                  >
-                    {thread.subject || "(no subject)"}
-                  </p>
-                  <span className="shrink-0 text-[11px] text-muted-foreground">
-                    {displayDate(thread.last_message_at)}
-                  </span>
-                </div>
-                <p
-                  className={cn(
-                    "mt-1 line-clamp-2 text-xs text-muted-foreground",
-                    thread.is_unread && "font-medium text-foreground/75",
-                  )}
-                >
-                  {thread.snippet || "No preview available"}
-                </p>
-                <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
-                  <span>{thread.message_count} messages</span>
-                  {thread.sync_status === "failed" && (
-                    <span className="text-destructive">Sync failed</span>
-                  )}
-                </div>
+                <Icon className="h-4 w-4" />
+                {label}
               </button>
-            ))
-          )}
-        </div>
-      </section>
+            ))}
+          </nav>
+        </aside>
 
-      <section className="min-w-0 flex-1">
-        {!selectedId ? (
-          <div className="hidden h-full items-center justify-center p-8 text-center md:flex">
-            <div>
-              <InboxIcon className="mx-auto h-9 w-9 text-muted-foreground/50" />
-              <p className="mt-3 text-sm font-medium">Select a conversation</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Threads are synchronized from Gmail.
-              </p>
-            </div>
-          </div>
-        ) : threadQuery.isLoading ? (
-          <CenteredStatus label="Loading conversation…" />
-        ) : threadQuery.isError || !selectedThread ? (
-          <RetryState
-            message="This conversation could not load."
-            onRetry={() => threadQuery.refetch()}
-          />
-        ) : (
-          <div className="flex h-full flex-col">
-            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3 sm:px-5">
-              <div className="flex min-w-0 items-center gap-2">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="md:hidden"
-                  aria-label="Back to thread list"
-                  onClick={() => setSelectedId(null)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="min-w-0">
-                  <h2 className="truncate text-base font-semibold">
-                    {String(selectedThread.subject || "(no subject)")}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {String(selectedThread.message_count)} messages ·{" "}
-                    {String(selectedThread.sync_status)}
-                  </p>
-                </div>
+        <section
+          className={cn(
+            "flex min-w-0 w-full flex-col border-r border-border md:w-[22rem]",
+            selectedId && "hidden md:flex",
+          )}
+        >
+          <div className="border-b border-border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h1 className="text-lg font-semibold capitalize">{folder}</h1>
+                <p className="text-xs text-muted-foreground">{accountEmail}</p>
               </div>
               <div className="flex items-center gap-1">
                 <Button
                   size="icon"
                   variant="ghost"
-                  aria-label={selectedThread.is_unread ? "Mark read" : "Mark unread"}
-                  onClick={() =>
-                    readMutation.mutate({
-                      threadId: String(selectedThread.id),
-                      unread: !selectedThread.is_unread,
-                    })
-                  }
+                  className="md:hidden"
+                  aria-label="Compose"
+                  onClick={() => openComposer("send")}
                 >
-                  {selectedThread.is_unread ? (
-                    <MailOpen className="h-4 w-4" />
-                  ) : (
-                    <Mail className="h-4 w-4" />
-                  )}
+                  <PenLine className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  aria-label="Archive thread"
-                  onClick={() =>
-                    threadActionMutation.mutate({
-                      action: "archive",
-                      threadId: String(selectedThread.id),
-                    })
-                  }
+                  aria-label="Synchronize email"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending || !providerConfigured}
                 >
-                  <Archive className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Move thread to trash"
-                  onClick={() =>
-                    threadActionMutation.mutate({
-                      action: "trash",
-                      threadId: String(selectedThread.id),
-                    })
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
+                  <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
                 </Button>
               </div>
-            </header>
-
-            <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-3 sm:p-5">
-              {messages.map((message) => {
-                const outbound = message.direction === "outbound";
-                const attachments = (threadQuery.data?.attachments ?? []).filter(
-                  (attachment) => attachment.message_id === message.id,
-                );
-                return (
-                  <article
-                    key={String(message.id)}
-                    className="rounded-2xl border border-border bg-card p-4 shadow-sm"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-semibold">
-                          {String(message.from_address || "Unknown sender")}
-                        </p>
-                        <p className="mt-0.5 break-words text-xs text-muted-foreground">
-                          To: {((message.to_addresses ?? []) as string[]).join(", ") || "—"}
-                        </p>
-                        {((message.cc_addresses ?? []) as string[]).length > 0 && (
-                          <p className="break-words text-xs text-muted-foreground">
-                            CC: {((message.cc_addresses ?? []) as string[]).join(", ")}
-                          </p>
-                        )}
-                        {outbound && ((message.bcc_addresses ?? []) as string[]).length > 0 && (
-                          <p className="break-words text-xs text-muted-foreground">
-                            BCC: {((message.bcc_addresses ?? []) as string[]).join(", ")}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {displayDate(messageTime(message))}
-                      </span>
-                    </div>
-                    <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
-                      {String(message.text_body || "No plain-text body available.")}
-                    </div>
-                    {attachments.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {attachments.map((attachment) => (
-                          <span
-                            key={attachment.id}
-                            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
-                          >
-                            <Paperclip className="h-3 w-3" />
-                            {attachment.filename}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {message.sync_status === "failed" && (
-                      <p className="mt-3 text-xs text-destructive">
-                        Synchronization failed: {String(message.sync_error ?? "Retry sync")}
-                      </p>
-                    )}
-                  </article>
-                );
-              })}
             </div>
-
-            <footer className="flex flex-wrap gap-2 border-t border-border p-3 sm:px-5">
-              <Button variant="outline" onClick={() => openComposer("reply")}>
-                <Reply className="mr-2 h-4 w-4" /> Reply
-              </Button>
-              <Button variant="outline" onClick={() => openComposer("reply_all")}>
-                <ReplyAll className="mr-2 h-4 w-4" /> Reply all
-              </Button>
-              <Button variant="outline" onClick={() => openComposer("forward")}>
-                <Forward className="mr-2 h-4 w-4" /> Forward
-              </Button>
-            </footer>
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search subject or message"
+                aria-label="Search Inbox"
+                className="rounded-xl pl-9"
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setUnreadOnly((value) => !value)}
+                className={cn(
+                  "rounded-lg px-2 py-1 text-xs",
+                  unreadOnly
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                Unread only
+              </button>
+              <button
+                type="button"
+                onClick={() => setSort((value) => (value === "newest" ? "oldest" : "newest"))}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+              >
+                {sort === "newest" ? (
+                  <ArrowDownAZ className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowUpAZ className="h-3.5 w-3.5" />
+                )}
+                {sort}
+              </button>
+            </div>
           </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {threadsQuery.isLoading ? (
+              <CenteredStatus label="Loading email threads…" compact />
+            ) : threadsQuery.isError ? (
+              <RetryState message="Inbox could not load." onRetry={() => threadsQuery.refetch()} />
+            ) : threads.length === 0 ? (
+              <div className="p-8 text-center">
+                <MailOpen className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                <p className="mt-3 text-sm font-medium">No {folder} threads</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Compose a new message or synchronize after a provider is configured.
+                </p>
+              </div>
+            ) : (
+              threads.map((thread) => (
+                <button
+                  key={thread.id}
+                  type="button"
+                  onClick={() => selectThread(thread.id, thread.is_unread)}
+                  className={cn(
+                    "w-full border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted/60",
+                    selectedId === thread.id && "bg-primary/[0.06]",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p
+                      className={cn(
+                        "truncate text-sm",
+                        thread.is_unread ? "font-semibold" : "font-medium",
+                      )}
+                    >
+                      {thread.subject || "(no subject)"}
+                    </p>
+                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                      {displayDate(thread.last_message_at)}
+                    </span>
+                  </div>
+                  <p
+                    className={cn(
+                      "mt-1 line-clamp-2 text-xs text-muted-foreground",
+                      thread.is_unread && "font-medium text-foreground/75",
+                    )}
+                  >
+                    {thread.snippet || "No preview available"}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <span>{thread.message_count} messages</span>
+                    {thread.sync_status === "failed" && (
+                      <span className="text-destructive">Sync failed</span>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="min-w-0 flex-1">
+          {!selectedId ? (
+            <div className="hidden h-full items-center justify-center p-8 text-center md:flex">
+              <div>
+                <InboxIcon className="mx-auto h-9 w-9 text-muted-foreground/50" />
+                <p className="mt-3 text-sm font-medium">Select a conversation</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Threads and drafts live in your internal MatchAI Inbox.
+                </p>
+              </div>
+            </div>
+          ) : threadQuery.isLoading ? (
+            <CenteredStatus label="Loading conversation…" />
+          ) : threadQuery.isError || !selectedThread ? (
+            <RetryState
+              message="This conversation could not load."
+              onRetry={() => threadQuery.refetch()}
+            />
+          ) : (
+            <div className="flex h-full flex-col">
+              <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3 sm:px-5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="md:hidden"
+                    aria-label="Back to thread list"
+                    onClick={() => setSelectedId(null)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-base font-semibold">
+                      {String(selectedThread.subject || "(no subject)")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {String(selectedThread.message_count)} messages ·{" "}
+                      {String(selectedThread.sync_status)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={selectedThread.is_unread ? "Mark read" : "Mark unread"}
+                    onClick={() =>
+                      readMutation.mutate({
+                        threadId: String(selectedThread.id),
+                        unread: !selectedThread.is_unread,
+                      })
+                    }
+                  >
+                    {selectedThread.is_unread ? (
+                      <MailOpen className="h-4 w-4" />
+                    ) : (
+                      <Mail className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Archive thread"
+                    onClick={() =>
+                      threadActionMutation.mutate({
+                        action: "archive",
+                        threadId: String(selectedThread.id),
+                      })
+                    }
+                  >
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Move thread to trash"
+                    onClick={() =>
+                      threadActionMutation.mutate({
+                        action: "trash",
+                        threadId: String(selectedThread.id),
+                      })
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </header>
+
+              <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-3 sm:p-5">
+                {messages.map((message) => {
+                  const outbound = message.direction === "outbound";
+                  const attachments = (threadQuery.data?.attachments ?? []).filter(
+                    (attachment) => attachment.message_id === message.id,
+                  );
+                  return (
+                    <article
+                      key={String(message.id)}
+                      className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-semibold">
+                            {String(message.from_address || "Unknown sender")}
+                          </p>
+                          <p className="mt-0.5 break-words text-xs text-muted-foreground">
+                            To: {((message.to_addresses ?? []) as string[]).join(", ") || "—"}
+                          </p>
+                          {((message.cc_addresses ?? []) as string[]).length > 0 && (
+                            <p className="break-words text-xs text-muted-foreground">
+                              CC: {((message.cc_addresses ?? []) as string[]).join(", ")}
+                            </p>
+                          )}
+                          {outbound && ((message.bcc_addresses ?? []) as string[]).length > 0 && (
+                            <p className="break-words text-xs text-muted-foreground">
+                              BCC: {((message.bcc_addresses ?? []) as string[]).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {displayDate(messageTime(message))}
+                        </span>
+                      </div>
+                      <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                        {String(message.text_body || "No plain-text body available.")}
+                      </div>
+                      {attachments.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {attachments.map((attachment) => (
+                            <span
+                              key={attachment.id}
+                              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
+                            >
+                              <Paperclip className="h-3 w-3" />
+                              {attachment.filename}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {message.sync_status === "failed" && (
+                        <p className="mt-3 text-xs text-destructive">
+                          Synchronization failed: {String(message.sync_error ?? "Retry sync")}
+                        </p>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+
+              <footer className="flex flex-wrap gap-2 border-t border-border p-3 sm:px-5">
+                <Button variant="outline" onClick={() => openComposer("reply")}>
+                  <Reply className="mr-2 h-4 w-4" /> Reply
+                </Button>
+                <Button variant="outline" onClick={() => openComposer("reply_all")}>
+                  <ReplyAll className="mr-2 h-4 w-4" /> Reply all
+                </Button>
+                <Button variant="outline" onClick={() => openComposer("forward")}>
+                  <Forward className="mr-2 h-4 w-4" /> Forward
+                </Button>
+              </footer>
+            </div>
+          )}
+        </section>
+
+        {composer && (
+          <Composer
+            state={composer}
+            setState={setComposer}
+            onClose={() => setComposer(null)}
+            onSave={() => saveMutation.mutate(composer)}
+            onReview={() => reviewMutation.mutate(composer)}
+            busy={saveMutation.isPending || reviewMutation.isPending}
+          />
         )}
-      </section>
 
-      {composer && (
-        <Composer
-          state={composer}
-          setState={setComposer}
-          onClose={() => setComposer(null)}
-          onSave={() => saveMutation.mutate(composer)}
-          onReview={() => reviewMutation.mutate(composer)}
-          busy={saveMutation.isPending || reviewMutation.isPending}
-        />
-      )}
-
-      {confirmation && (
-        <ConfirmationDialog
-          confirmation={confirmation}
-          busy={executeMutation.isPending}
-          onCancel={() => setConfirmation(null)}
-          onConfirm={() => executeMutation.mutate(confirmation)}
-        />
-      )}
+        {confirmation && (
+          <ConfirmationDialog
+            confirmation={confirmation}
+            providerConfigured={providerConfigured}
+            busy={executeMutation.isPending}
+            onCancel={() => setConfirmation(null)}
+            onConfirm={() => executeMutation.mutate(confirmation)}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -845,7 +848,7 @@ function Composer({
               {state.mode.replace("_", " ")}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Sends through connected Gmail after confirmation
+              Uses your internal MatchAI email after exact confirmation
             </p>
           </div>
           <Button size="icon" variant="ghost" aria-label="Close composer" onClick={onClose}>
@@ -1002,11 +1005,13 @@ function LabeledInput({
 
 function ConfirmationDialog({
   confirmation,
+  providerConfigured,
   busy,
   onCancel,
   onConfirm,
 }: {
   confirmation: Confirmation;
+  providerConfigured: boolean;
   busy: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -1055,6 +1060,12 @@ function ConfirmationDialog({
           Review every field. The approved action executes exactly once and is recorded in the audit
           log.
         </p>
+        {confirmation.kind === "email" && !providerConfigured && (
+          <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
+            Sending is unavailable because no creator email API provider has been selected. Your
+            draft and confirmation remain safe.
+          </p>
+        )}
         <dl className="mt-4 space-y-3">
           {fields.map(([label, rawValue]) => {
             const value = Array.isArray(rawValue)
@@ -1084,7 +1095,10 @@ function ConfirmationDialog({
           <Button variant="outline" onClick={onCancel} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={onConfirm} disabled={busy}>
+          <Button
+            onClick={onConfirm}
+            disabled={busy || (confirmation.kind === "email" && !providerConfigured)}
+          >
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirm and execute once
           </Button>

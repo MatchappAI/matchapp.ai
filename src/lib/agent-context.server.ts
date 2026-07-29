@@ -11,7 +11,7 @@ export async function loadAgentContext(userId: string) {
     deals,
     approvals,
     outreach,
-    gmail,
+    connections,
     prefs,
     insights,
   ] = await Promise.all([
@@ -73,7 +73,7 @@ export async function loadAgentContext(userId: string) {
     deals: deals.data ?? [],
     approvals: approvals.data ?? [],
     outreach: outreach.data ?? [],
-    connections: gmail.data ?? [],
+    connections: connections.data ?? [],
     prefs: prefs.data,
     insights: insights.data ?? [],
   };
@@ -138,14 +138,23 @@ export function summarizeContext(ctx: Awaited<ReturnType<typeof loadAgentContext
       lines.push(`Creator notes: ${ctx.prefs.additional_notes.slice(0, 240)}`);
   }
   if (ctx.stats?.length) {
-    const themes = ctx.stats.flatMap((s) => (s as { top_content_categories?: string[] }).top_content_categories ?? []);
-    if (themes.length) lines.push(`Top performing topics: ${[...new Set(themes)].slice(0, 6).join(", ")}`);
-    const eng = ctx.stats.map((s) => Number((s as { engagement_rate?: number }).engagement_rate ?? 0)).filter(Boolean);
-    if (eng.length) lines.push(`Avg engagement: ${(eng.reduce((a, b) => a + b, 0) / eng.length).toFixed(2)}%`);
+    const themes = ctx.stats.flatMap(
+      (s) => (s as { top_content_categories?: string[] }).top_content_categories ?? [],
+    );
+    if (themes.length)
+      lines.push(`Top performing topics: ${[...new Set(themes)].slice(0, 6).join(", ")}`);
+    const eng = ctx.stats
+      .map((s) => Number((s as { engagement_rate?: number }).engagement_rate ?? 0))
+      .filter(Boolean);
+    if (eng.length)
+      lines.push(`Avg engagement: ${(eng.reduce((a, b) => a + b, 0) / eng.length).toFixed(2)}%`);
   }
   if (ctx.brands.length) {
     lines.push(
-      `Top brand matches: ${ctx.brands.slice(0, 5).map((b) => `${b.brand_name} (${b.fit_score}%)`).join(", ")}`,
+      `Top brand matches: ${ctx.brands
+        .slice(0, 5)
+        .map((b) => `${b.brand_name} (${b.fit_score}%)`)
+        .join(", ")}`,
     );
   }
   if (ctx.deals.length) {
@@ -156,14 +165,16 @@ export function summarizeContext(ctx: Awaited<ReturnType<typeof loadAgentContext
     const applied = ctx.insights.filter((i) => i.applied);
     if (applied.length) {
       lines.push(
-        `What I've learned about you so far: ${applied.map((i) => i.insight_title).slice(0, 5).join(" · ")}`,
+        `What I've learned about you so far: ${applied
+          .map((i) => i.insight_title)
+          .slice(0, 5)
+          .join(" · ")}`,
       );
     }
   }
   lines.push(
-    `Outreach sending: MatchAI sends every pitch and follow-up from its own verified domain (outreach@notify.www.matchapp.ai, shown as "You via MatchAI"). Brand replies route straight back into the MatchAI workspace — the creator never connects Gmail, Outlook, or any external inbox. Do not suggest connecting an email provider; there isn't one to connect.`,
+    `Creator email: every creator has an internal MatchAI email identity and uses the MatchAI Inbox for outreach and replies. The external delivery/synchronization API provider has not been selected. Never claim a message was sent, delivered, received, or synchronized while the provider is unconfigured. Resend is reserved for MatchAI transactional/product email.`,
   );
-
 
   return lines.join("\n");
 }
