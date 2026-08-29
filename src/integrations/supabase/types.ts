@@ -2143,6 +2143,7 @@ export type Database = {
           bio: string | null
           connected_platforms: string[]
           content_formats: string[]
+          country: string | null
           created_at: string
           creator_agreement_version: string | null
           creator_handle: string | null
@@ -2168,6 +2169,7 @@ export type Database = {
           stripe_connect_onboarded: boolean
           terms_accepted_at: string | null
           ugc_interest: boolean | null
+          ugc_role: string | null
           unsubscribe_footer_enabled: boolean
           updated_at: string
           user_id: string
@@ -2183,6 +2185,7 @@ export type Database = {
           bio?: string | null
           connected_platforms?: string[]
           content_formats?: string[]
+          country?: string | null
           created_at?: string
           creator_agreement_version?: string | null
           creator_handle?: string | null
@@ -2208,6 +2211,7 @@ export type Database = {
           stripe_connect_onboarded?: boolean
           terms_accepted_at?: string | null
           ugc_interest?: boolean | null
+          ugc_role?: string | null
           unsubscribe_footer_enabled?: boolean
           updated_at?: string
           user_id: string
@@ -2223,6 +2227,7 @@ export type Database = {
           bio?: string | null
           connected_platforms?: string[]
           content_formats?: string[]
+          country?: string | null
           created_at?: string
           creator_agreement_version?: string | null
           creator_handle?: string | null
@@ -2248,6 +2253,7 @@ export type Database = {
           stripe_connect_onboarded?: boolean
           terms_accepted_at?: string | null
           ugc_interest?: boolean | null
+          ugc_role?: string | null
           unsubscribe_footer_enabled?: boolean
           updated_at?: string
           user_id?: string
@@ -2473,6 +2479,591 @@ export type Database = {
         }
         Relationships: []
       }
+      ugc_creator_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          exclusions_json: Json
+          expertise_json: Json
+          extracted_tone: string | null
+          follower_range: string | null
+          id: string
+          niche: string | null
+          platforms: string[]
+          sub_niches: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          exclusions_json?: Json
+          expertise_json?: Json
+          extracted_tone?: string | null
+          follower_range?: string | null
+          id?: string
+          niche?: string | null
+          platforms?: string[]
+          sub_niches?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          exclusions_json?: Json
+          expertise_json?: Json
+          extracted_tone?: string | null
+          follower_range?: string | null
+          id?: string
+          niche?: string | null
+          platforms?: string[]
+          sub_niches?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ugc_content_sources: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          metadata_json: Json
+          status: string
+          storage_path: string | null
+          type: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          metadata_json?: Json
+          status?: string
+          storage_path?: string | null
+          type: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          metadata_json?: Json
+          status?: string
+          storage_path?: string | null
+          type?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      ugc_content_chunks: {
+        Row: {
+          chunk_text: string
+          created_at: string
+          creator_id: string
+          embedding: string | null
+          id: string
+          metadata_json: Json
+          source_id: string
+        }
+        Insert: {
+          chunk_text: string
+          created_at?: string
+          creator_id: string
+          embedding?: string | null
+          id?: string
+          metadata_json?: Json
+          source_id: string
+        }
+        Update: {
+          chunk_text?: string
+          created_at?: string
+          creator_id?: string
+          embedding?: string | null
+          id?: string
+          metadata_json?: Json
+          source_id?: string
+        }
+        Relationships: []
+      }
+      ugc_demand_research_runs: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          niche: string | null
+          query_set_json: Json
+          source_links_json: Json
+          summary_json: Json
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          niche?: string | null
+          query_set_json?: Json
+          source_links_json?: Json
+          summary_json?: Json
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          niche?: string | null
+          query_set_json?: Json
+          source_links_json?: Json
+          summary_json?: Json
+        }
+        Relationships: []
+      }
+      ugc_agent_opportunities: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          job_to_be_done: string | null
+          rationale: string | null
+          scores_json: Json
+          status: string
+          suggested_price_cents: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          job_to_be_done?: string | null
+          rationale?: string | null
+          scores_json?: Json
+          status?: string
+          suggested_price_cents?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          job_to_be_done?: string | null
+          rationale?: string | null
+          scores_json?: Json
+          status?: string
+          suggested_price_cents?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
+      ugc_agents: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          free_quota: number
+          id: string
+          name: string
+          price_cents: number
+          price_model: string
+          published: boolean
+          safety_json: Json
+          slug: string
+          system_prompt: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          free_quota?: number
+          id?: string
+          name: string
+          price_cents?: number
+          price_model?: string
+          published?: boolean
+          safety_json?: Json
+          slug: string
+          system_prompt?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          free_quota?: number
+          id?: string
+          name?: string
+          price_cents?: number
+          price_model?: string
+          published?: boolean
+          safety_json?: Json
+          slug?: string
+          system_prompt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ugc_agent_sources: {
+        Row: {
+          agent_id: string
+          source_id: string
+        }
+        Insert: {
+          agent_id: string
+          source_id: string
+        }
+        Update: {
+          agent_id?: string
+          source_id?: string
+        }
+        Relationships: []
+      }
+      ugc_followers: {
+        Row: {
+          created_at: string
+          marketing_consent: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          marketing_consent?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          marketing_consent?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ugc_agent_customers: {
+        Row: {
+          agent_id: string
+          created_at: string
+          entitlement_status: string
+          follower_id: string
+          id: string
+          stripe_customer_id: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          entitlement_status?: string
+          follower_id: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          entitlement_status?: string
+          follower_id?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: []
+      }
+      ugc_conversations: {
+        Row: {
+          agent_id: string
+          created_at: string
+          follower_id: string
+          id: string
+          last_active_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          follower_id: string
+          id?: string
+          last_active_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          follower_id?: string
+          id?: string
+          last_active_at?: string
+        }
+        Relationships: []
+      }
+      ugc_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          cost_usd: number | null
+          created_at: string
+          id: string
+          role: string
+          token_usage: number | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          cost_usd?: number | null
+          created_at?: string
+          id?: string
+          role: string
+          token_usage?: number | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          cost_usd?: number | null
+          created_at?: string
+          id?: string
+          role?: string
+          token_usage?: number | null
+        }
+        Relationships: []
+      }
+      ugc_follower_memory: {
+        Row: {
+          agent_id: string
+          follower_id: string
+          memory_json: Json
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          follower_id: string
+          memory_json?: Json
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          follower_id?: string
+          memory_json?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ugc_transactions: {
+        Row: {
+          agent_id: string
+          created_at: string
+          creator_id: string
+          creator_net_cents: number
+          follower_id: string
+          gross_cents: number
+          id: string
+          platform_fee_cents: number
+          processor_fee_cents: number
+          status: string
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          creator_id: string
+          creator_net_cents: number
+          follower_id: string
+          gross_cents: number
+          id?: string
+          platform_fee_cents: number
+          processor_fee_cents?: number
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          creator_id?: string
+          creator_net_cents?: number
+          follower_id?: string
+          gross_cents?: number
+          id?: string
+          platform_fee_cents?: number
+          processor_fee_cents?: number
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: []
+      }
+      ugc_payout_accounts: {
+        Row: {
+          created_at: string
+          creator_id: string
+          onboarding_status: string
+          payouts_enabled: boolean
+          stripe_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          onboarding_status?: string
+          payouts_enabled?: boolean
+          stripe_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          onboarding_status?: string
+          payouts_enabled?: boolean
+          stripe_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ugc_referrals: {
+        Row: {
+          attributed_at: string
+          code: string
+          expires_at: string
+          id: string
+          referred_creator_id: string
+          referrer_creator_id: string
+        }
+        Insert: {
+          attributed_at?: string
+          code: string
+          expires_at?: string
+          id?: string
+          referred_creator_id: string
+          referrer_creator_id: string
+        }
+        Update: {
+          attributed_at?: string
+          code?: string
+          expires_at?: string
+          id?: string
+          referred_creator_id?: string
+          referrer_creator_id?: string
+        }
+        Relationships: []
+      }
+      ugc_referral_earnings: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          referral_id: string
+          status: string
+          transaction_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_id: string
+          status?: string
+          transaction_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_id?: string
+          status?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ugc_feedback: {
+        Row: {
+          agent_id: string
+          correction_text: string | null
+          created_at: string
+          creator_id: string | null
+          follower_id: string | null
+          id: string
+          message_id: string | null
+          rating: number | null
+        }
+        Insert: {
+          agent_id: string
+          correction_text?: string | null
+          created_at?: string
+          creator_id?: string | null
+          follower_id?: string | null
+          id?: string
+          message_id?: string | null
+          rating?: number | null
+        }
+        Update: {
+          agent_id?: string
+          correction_text?: string | null
+          created_at?: string
+          creator_id?: string | null
+          follower_id?: string | null
+          id?: string
+          message_id?: string | null
+          rating?: number | null
+        }
+        Relationships: []
+      }
+      ugc_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          payload_json: Json
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload_json?: Json
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload_json?: Json
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ugc_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata_json: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata_json?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata_json?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -2503,6 +3094,14 @@ export type Database = {
           message: Json
           msg_id: number
           read_ct: number
+        }[]
+      }
+      match_ugc_content_chunks: {
+        Args: { p_creator_id: string; p_query_embedding: string; p_match_count?: number }
+        Returns: {
+          id: string
+          chunk_text: string
+          similarity: number
         }[]
       }
     }
