@@ -22,6 +22,8 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as ApiAgentsRouteImport } from './routes/api.agents'
+import { Route as ApiFeedbackRouteImport } from './routes/api.feedback'
 import { Route as ApiLandingChatRouteImport } from './routes/api/landing-chat'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
@@ -44,10 +46,23 @@ import { Route as OnboardingStep3RouteImport } from './routes/onboarding.step-3'
 import { Route as PayIdRouteImport } from './routes/pay.$id'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as ApiAccountDataRouteImport } from './routes/api.account.data'
+import { Route as ApiAgentsIdRouteImport } from './routes/api.agents.$id'
+import { Route as ApiChatAgentSlugRouteImport } from './routes/api.chat.$agentSlug'
 import { Route as ApiChatAgentRouteImport } from './routes/api.chat.agent'
 import { Route as ApiChatLandingRouteImport } from './routes/api.chat.landing'
 import { Route as ApiChatOnboardingRouteImport } from './routes/api.chat.onboarding'
+import { Route as ApiCheckoutAgentIdRouteImport } from './routes/api.checkout.$agentId'
+import { Route as ApiContentImportUrlRouteImport } from './routes/api.content.import-url'
+import { Route as ApiContentUploadRouteImport } from './routes/api.content.upload'
+import { Route as ApiCreatorAnalyticsRouteImport } from './routes/api.creator.analytics'
+import { Route as ApiCreatorAnalyzeRouteImport } from './routes/api.creator.analyze'
+import { Route as ApiOpportunitiesGenerateRouteImport } from './routes/api.opportunities.generate'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api.public.stripe-webhook'
+import { Route as ApiPublicUgcStripeWebhookRouteImport } from './routes/api.public.ugc-stripe-webhook'
+import { Route as ApiReferralsClaimRouteImport } from './routes/api.referrals.claim'
+import { Route as ApiResearchDemandRouteImport } from './routes/api.research.demand'
+import { Route as ApiStripeConnectRouteImport } from './routes/api.stripe.connect'
 import { Route as DashboardAdminIndexRouteImport } from './routes/dashboard.admin.index'
 import { Route as DashboardAdminImportRouteImport } from './routes/dashboard.admin.import'
 import { Route as DashboardAdminOutreachRouteImport } from './routes/dashboard.admin.outreach'
@@ -134,6 +149,16 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
     path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAgentsRoute = ApiAgentsRouteImport.update({
+  id: '/api/agents',
+  path: '/api/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
+  id: '/api/feedback',
+  path: '/api/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLandingChatRoute = ApiLandingChatRouteImport.update({
   id: '/api/landing-chat',
   path: '/api/landing-chat',
@@ -245,6 +270,21 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAccountDataRoute = ApiAccountDataRouteImport.update({
+  id: '/api/account/data',
+  path: '/api/account/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAgentsIdRoute = ApiAgentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAgentsRoute,
+} as any)
+const ApiChatAgentSlugRoute = ApiChatAgentSlugRouteImport.update({
+  id: '/api/chat/$agentSlug',
+  path: '/api/chat/$agentSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatAgentRoute = ApiChatAgentRouteImport.update({
   id: '/api/chat/agent',
   path: '/api/chat/agent',
@@ -260,9 +300,61 @@ const ApiChatOnboardingRoute = ApiChatOnboardingRouteImport.update({
   path: '/api/chat/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCheckoutAgentIdRoute = ApiCheckoutAgentIdRouteImport.update({
+  id: '/api/checkout/$agentId',
+  path: '/api/checkout/$agentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContentImportUrlRoute = ApiContentImportUrlRouteImport.update({
+  id: '/api/content/import-url',
+  path: '/api/content/import-url',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContentUploadRoute = ApiContentUploadRouteImport.update({
+  id: '/api/content/upload',
+  path: '/api/content/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCreatorAnalyticsRoute = ApiCreatorAnalyticsRouteImport.update({
+  id: '/api/creator/analytics',
+  path: '/api/creator/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCreatorAnalyzeRoute = ApiCreatorAnalyzeRouteImport.update({
+  id: '/api/creator/analyze',
+  path: '/api/creator/analyze',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOpportunitiesGenerateRoute =
+  ApiOpportunitiesGenerateRouteImport.update({
+    id: '/api/opportunities/generate',
+    path: '/api/opportunities/generate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   id: '/api/public/stripe-webhook',
   path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicUgcStripeWebhookRoute =
+  ApiPublicUgcStripeWebhookRouteImport.update({
+    id: '/api/public/ugc-stripe-webhook',
+    path: '/api/public/ugc-stripe-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiReferralsClaimRoute = ApiReferralsClaimRouteImport.update({
+  id: '/api/referrals/claim',
+  path: '/api/referrals/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiResearchDemandRoute = ApiResearchDemandRouteImport.update({
+  id: '/api/research/demand',
+  path: '/api/research/demand',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeConnectRoute = ApiStripeConnectRouteImport.update({
+  id: '/api/stripe/connect',
+  path: '/api/stripe/connect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardAdminIndexRoute = DashboardAdminIndexRouteImport.update({
@@ -380,6 +472,8 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/agents': typeof ApiAgentsRouteWithChildren
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/admin': typeof DashboardAdminRouteWithChildren
@@ -402,10 +496,23 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/account/data': typeof ApiAccountDataRoute
+  '/api/agents/$id': typeof ApiAgentsIdRoute
+  '/api/chat/$agentSlug': typeof ApiChatAgentSlugRoute
   '/api/chat/agent': typeof ApiChatAgentRoute
   '/api/chat/landing': typeof ApiChatLandingRoute
   '/api/chat/onboarding': typeof ApiChatOnboardingRoute
+  '/api/checkout/$agentId': typeof ApiCheckoutAgentIdRoute
+  '/api/content/import-url': typeof ApiContentImportUrlRoute
+  '/api/content/upload': typeof ApiContentUploadRoute
+  '/api/creator/analytics': typeof ApiCreatorAnalyticsRoute
+  '/api/creator/analyze': typeof ApiCreatorAnalyzeRoute
+  '/api/opportunities/generate': typeof ApiOpportunitiesGenerateRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/public/ugc-stripe-webhook': typeof ApiPublicUgcStripeWebhookRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/research/demand': typeof ApiResearchDemandRoute
+  '/api/stripe/connect': typeof ApiStripeConnectRoute
   '/dashboard/admin/import': typeof DashboardAdminImportRoute
   '/dashboard/admin/outreach': typeof DashboardAdminOutreachRoute
   '/dashboard/deals/$id': typeof DashboardDealsIdRoute
@@ -438,6 +545,8 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/agents': typeof ApiAgentsRouteWithChildren
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -459,10 +568,23 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/account/data': typeof ApiAccountDataRoute
+  '/api/agents/$id': typeof ApiAgentsIdRoute
+  '/api/chat/$agentSlug': typeof ApiChatAgentSlugRoute
   '/api/chat/agent': typeof ApiChatAgentRoute
   '/api/chat/landing': typeof ApiChatLandingRoute
   '/api/chat/onboarding': typeof ApiChatOnboardingRoute
+  '/api/checkout/$agentId': typeof ApiCheckoutAgentIdRoute
+  '/api/content/import-url': typeof ApiContentImportUrlRoute
+  '/api/content/upload': typeof ApiContentUploadRoute
+  '/api/creator/analytics': typeof ApiCreatorAnalyticsRoute
+  '/api/creator/analyze': typeof ApiCreatorAnalyzeRoute
+  '/api/opportunities/generate': typeof ApiOpportunitiesGenerateRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/public/ugc-stripe-webhook': typeof ApiPublicUgcStripeWebhookRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/research/demand': typeof ApiResearchDemandRoute
+  '/api/stripe/connect': typeof ApiStripeConnectRoute
   '/dashboard/admin/import': typeof DashboardAdminImportRoute
   '/dashboard/admin/outreach': typeof DashboardAdminOutreachRoute
   '/dashboard/deals/$id': typeof DashboardDealsIdRoute
@@ -497,6 +619,8 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/agents': typeof ApiAgentsRouteWithChildren
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/admin': typeof DashboardAdminRouteWithChildren
@@ -519,10 +643,23 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/account/data': typeof ApiAccountDataRoute
+  '/api/agents/$id': typeof ApiAgentsIdRoute
+  '/api/chat/$agentSlug': typeof ApiChatAgentSlugRoute
   '/api/chat/agent': typeof ApiChatAgentRoute
   '/api/chat/landing': typeof ApiChatLandingRoute
   '/api/chat/onboarding': typeof ApiChatOnboardingRoute
+  '/api/checkout/$agentId': typeof ApiCheckoutAgentIdRoute
+  '/api/content/import-url': typeof ApiContentImportUrlRoute
+  '/api/content/upload': typeof ApiContentUploadRoute
+  '/api/creator/analytics': typeof ApiCreatorAnalyticsRoute
+  '/api/creator/analyze': typeof ApiCreatorAnalyzeRoute
+  '/api/opportunities/generate': typeof ApiOpportunitiesGenerateRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/public/ugc-stripe-webhook': typeof ApiPublicUgcStripeWebhookRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/research/demand': typeof ApiResearchDemandRoute
+  '/api/stripe/connect': typeof ApiStripeConnectRoute
   '/dashboard/admin/import': typeof DashboardAdminImportRoute
   '/dashboard/admin/outreach': typeof DashboardAdminOutreachRoute
   '/dashboard/deals/$id': typeof DashboardDealsIdRoute
@@ -558,6 +695,8 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/api/agents'
+    | '/api/feedback'
     | '/api/landing-chat'
     | '/checkout/return'
     | '/dashboard/admin'
@@ -580,10 +719,23 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/account/data'
+    | '/api/agents/$id'
+    | '/api/chat/$agentSlug'
     | '/api/chat/agent'
     | '/api/chat/landing'
     | '/api/chat/onboarding'
+    | '/api/checkout/$agentId'
+    | '/api/content/import-url'
+    | '/api/content/upload'
+    | '/api/creator/analytics'
+    | '/api/creator/analyze'
+    | '/api/opportunities/generate'
     | '/api/public/stripe-webhook'
+    | '/api/public/ugc-stripe-webhook'
+    | '/api/referrals/claim'
+    | '/api/research/demand'
+    | '/api/stripe/connect'
     | '/dashboard/admin/import'
     | '/dashboard/admin/outreach'
     | '/dashboard/deals/$id'
@@ -616,6 +768,8 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/api/agents'
+    | '/api/feedback'
     | '/api/landing-chat'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -637,10 +791,23 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/account/data'
+    | '/api/agents/$id'
+    | '/api/chat/$agentSlug'
     | '/api/chat/agent'
     | '/api/chat/landing'
     | '/api/chat/onboarding'
+    | '/api/checkout/$agentId'
+    | '/api/content/import-url'
+    | '/api/content/upload'
+    | '/api/creator/analytics'
+    | '/api/creator/analyze'
+    | '/api/opportunities/generate'
     | '/api/public/stripe-webhook'
+    | '/api/public/ugc-stripe-webhook'
+    | '/api/referrals/claim'
+    | '/api/research/demand'
+    | '/api/stripe/connect'
     | '/dashboard/admin/import'
     | '/dashboard/admin/outreach'
     | '/dashboard/deals/$id'
@@ -674,6 +841,8 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/api/agents'
+    | '/api/feedback'
     | '/api/landing-chat'
     | '/checkout/return'
     | '/dashboard/admin'
@@ -696,10 +865,23 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/account/data'
+    | '/api/agents/$id'
+    | '/api/chat/$agentSlug'
     | '/api/chat/agent'
     | '/api/chat/landing'
     | '/api/chat/onboarding'
+    | '/api/checkout/$agentId'
+    | '/api/content/import-url'
+    | '/api/content/upload'
+    | '/api/creator/analytics'
+    | '/api/creator/analyze'
+    | '/api/opportunities/generate'
     | '/api/public/stripe-webhook'
+    | '/api/public/ugc-stripe-webhook'
+    | '/api/referrals/claim'
+    | '/api/research/demand'
+    | '/api/stripe/connect'
     | '/dashboard/admin/import'
     | '/dashboard/admin/outreach'
     | '/dashboard/deals/$id'
@@ -734,16 +916,30 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiAgentsRoute: typeof ApiAgentsRouteWithChildren
+  ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiLandingChatRoute: typeof ApiLandingChatRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   PayIdRoute: typeof PayIdRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiAccountDataRoute: typeof ApiAccountDataRoute
+  ApiChatAgentSlugRoute: typeof ApiChatAgentSlugRoute
   ApiChatAgentRoute: typeof ApiChatAgentRoute
   ApiChatLandingRoute: typeof ApiChatLandingRoute
   ApiChatOnboardingRoute: typeof ApiChatOnboardingRoute
+  ApiCheckoutAgentIdRoute: typeof ApiCheckoutAgentIdRoute
+  ApiContentImportUrlRoute: typeof ApiContentImportUrlRoute
+  ApiContentUploadRoute: typeof ApiContentUploadRoute
+  ApiCreatorAnalyticsRoute: typeof ApiCreatorAnalyticsRoute
+  ApiCreatorAnalyzeRoute: typeof ApiCreatorAnalyzeRoute
+  ApiOpportunitiesGenerateRoute: typeof ApiOpportunitiesGenerateRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
+  ApiPublicUgcStripeWebhookRoute: typeof ApiPublicUgcStripeWebhookRoute
+  ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
+  ApiResearchDemandRoute: typeof ApiResearchDemandRoute
+  ApiStripeConnectRoute: typeof ApiStripeConnectRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksAutoReleaseEscrowRoute: typeof ApiPublicHooksAutoReleaseEscrowRoute
   ApiPublicHooksDailyDigestRoute: typeof ApiPublicHooksDailyDigestRoute
@@ -849,6 +1045,20 @@ declare module '@tanstack/react-router' {
       path: '/.well-known/oauth-protected-resource'
       fullPath: '/.well-known/oauth-protected-resource'
       preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/agents': {
+      id: '/api/agents'
+      path: '/api/agents'
+      fullPath: '/api/agents'
+      preLoaderRoute: typeof ApiAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feedback': {
+      id: '/api/feedback'
+      path: '/api/feedback'
+      fullPath: '/api/feedback'
+      preLoaderRoute: typeof ApiFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/landing-chat': {
@@ -1005,6 +1215,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/account/data': {
+      id: '/api/account/data'
+      path: '/api/account/data'
+      fullPath: '/api/account/data'
+      preLoaderRoute: typeof ApiAccountDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/agents/$id': {
+      id: '/api/agents/$id'
+      path: '/$id'
+      fullPath: '/api/agents/$id'
+      preLoaderRoute: typeof ApiAgentsIdRouteImport
+      parentRoute: typeof ApiAgentsRoute
+    }
+    '/api/chat/$agentSlug': {
+      id: '/api/chat/$agentSlug'
+      path: '/api/chat/$agentSlug'
+      fullPath: '/api/chat/$agentSlug'
+      preLoaderRoute: typeof ApiChatAgentSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat/agent': {
       id: '/api/chat/agent'
       path: '/api/chat/agent'
@@ -1026,11 +1257,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatOnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/checkout/$agentId': {
+      id: '/api/checkout/$agentId'
+      path: '/api/checkout/$agentId'
+      fullPath: '/api/checkout/$agentId'
+      preLoaderRoute: typeof ApiCheckoutAgentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/content/import-url': {
+      id: '/api/content/import-url'
+      path: '/api/content/import-url'
+      fullPath: '/api/content/import-url'
+      preLoaderRoute: typeof ApiContentImportUrlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/content/upload': {
+      id: '/api/content/upload'
+      path: '/api/content/upload'
+      fullPath: '/api/content/upload'
+      preLoaderRoute: typeof ApiContentUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/creator/analytics': {
+      id: '/api/creator/analytics'
+      path: '/api/creator/analytics'
+      fullPath: '/api/creator/analytics'
+      preLoaderRoute: typeof ApiCreatorAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/creator/analyze': {
+      id: '/api/creator/analyze'
+      path: '/api/creator/analyze'
+      fullPath: '/api/creator/analyze'
+      preLoaderRoute: typeof ApiCreatorAnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/opportunities/generate': {
+      id: '/api/opportunities/generate'
+      path: '/api/opportunities/generate'
+      fullPath: '/api/opportunities/generate'
+      preLoaderRoute: typeof ApiOpportunitiesGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/stripe-webhook': {
       id: '/api/public/stripe-webhook'
       path: '/api/public/stripe-webhook'
       fullPath: '/api/public/stripe-webhook'
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ugc-stripe-webhook': {
+      id: '/api/public/ugc-stripe-webhook'
+      path: '/api/public/ugc-stripe-webhook'
+      fullPath: '/api/public/ugc-stripe-webhook'
+      preLoaderRoute: typeof ApiPublicUgcStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/referrals/claim': {
+      id: '/api/referrals/claim'
+      path: '/api/referrals/claim'
+      fullPath: '/api/referrals/claim'
+      preLoaderRoute: typeof ApiReferralsClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/research/demand': {
+      id: '/api/research/demand'
+      path: '/api/research/demand'
+      fullPath: '/api/research/demand'
+      preLoaderRoute: typeof ApiResearchDemandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stripe/connect': {
+      id: '/api/stripe/connect'
+      path: '/api/stripe/connect'
+      fullPath: '/api/stripe/connect'
+      preLoaderRoute: typeof ApiStripeConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/admin/': {
@@ -1255,6 +1556,18 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
   OnboardingRouteChildren,
 )
 
+interface ApiAgentsRouteChildren {
+  ApiAgentsIdRoute: typeof ApiAgentsIdRoute
+}
+
+const ApiAgentsRouteChildren: ApiAgentsRouteChildren = {
+  ApiAgentsIdRoute: ApiAgentsIdRoute,
+}
+
+const ApiAgentsRouteWithChildren = ApiAgentsRoute._addFileChildren(
+  ApiAgentsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
@@ -1270,16 +1583,30 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiAgentsRoute: ApiAgentsRouteWithChildren,
+  ApiFeedbackRoute: ApiFeedbackRoute,
   ApiLandingChatRoute: ApiLandingChatRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   PayIdRoute: PayIdRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiAccountDataRoute: ApiAccountDataRoute,
+  ApiChatAgentSlugRoute: ApiChatAgentSlugRoute,
   ApiChatAgentRoute: ApiChatAgentRoute,
   ApiChatLandingRoute: ApiChatLandingRoute,
   ApiChatOnboardingRoute: ApiChatOnboardingRoute,
+  ApiCheckoutAgentIdRoute: ApiCheckoutAgentIdRoute,
+  ApiContentImportUrlRoute: ApiContentImportUrlRoute,
+  ApiContentUploadRoute: ApiContentUploadRoute,
+  ApiCreatorAnalyticsRoute: ApiCreatorAnalyticsRoute,
+  ApiCreatorAnalyzeRoute: ApiCreatorAnalyzeRoute,
+  ApiOpportunitiesGenerateRoute: ApiOpportunitiesGenerateRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
+  ApiPublicUgcStripeWebhookRoute: ApiPublicUgcStripeWebhookRoute,
+  ApiReferralsClaimRoute: ApiReferralsClaimRoute,
+  ApiResearchDemandRoute: ApiResearchDemandRoute,
+  ApiStripeConnectRoute: ApiStripeConnectRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksAutoReleaseEscrowRoute: ApiPublicHooksAutoReleaseEscrowRoute,
   ApiPublicHooksDailyDigestRoute: ApiPublicHooksDailyDigestRoute,
