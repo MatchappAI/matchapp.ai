@@ -29,7 +29,7 @@ export function Hero() {
               transition={{ duration: 0.9, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
               className="text-[2.6rem] font-bold leading-[1.04] tracking-[-0.022em] text-foreground sm:text-5xl lg:text-[3.65rem]"
             >
-              Get paid brand deals without the pitching, chasing, or bad offers.
+              Get paid for your content.
             </motion.h1>
 
             <motion.p
@@ -38,10 +38,8 @@ export function Hero() {
               transition={{ duration: 0.8, delay: 0.25 }}
               className="mt-6 max-w-md text-[15.5px] leading-[1.7] text-muted-foreground/90"
             >
-              MatchAI finds brand deals that fit you, writes the pitch, tracks every application,
-              and flags bad offers before you sign. Built for UGC creators and micro-influencers
-              under 50K. You just tap <span className="font-semibold text-foreground">Approve</span>
-              .
+              Your personal AI agent helps you find brand deals, write better pitches, track
+              replies, and negotiate with confidence.
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 12 }}
@@ -49,8 +47,9 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.28 }}
               className="mt-3 max-w-md text-[13.5px] leading-[1.6] text-foreground/75"
             >
-              You already make the content. MatchAI helps you find the deals that fit it and close
-              them cleanly.
+              Find relevant brand opportunities, get personalized outreach written for you, track
+              replies and follow-ups in one place, know what to charge, and check offers before
+              you respond.
             </motion.p>
 
             <motion.div
@@ -88,7 +87,7 @@ export function Hero() {
                     to="/dashboard"
                     className="btn-sheen group relative rounded-xl bg-primary hover:bg-primary/90 transition-colors px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_oklch(0_0_0/0.22)] ring-1 ring-foreground/15 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_oklch(0_0_0/0.22)]"
                   >
-                    Open my agent →
+                    Get brand deals →
                   </Link>
                   <a
                     href="#how"
@@ -103,7 +102,7 @@ export function Hero() {
                     to="/auth"
                     className="btn-sheen group relative rounded-xl bg-primary hover:bg-primary/90 transition-colors px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_oklch(0_0_0/0.22)] ring-1 ring-foreground/15 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_oklch(0_0_0/0.22)]"
                   >
-                    Find Paid Brand Deals →
+                    Get brand deals →
                   </Link>
                   <a
                     href="#how"
@@ -121,7 +120,7 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.42 }}
               className="mt-5 max-w-md text-[14px] font-semibold leading-snug text-foreground"
             >
-              Start free. Creator-brand payment is agreed and handled directly with the brand.
+              No upfront cost to start. We only get paid when you do.
             </motion.p>
 
             <motion.p
@@ -134,8 +133,8 @@ export function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
               </span>
-              Free to start · No credit card · Internal creator email included · External provider
-              stays off until selected
+              Free to start · No credit card · Internal creator email included · Creator-brand
+              payments stay outside MatchAI
             </motion.p>
 
             <motion.div
@@ -188,7 +187,8 @@ export function Hero() {
 
         <footer className="flex flex-col items-start justify-between gap-4 border-t border-border/60 py-6 sm:flex-row sm:items-center">
           <p className="text-xs text-muted-foreground">
-            For creators doing this solo — no manager, no agency, no monthly retainer.
+            For creators doing this solo, with a personal AI agent that keeps the process
+            organized.
           </p>
           <div className="flex flex-wrap gap-2 text-[10.5px] font-semibold tracking-wider text-muted-foreground">
             {["REAL BRANDS ONLY", "YOU APPROVE EVERY SEND", "PAYMENT STAYS EXTERNAL"].map((t) => (
