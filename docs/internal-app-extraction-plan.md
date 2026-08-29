@@ -1,12 +1,15 @@
 # Internal App Extraction Plan
 
-This repository currently keeps the public site, creator product, and internal
-operations UI in one production codebase. The internal app should remain in
-`matchapp.ai` until product and backend boundaries are stable enough to split.
+This repository keeps the public site, creator product, and internal
+operations UI in one production codebase. Graphical admin tools stay inside
+`matchapp.ai`; `matchai-ops` is only for scripts, runbooks, and utilities.
 
 ## Current Internal Route Locations
 
 - `/dashboard/admin`
+- `/admin` should be treated as the future canonical naming convention if
+  route aliases are introduced, but the current production routes remain under
+  `/dashboard/admin` and `/dashboard/discovery`.
 - `/dashboard/admin/import`
 - `/dashboard/admin/outreach`
 - `/dashboard/discovery`
@@ -75,11 +78,14 @@ tables and avoid duplicating migrations in the extracted repo.
 ## Future Extraction Process
 
 1. Freeze the shared backend contract in `matchapp.ai`.
-2. Move only the internal route layer and internal-only shell into a new repo.
-3. Keep shared domain logic in a separately published package or shared module.
-4. Leave database migrations, auth, and provider adapters canonical in
+2. Keep admin pages in `matchapp.ai`; do not extract the graphical UI into
+   `matchai-ops`.
+3. Publish operational scripts and documentation in `matchai-ops`.
+4. Keep shared domain logic canonical in `matchapp.ai`.
+5. Leave database migrations, auth, and provider adapters canonical in
    `matchapp.ai`.
-5. Verify the extracted app against the same production database contract.
+6. Verify any script or runbook in `matchai-ops` against the same production
+   API contract.
 
 ## Post-Extraction Tests
 
@@ -97,6 +103,7 @@ tables and avoid duplicating migrations in the extracted repo.
 ## Deployment Plan
 
 - Keep production deployment anchored in `matchapp.ai`.
-- Extract internal UI only after the shared backend contract is stable.
-- Deploy the extracted app against the same verified API and auth boundaries.
-- Re-run role checks, import flows, and review queues after extraction.
+- Do not deploy a second admin site.
+- Deploy operational scripts only when they are explicitly invoked.
+- Re-run role checks, import flows, and review queues after any admin-related
+  backend change.
